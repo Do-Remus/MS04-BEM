@@ -32,8 +32,8 @@ void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
     const double pas_cercle = 2 * pi / nb_segments;
     for (int i = 0; i < nb_segments; i++)
     {
-        Point A(Ob.centre.x + Ob.rayon * (pas_cercle * i), Ob.centre.y + Ob.rayon * sin(pas_cercle * i));
-        Point B(Ob.centre.x + Ob.rayon * (pas_cercle * (i + 1)), Ob.centre.y + Ob.rayon * sin(pas_cercle * (i + 1)));
+        Point A(Ob.centre.x + Ob.rayon * cos(pas_cercle * i), Ob.centre.y + Ob.rayon * sin(pas_cercle * i));
+        Point B(Ob.centre.x + Ob.rayon * cos(pas_cercle * (i + 1)), Ob.centre.y + Ob.rayon * sin(pas_cercle * (i + 1)));
         this->push_back(Segment(A, B));
     }
     return;
