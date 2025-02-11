@@ -4,6 +4,7 @@
 #include "cercle.hpp"
 #include "cercle.hpp"
 #include "segment.hpp"
+#include "utils.hpp"
 using namespace std;
 
 int main()
@@ -27,9 +28,14 @@ int main()
     cout<<"3*C"<<3*C;
     cout<<"C/5"<<C/5;
     cout<<"norme C"<<C.norm()<<endl;
-    cout<<"produit vectoriel composante z ="<<A^C
+    cout<<"produit vectoriel composante z ="<<A*C;
+
+    Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.5);
+
+    cout << "la" << endl;
+    monMaillage.export_maillage("output.txt");
+    cout << "la" << endl;
     
 
     return 0;
 }
-
