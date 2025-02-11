@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 const double pi = atan(1.) * 4;
@@ -15,6 +16,7 @@ public:
     Maillage() {};
     Maillage(const vector<Cercle> cercles, const double pas_maillage);
     void ajoute_cercle(const double pas_mailage, const Cercle &Ob);
+    void export_maillage(string filename);
 };
 
 void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
@@ -35,6 +37,27 @@ void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
         Point B(Ob.centre.x + Ob.rayon * (pas_cercle * (i + 1)), Ob.centre.y + Ob.rayon * sin(pas_cercle * (i + 1)));
         this->push_back(Segment(A, B));
     }
+    return;
+}
+
+void Maillage::export_maillage(string filename)
+{
+    ofstream f(filename);
+
+    if (!f.is_open())
+    {
+        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+        exit(-1);
+    }
+
+    for (int i = 0; i < this->size(); i++)
+    {
+        Segment s = this->operator[](i);
+        f << s.P1.x << " " << s.P1.y << " ";
+        f << s.P2.x << " " << s.P2.y << endl;
+    }
+    f.close();
+
     return;
 }
 
