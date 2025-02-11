@@ -1,6 +1,5 @@
 #ifndef Cercle_HPP_INCLUDED
 #define Cercle_HPP_INCLUDED
-
 #include "point.hpp"
 
 class Cercle

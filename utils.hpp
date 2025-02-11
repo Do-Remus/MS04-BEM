@@ -40,7 +40,6 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
     double xAleatoire;
     double yAleatoire;
     vector<Cercle> obstacles;
-
     for (unsigned int i = 0; i < nbObstacles; i++)
     {
         do
@@ -48,7 +47,8 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
             rayonAleatoire = rayonLimitant * (double)rand() / RAND_MAX;
             xAleatoire = epaisseur * (double)rand() / RAND_MAX;
             yAleatoire = hauteur * (double)rand() / RAND_MAX;
-        } while (not obstacle_valide(rayonAleatoire, xAleatoire, yAleatoire, obstacles, hauteur, epaisseur));
+        } while (!obstacle_valide(rayonAleatoire, xAleatoire, yAleatoire, obstacles, hauteur, epaisseur));
+
         Point nouvCentre(xAleatoire, yAleatoire);
         Cercle nouvObstacle(rayonAleatoire, nouvCentre);
         obstacles.push_back(nouvObstacle);

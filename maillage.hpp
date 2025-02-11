@@ -3,7 +3,6 @@
 #include "cercle.hpp"
 #include "segment.hpp"
 #include <vector>
-#include <cmath>
 #include <iostream>
 #include <fstream>
 using namespace std;
@@ -16,7 +15,7 @@ public:
     Maillage() {};
     Maillage(const vector<Cercle> cercles, const double pas_maillage);
     void ajoute_cercle(const double pas_mailage, const Cercle &Ob);
-    void export_maillage(string filename);
+    void export_maillage(const string &filename);
 };
 
 void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
@@ -40,10 +39,12 @@ void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
     return;
 }
 
-void Maillage::export_maillage(string filename)
+void Maillage::export_maillage(const string &filename)
 {
     ofstream f(filename);
 
+    cout << filename << endl;
+    cout << f.is_open() << endl;
     if (!f.is_open())
     {
         cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
@@ -52,7 +53,7 @@ void Maillage::export_maillage(string filename)
 
     for (unsigned int i = 0; i < this->size(); i++)
     {
-        Segment s = this->operator[](i);
+        const Segment &s = this->operator[](i);
         f << s.P1.x << " " << s.P1.y << " ";
         f << s.P2.x << " " << s.P2.y << endl;
     }
