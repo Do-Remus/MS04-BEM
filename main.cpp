@@ -1,4 +1,5 @@
 #include <iostream>
+#include <time.h>
 #include "point.hpp"
 #include "cercle.hpp"
 #include "cercle.hpp"
@@ -7,6 +8,7 @@ using namespace std;
 
 int main()
 {
+    srand(time(NULL));
     Point A(1, 1);
     Point C(1, 2);
     cout << "A =(" << A.x << "," << A.y << ")" << endl;
