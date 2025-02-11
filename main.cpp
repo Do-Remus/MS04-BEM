@@ -20,8 +20,14 @@ int main()
     Segment S(A, C);
     cout << "segment P1: " << S.P1.x << "," << S.P1.y << endl;
     cout << "segment P2: " << S.P2.x << "," << S.P2.y << endl;
-
+    // test ostream function
     cout << "A =" << A << endl;
+    // test operations
+    cout << "A+C" << A + C;
+    cout << "A-C" << A - C;
+    cout << "3*C" << 3 * C;
+    cout << "C/5" << C / 5;
+    cout << "norme C" << C.norm() << endl;
 
     Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.5);
 
