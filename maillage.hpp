@@ -50,7 +50,7 @@ void Maillage::export_maillage(string filename)
         exit(-1);
     }
 
-    for (int i = 0; i < this->size(); i++)
+    for (unsigned int i = 0; i < this->size(); i++)
     {
         Segment s = this->operator[](i);
         f << s.P1.x << " " << s.P1.y << " ";
@@ -64,7 +64,7 @@ void Maillage::export_maillage(string filename)
 Maillage::Maillage(const vector<Cercle> cercles, const double pas_maillage)
 {
     // Verification du strict positivité du pas du maillage fait dans ajoute cercle
-    for (int i = 0; i < cercles.size(); i++)
+    for (unsigned int i = 0; i < cercles.size(); i++)
     {
         ajoute_cercle(pas_maillage, cercles[i]);
     }

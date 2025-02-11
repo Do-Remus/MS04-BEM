@@ -18,7 +18,7 @@ bool obstacle_valide(double rayonAleatoire, double xAleatoire, double yAleatoire
     }
 
     // Verification de non recouvrement
-    for (int i = 0; i < obstacles.size(); i++)
+    for (unsigned int i = 0; i < obstacles.size(); i++)
     {
         double dx = obstacles[i].centre.x - xAleatoire;
         double dy = obstacles[i].centre.y - yAleatoire;
@@ -35,17 +35,17 @@ bool obstacle_valide(double rayonAleatoire, double xAleatoire, double yAleatoire
 
 Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double hauteur, double epaisseur, double pas_maillage)
 {
-    double tailleLimitante = max(hauteur, epaisseur);
+    double rayonLimitant = min(hauteur, epaisseur) / 2;
     double rayonAleatoire;
     double xAleatoire;
     double yAleatoire;
     vector<Cercle> obstacles;
 
-    for (int i = 0; i < nbObstacles; i++)
+    for (unsigned int i = 0; i < nbObstacles; i++)
     {
         do
         {
-            rayonAleatoire = tailleLimitante * (double)rand() / RAND_MAX;
+            rayonAleatoire = rayonLimitant * (double)rand() / RAND_MAX;
             xAleatoire = epaisseur * (double)rand() / RAND_MAX;
             yAleatoire = hauteur * (double)rand() / RAND_MAX;
         } while (not obstacle_valide(rayonAleatoire, xAleatoire, yAleatoire, obstacles, hauteur, epaisseur));
@@ -54,7 +54,9 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
         obstacles.push_back(nouvObstacle);
     }
 
-    return Maillage(obstacles, pas_maillage);
+    Maillage maillage(obstacles, pas_maillage);
+
+    return maillage;
 }
 
 #endif

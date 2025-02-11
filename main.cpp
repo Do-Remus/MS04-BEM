@@ -4,6 +4,7 @@
 #include "cercle.hpp"
 #include "cercle.hpp"
 #include "segment.hpp"
+#include "utils.hpp"
 using namespace std;
 
 int main()
@@ -17,12 +18,14 @@ int main()
     cout << " obstacle rayon = " << B.rayon << endl;
 
     Segment S(A, C);
-    cout << "segment P1" << S.P1.x << "," << S.P1.y << endl;
-    cout << "segment P2" << S.P2.x << "," << S.P2.y << endl;
+    cout << "segment P1: " << S.P1.x << "," << S.P1.y << endl;
+    cout << "segment P2: " << S.P2.x << "," << S.P2.y << endl;
 
-    cout<<"A ="<<A<<endl;
+    cout << "A =" << A << endl;
 
+    Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.5);
+
+    monMaillage.export_maillage("output.txt");
 
     return 0;
 }
-
