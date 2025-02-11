@@ -27,6 +27,8 @@ int main()
     cout<<"3*C"<<3*C;
     cout<<"C/5"<<C/5;
     cout<<"norme C"<<C.norm()<<endl;
+    cout<<"produit vectoriel composante z ="<<A^C
+    
 
     return 0;
 }

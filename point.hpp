@@ -102,4 +102,10 @@ double Point::norm(){
 }
 
 
+
+
+double operator*(const Point& A,const Point& B){
+    return A.x*B.y - A.y*B.x;
+}
+
 #endif
