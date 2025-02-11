@@ -1,5 +1,7 @@
 #ifndef POINT_HPP_INCLUDED
 #define POINT_HPP_INCLUDED
+#include <iostream>
+using namespace std;
 
 
 class Point
@@ -9,8 +11,47 @@ public:
     double y;
     Point();
     Point(double x, double y);
-
+    Point& operator+=(Point& B);
+    Point& operator-=(Point& B);
+    Point& operator*=(const double a);
+    Point& operator/=(const double a );
 };
+
+ostream& operator<<(ostream& out, const Point& A){
+    out<<"("<<A.x<<";"<<A.y<<")"<<endl;
+    return out;
+}
+
+Point& operator+(Point& A, Point& B){
+    Point R =A;
+    R+=B;
+    return R;
+}
+
+Point& operator-(Point& A, Point& B){
+    Point R =A;
+    R-=B;
+    return R;
+}
+
+Point& operator*(Point& A, const double a){
+    Point R=A;
+    R*=a;
+    return R;
+}
+
+Point& operator*(const double a, Point& A){
+    Point R=A;
+    R*=a;
+    return R;
+}
+
+Point& operator/(Point& A, const double a){
+    Point R=A;
+    R/=a;
+    return R;
+}
+
 
 Point::Point(){
     //basic constuctor
@@ -21,6 +62,35 @@ Point::Point(){
 Point::Point(double a, double b){
     this->x=a;
     this->y=b;
+}
+
+Point& Point::operator+=(Point& B){
+    this->x+=B.x;
+    this->y+=B.y;
+    return *this;  
+}
+
+Point& Point::operator-=(Point& B){
+    this->x-=B.x;
+    this->y-=B.y;
+    return *this;  
+}
+
+Point& Point::operator*=(const double a){
+    this->x*=a;
+    this->y*=a;
+    return *this;  
+}
+
+
+Point& Point::operator/=(const double a){
+    if(a==0){
+        cout<<"division par 0";
+        exit (-1);
+    }
+    this->x/=a;
+    this->y/=a;
+    return *this;  
 }
 
 
