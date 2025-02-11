@@ -10,42 +10,45 @@ public:
     double y;
     Point();
     Point(double x, double y);
-    Point& operator+=(Point& B);
-    Point& operator-=(Point& B);
+    Point& operator+=(const Point& B);
+    Point& operator-=(const Point& B);
     Point& operator*=(const double a);
     Point& operator/=(const double a );
+    double norm();
 };
+
+
 
 ostream& operator<<(ostream& out, const Point& A){
     out<<"("<<A.x<<";"<<A.y<<")"<<endl;
     return out;
 }
 
-Point& operator+(Point& A, Point& B){
+Point operator+(const Point& A,const Point& B){
     Point R =A;
     R+=B;
     return R;
 }
 
-Point& operator-(Point& A, Point& B){
+Point operator-(const Point& A,const Point& B){
     Point R =A;
     R-=B;
-    return R;
+    return R;  
 }
 
-Point& operator*(Point& A, const double a){
+Point operator*(const Point& A, const double a){
     Point R=A;
     R*=a;
     return R;
 }
 
-Point& operator*(const double a, Point& A){
+Point operator*(const double a,const  Point& A){
     Point R=A;
     R*=a;
     return R;
 }
 
-Point& operator/(Point& A, const double a){
+Point operator/(const Point& A, const double a){
     Point R=A;
     R/=a;
     return R;
@@ -65,13 +68,13 @@ Point::Point(double a, double b)
     this->y = b;
 }
 
-Point& Point::operator+=(Point& B){
+Point& Point::operator+=(const Point& B){
     this->x+=B.x;
     this->y+=B.y;
     return *this;  
 }
 
-Point& Point::operator-=(Point& B){
+Point& Point::operator-=(const Point& B){
     this->x-=B.x;
     this->y-=B.y;
     return *this;  
@@ -92,6 +95,10 @@ Point& Point::operator/=(const double a){
     this->x/=a;
     this->y/=a;
     return *this;  
+}
+
+double Point::norm(){
+    return sqrt(this->x*this->x + this->y*this->y);
 }
 
 
