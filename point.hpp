@@ -3,7 +3,6 @@
 #include <iostream>
 using namespace std;
 
-
 class Point
 {
 public:
@@ -53,15 +52,17 @@ Point& operator/(Point& A, const double a){
 }
 
 
-Point::Point(){
-    //basic constuctor
-    this->x=0;
-    this->y=0;
+Point::Point()
+{
+    // basic constuctor
+    this->x = 0;
+    this->y = 0;
 }
 
-Point::Point(double a, double b){
-    this->x=a;
-    this->y=b;
+Point::Point(double a, double b)
+{
+    this->x = a;
+    this->y = b;
 }
 
 Point& Point::operator+=(Point& B){
@@ -94,4 +95,4 @@ Point& Point::operator/=(const double a){
 }
 
 
-#endif 
+#endif
