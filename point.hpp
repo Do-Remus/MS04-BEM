@@ -110,13 +110,9 @@ double Point::norm()
     return sqrt(this->x * this->x + this->y * this->y);
 }
 
-
-
-
-double operator*(const Point& A,const Point& B){
-    return A.x*B.y - A.y*B.x;
+double operator*(const Point &A, const Point &B)
+{
+    return A.x * B.y - A.y * B.x;
 }
-
-
 
 #endif
