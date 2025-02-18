@@ -59,23 +59,27 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
     return maillage;
 }
 
-void genere_coefficient_matrice_A(Matrice &A, const Maillage &maillage)
+int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage)
 {
-    if (pas <= 0)
+    for (int i = 0; i < maillage.size(); i++)
     {
-        cout << "ERREUR : le pas doit-être strictement positif" << endl;
-        exit(-1);
+        P[i] = integ_simple(maillage[i], pTheta);
     }
 
+    return 0;
+}
+
+int genere_coefficient_matrice_A(Matrice &A, const Maillage &maillage)
+{
     for (int i = 0; i < maillage.size(); i++)
     {
         for (int j = 0; j < maillage.size(); j++)
         {
-            A(i, j) = integ(maillage[i], maillage[j], f) + integ_log(maillage, i, j) / (2 * pi);
+            A(i, j) = integ_double(maillage[i], maillage[j], f) + integ_log(maillage[i], maillage[j]) / (2 * pi);
         }
     }
 
-    return;
+    return 0;
 }
 
 #endif

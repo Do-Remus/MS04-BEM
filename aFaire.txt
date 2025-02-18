@@ -1,0 +1,6 @@
+- Ajouter comparaison points (|P-Q| < epsilon)
+- Fin intégrale du log
+- Matrices
+- Résolution
+- Affichage Matlab
+- mettre nbPas en argument optionnel
