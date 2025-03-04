@@ -32,9 +32,7 @@ int main()
 
     Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.01);
 
-    cout << "la" << endl;
     monMaillage.export_maillage("output.txt");
-    cout << "la" << endl;
 
     return 0;
 }
