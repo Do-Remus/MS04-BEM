@@ -43,8 +43,6 @@ void Maillage::export_maillage(const string &filename)
 {
     ofstream f(filename);
 
-    cout << filename << endl;
-    cout << f.is_open() << endl;
     if (!f.is_open())
     {
         cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
