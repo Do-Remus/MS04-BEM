@@ -1,7 +1,11 @@
 #include <iostream>
+#include <math.h>
 #include "segment.hpp"
 
-double integ_simple(Segment AB, function<double(Point)> f, int Nbpas1)
+typedef double (*fun_d_P)(const Point &);
+typedef double (*fun_d_P2)(const Point &, const Point &);
+
+double integ_simple(Segment AB, fun_d_P f, int Nbpas1)
 // permet de faire une intÈgrale simple sur le segment AB
 // sur f:R^2->R, avec Nbpas1 intervalles sur AB
 {
@@ -13,7 +17,7 @@ double integ_simple(Segment AB, function<double(Point)> f, int Nbpas1)
     }
 }
 
-double integ_double(Segment AB, Segment CD, function<double(Point, Point)> f, int Nbpas1, int Nbpas2)
+double integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
 // permet de faire une intÈgrale double sur les segments AB et CD
 // sur f:R^2xR^2->R, avec pas1 intervalles sur AB et pas2 intervalles sur CD
 {
@@ -30,6 +34,6 @@ double integ_double(Segment AB, Segment CD, function<double(Point, Point)> f, in
     }
 }
 
-double integ_log(Segment AB, Segment CD, function<double(Point, Point)> f, int Nbpas1, int Nbpas2)
+double integ_log(Segment AB, Segment CD, int Nbpas)
 {
 }
