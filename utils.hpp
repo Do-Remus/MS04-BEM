@@ -59,27 +59,27 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
     return maillage;
 }
 
-int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage)
-{
-    for (int i = 0; i < maillage.size(); i++)
-    {
-        P[i] = integ_simple(maillage[i], pTheta);
-    }
+// int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage)
+// {
+//     for (int i = 0; i < maillage.size(); i++)
+//     {
+//         P[i] = integ_simple(maillage[i], pTheta);
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
-int genere_coefficient_matrice_A(Matrice &A, const Maillage &maillage)
-{
-    for (int i = 0; i < maillage.size(); i++)
-    {
-        for (int j = 0; j < maillage.size(); j++)
-        {
-            A(i, j) = integ_double(maillage[i], maillage[j], f) + integ_log(maillage[i], maillage[j]) / (2 * pi);
-        }
-    }
+// int genere_coefficient_matrice_A(Matrice &A, const Maillage &maillage)
+// {
+//     for (int i = 0; i < maillage.size(); i++)
+//     {
+//         for (int j = 0; j < maillage.size(); j++)
+//         {
+//             A(i, j) = integ_double(maillage[i], maillage[j], f) + integ_log(maillage[i], maillage[j]) / (2 * pi);
+//         }
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
 #endif

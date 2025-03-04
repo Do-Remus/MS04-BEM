@@ -1,38 +1,35 @@
 #include <iostream>
 #include "segment.hpp"
 
-double integ_simple(segment AB,std::function<double(Point)> f, int Nbpas1)
+double integ_simple(Segment AB, function<double(Point)> f, int Nbpas1)
 // permet de faire une intÈgrale simple sur le segment AB
 // sur f:R^2->R, avec Nbpas1 intervalles sur AB
 {
     double result = 0;
-    double dAB=AB.norm/Nbpas1;
+    double dAB = AB.norm() / Nbpas1;
     for (int i = 0; i < Nbpas1; i++)
     {
-        result += dAB * f(AB.P1 + dAB * i*(AB.P2-AB.P1));
+        result += dAB * f(AB.P1 + dAB * i * (AB.P2 - AB.P1));
     }
 }
 
-
-double integ_double(segment AB, segment CD, std::function<double(Point, Point)> f, int Nbpas1, int Nbpas2)
+double integ_double(Segment AB, Segment CD, function<double(Point, Point)> f, int Nbpas1, int Nbpas2)
 // permet de faire une intÈgrale double sur les segments AB et CD
 // sur f:R^2xR^2->R, avec pas1 intervalles sur AB et pas2 intervalles sur CD
 {
     double result = 0;
-    double dAB=AB.norm/Nbpas1;
-    double dCD=CD.norm/Nbpas2;
-    double dS = abs((dAB*(AB.P2-AB.P1))*(dCD*(CD.P2-CD.P1))); // produit vectoriel des deux petits vecteurs;
-    for (int i = 0; i < pas1; i++)
+    double dAB = AB.norm() / Nbpas1;
+    double dCD = CD.norm() / Nbpas2;
+    double dS = abs((dAB * (AB.P2 - AB.P1)) * (dCD * (CD.P2 - CD.P1))); // produit vectoriel des deux petits vecteurs;
+    for (int i = 0; i < Nbpas1; i++)
     {
-        for (int j = 0; j < pas2; j++)
+        for (int j = 0; j < Nbpas2; j++)
         {
-            result += dS * f(AB.P1 + dAB*(AB.P2-AB.P1) * i, CD.P1 + dCD *(CD.P2-CD.P1)*j);
+            result += dS * f(AB.P1 + dAB * (AB.P2 - AB.P1) * i, CD.P1 + dCD * (CD.P2 - CD.P1) * j);
         }
     }
 }
 
-double integ_log(segment AB, segment CD, std::function<double(Point, Point)> f, int Nbpas1, int Nbpas2)
+double integ_log(Segment AB, Segment CD, function<double(Point, Point)> f, int Nbpas1, int Nbpas2)
 {
-
-
 }
