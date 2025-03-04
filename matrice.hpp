@@ -16,19 +16,20 @@ public:
     int n;                               // ordre de la Matrice
     Matrice (int m=0, double v=0.);
     Matrice (const Vecteur& d);
-    Matrice(const initializer_list<Vecteur>& vs); // constructeur d'une MatriceSym à partir de vecteurs
+    Matrice(const initializer_list<Vecteur>& vs); // constructeur d'une Matrice à partir de vecteurs
     double& coef(int i,int j) ;         // acces au coef i,j (1->n)
     double  coef(int i, int j) const ;   // acces au coef i,j (1->n) const
     double& operator() (int i, int j);
     double operator() (int i,int j) const;
-    Vecteur operator() (int i) const;
-
-
 };
 
 class MatriceSym : public Matrice
 {public:
     MatriceSym(int m=0, double v=0.);
+    double& coefSym(int i,int j) ;         // acces au coef i,j (1->n)
+    double  coefSym(int i, int j) const ;   // acces au coef i,j (1->n) const
+    double& operator() (int i, int j);
+    double operator() (int i,int j) const;
 };
 
 
@@ -109,11 +110,39 @@ MatriceSym::MatriceSym (int m, double v)      // constructeur dimensions et coef
     coefs.resize(n*(n+1)/2,v); //reduction du nombre de coefs necessaires pour definir la matrice
 }
 
+double& MatriceSym::coefSym(int i,int j){ // acces au coef i,j (1->n)
+    if(i<=0 || j<=0) {cout<<"coef(i,j) : i,j en dehors des bornes"<<endl; exit(-1);}
+    if(j>=i){
+        return this->coefs[n*(n+1)/2 -(i)*(i+1)/2 + j];
+    } else {
+        return this->coefs[n*(n+1)/2 -(j)*(j+1)/2 + i];
+}
+}
+
+double  MatriceSym::coefSym(int i, int j) const { // acces au coef i,j (1->n) const
+    if(i<=0 || j<=0) {cout<<"coef(i,j) : i,j en dehors des bornes"<<endl; exit(-1);}
+    if(j>=i){
+        return this->coefs[n*(n+1)/2 -(i)*(i+1)/2 + j];
+    } else {
+        return this->coefs[n*(n+1)/2 -(j)*(j+1)/2 + i];
+}
+}  
+
+
+double& MatriceSym::operator() (int i, int j){
+    return this->coefSym(i,j);
+}
+double MatriceSym::operator() (int i,int j) const{
+    return this->coefSym(i,j);
+
+}
+
+
 
 
 //factorisation LDL
 void decomposition_LDL(const MatriceSym& A, Matrice& L, Vecteur& D) {
-    // init matrice L et D
+    // init matrice L et matrice diagonale D
     int n=A.n;
     L.n=n;
     D.resize(n);
@@ -125,13 +154,13 @@ void decomposition_LDL(const MatriceSym& A, Matrice& L, Vecteur& D) {
             D[i] -= L(i,k) * L(i,k) * D[i];
         }
 
-        // Ensure matrix is positive definite
+        // Verification caractère défini positif
         if (D[i] == 0) {
-            cout << "Matrix is not positive definite!" << endl;
+            cout << "Matrice non définie positive!" << endl;
             exit(-1);
         }
 
-        // Compute L[i][j] for j < i
+        // calcule L(i,j) pour j < i
         for (int j = i + 1; j < n; ++j) {
             L(j,i) = A(j,i);
             for (int k = 0; k < i; ++k) {
@@ -140,7 +169,7 @@ void decomposition_LDL(const MatriceSym& A, Matrice& L, Vecteur& D) {
             L(j,i) /= D[i];
         }
 
-        // Set diagonal elements of L to 1
+        // elements diagonaux de L sont 1
         L(i,i) = 1.0;
     }
 
@@ -180,9 +209,10 @@ Vecteur resolution_systeme_lineaire(const MatriceSym& A, const Vecteur& P){
     for(int i=n;i>0;i--){
         Q[i]+=Y[i]/D[i];
         for(int k=i+1;k<n;k++){
-            Q[i]-=L(i,k)*Q[k];
+            Q[i]-=L(k,i)*Q[k]; //attention L'(i,k)=L(k,i)
         }
     }
+    //solution
     return Q;
 }
 
