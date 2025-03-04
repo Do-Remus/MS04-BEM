@@ -23,4 +23,15 @@ double Segment::norm()
     return C.norm();
 }
 
+
+bool operator==(const Segment AB, const Segment CD){
+    if(AB.P1==CD.P1 && AB.P2==CD.P2){
+        return true;
+    }
+    if(AB.P1==CD.P2 && AB.P2==CD.P1){
+        return true;
+    }
+    return false;
+
+}
 #endif

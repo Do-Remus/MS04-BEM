@@ -9,6 +9,17 @@ using namespace std;
 
 
 typedef vector<double> Vecteur;
+ostream&  operator <<(ostream& out, const Vecteur& u){
+    int n=u.size();
+    out<<'('<<u[0];
+    for (int i=1;i<n;i++){
+        out<<","<<u[i];
+    }
+    out<<") \n";
+    return out;
+}
+
+
 class Matrice
 {protected :
     Vecteur coefs;                       // coefficients rangés par ligne
@@ -21,6 +32,7 @@ public:
     double  coef(int i, int j) const ;   // acces au coef i,j (1->n) const
     double& operator() (int i, int j);
     double operator() (int i,int j) const;
+    
 };
 
 class MatriceSym : public Matrice
@@ -99,6 +111,14 @@ double Matrice::operator() (int i, int j) const {
 
 }
 
+ostream& operator <<(ostream& out, const Matrice& A){
+    for(int i=0; i<A.n;i++){
+        for(int j=0; j<A.n; j++){
+            out<<A(i,j)<<" ";//peut etre pb de commencement de ligne a 1 et pas 0
+        }
+        out<<endl;
+    }
+}
 
 
 //MatriceSym
@@ -136,6 +156,8 @@ double MatriceSym::operator() (int i,int j) const{
     return this->coefSym(i,j);
 
 }
+
+
 
 
 

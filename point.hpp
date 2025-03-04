@@ -115,4 +115,17 @@ double operator*(const Point &A, const Point &B)
     return A.x * B.y - A.y * B.x;
 }
 
+bool operator==(const Point& A, const Point& B){
+    if(A.x==B.x && A.y==B.y){
+        return true;
+    }
+    return false;
+}
+
+double operator|(const Point A, const Point B){
+    return A.x*B.x + A.y*B.y;
+}
+
+
+
 #endif
