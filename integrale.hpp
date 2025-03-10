@@ -1,3 +1,5 @@
+#ifndef INTEGRALE_HPP_INCLUDED
+#define INTEGRALE_HPP_INCLUDED
 #include <iostream>
 #include <math.h>
 #include "segment.hpp"
@@ -15,6 +17,7 @@ double integ_simple(Segment AB, fun_d_P f, int Nbpas1)
     {
         result += dAB * f(AB.P1 + dAB * i * (AB.P2 - AB.P1));
     }
+    return result;
 }
 
 double integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
@@ -32,6 +35,7 @@ double integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
             result += dS * f(AB.P1 + dAB * (AB.P2 - AB.P1) * i, CD.P1 + dCD * (CD.P2 - CD.P1) * j);
         }
     }
+    return result;
 }
 
 double log_norm(const Point &A, const Point &B)
@@ -74,3 +78,5 @@ double integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
         return (integ_double(AB, CD, log_norm, Nbpas1, Nbpas2));
     }
 }
+
+#endif

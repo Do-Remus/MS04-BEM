@@ -6,7 +6,13 @@
 #include "segment.hpp"
 #include "utils.hpp"
 #include "matrice.hpp"
+#include "integrale.hpp"
 using namespace std;
+
+double f(const Point &A)
+{
+    return A.x * A.x;
+}
 
 int main()
 {
@@ -35,15 +41,21 @@ int main()
 
     monMaillage.export_maillage("output.txt");
 
-    //test Vecteur
-    Vecteur u ={1,2,3};
-    cout<<u;
+    // test Vecteur
+    Vecteur u = {1, 2, 3};
+    cout << u;
 
-    //test Matrice
+    // test Integrales
 
+    Point P1(0, 0);
+    Point P2(1, 0);
+    Segment Seg(P1, P2);
+    cout << "Integrale: " << integ_simple(Seg, f, 100) << endl;
 
-    //test MatriceSym
+    // test Matrice
 
-    //test decomposition LDL
+    // test MatriceSym
+
+    // test decomposition LDL
     return 0;
 }
