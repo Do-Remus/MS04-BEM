@@ -29,17 +29,31 @@ int main()
     cout << "3*C" << 3 * C;
     cout << "C/5" << C / 5;
     cout << "norme C" << C.norm() << endl;
-    cout << "produit vectoriel composante z =" << A * C;
+    cout << "produit vectoriel composante z =" << A * C<<endl;
 
     Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.01);
 
     monMaillage.export_maillage("output.txt");
 
-    //test Vecteur
+    //test Vecteur      
     Vecteur u ={1,2,3};
     cout<<u;
-
+    Vecteur v={2,5,6};
+    Vecteur w={1,1,1};
     //test Matrice
+    MatriceSym L;
+    Vecteur D;
+    int m=3;
+    MatriceSym AAAAH(w);
+    // for(int i=0; i<m;i++){
+    //     for(int j=i; j<m;j++){
+    //         AAAAH(i,j)=1;
+    //     }
+    // }
+    cout<<AAAAH<<endl;
+    AAAAH.decomposition_LDL(L,D);
+
+
 
 
     //test MatriceSym
