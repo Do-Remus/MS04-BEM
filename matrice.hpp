@@ -61,9 +61,12 @@ double& MatriceSym::operator() (int i, int j){
 
 
 
-double Matrice::operator() (int i, int j) const {
-      if(i<=0 || j<=0 || j>=n || i >=this->n) {cout<<"coef(i,j) : i,j en dehors des bornes"<<endl; exit(-1);}
-     return this->coefs[(i-1)*this->n+j-1];
+double MatriceSym::operator() (int i, int j) const {
+    if(i<0 || j<0 || j>=n || i >=n) {cout<<"coef(i,j) : i,j en dehors des bornes"<<endl; exit(-1);}
+    if(j<i){
+        return coefs[n*(n+1)/2 -i*(i+1)/2 + j - i];
+     }
+     return coefs[n*(n+1)/2 -j*(j+1)/2 + i - j];
 
 }
 
@@ -105,8 +108,7 @@ void MatriceSym::decomposition_LDL( MatriceSym& L, Vecteur& D) {
         for (int j = i + 1; j < n; ++j)
         {
             L(j, i) = A(j, i);
-            for (int k = 0; k < i; ++k)
-            {
+            for (int k = 0; k < i; ++k){
                 L(j, i) -= L(j, k) * L(i, k) * D[k];
             }
             L(j, i) /= D[i];
