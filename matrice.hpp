@@ -4,9 +4,10 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <complex>
 using namespace std;
 
-typedef vector<double> Vecteur;
+typedef vector<complex<double>> Vecteur;
 ostream &operator<<(ostream &out, const Vecteur &u)
 {
     int n = u.size();
@@ -23,6 +24,7 @@ class MatriceSym
 {protected :
     Vecteur coefs;                       // coefficients rangés par ligne
 public:
+<<<<<<< HEAD
     int n;                               // ordre de la MatriceSym
     MatriceSym (int m=0, double v=0.);
     MatriceSym (const Vecteur& d);
@@ -30,13 +32,42 @@ public:
     double operator() (int i,int j) const;
     void decomposition_LDL( MatriceSym& L, Vecteur& D); 
     
+=======
+    int n; // ordre de la Matrice
+    Matrice(int m = 0, complex<double> v = 0.);
+    Matrice(const Vecteur &d);
+    Matrice(const initializer_list<Vecteur> &vs); // constructeur d'une Matrice à partir de vecteurs
+    complex<double> &coef(int i, int j);          // acces au coef i,j (1->n)
+    complex<double> coef(int i, int j) const;     // acces au coef i,j (1->n) const
+    complex<double> &operator()(int i, int j);
+    complex<double> operator()(int i, int j) const;
+>>>>>>> 21fb5b11d87996b1f3be2b1b20cae6bfdb0959d3
 };
 
 MatriceSym::MatriceSym (int m, double v)      // constructeur dimensions et coefs constants
 {
+<<<<<<< HEAD
     n=max(m,0);
     if(m==0) {return;}
     coefs.resize(n*n,v);
+=======
+public:
+    MatriceSym(int m = 0, complex<double> v = 0.);
+    complex<double> &coefSym(int i, int j);      // acces au coef i,j (1->n)
+    complex<double> coefSym(int i, int j) const; // acces au coef i,j (1->n) const
+    complex<double> &operator()(int i, int j);
+    complex<double> operator()(int i, int j) const;
+};
+
+Matrice::Matrice(int m, complex<double> v) // constructeur dimensions et coefs constants
+{
+    n = max(m, 0);
+    if (m == 0)
+    {
+        return;
+    }
+    coefs.resize(n * n, v);
+>>>>>>> 21fb5b11d87996b1f3be2b1b20cae6bfdb0959d3
 }
 
 MatriceSym::MatriceSym (const Vecteur& d)     // constructeur d'une MatriceSym diagonale
@@ -46,6 +77,7 @@ MatriceSym::MatriceSym (const Vecteur& d)     // constructeur d'une MatriceSym d
     for(int i=0;i<n;i++){
         coefs[n*(n+1)/2 - i*(i+1)/2]=d[i];
         }
+<<<<<<< HEAD
 }
 
 
@@ -74,6 +106,70 @@ ostream& operator <<(ostream& out, const MatriceSym& A){
     for(int i=0; i<A.n;i++){
         for(int j=0; j<A.n; j++){
             out<<A(i,j)<<" ";
+=======
+        for (int i = 0; i < n; i++, k++)
+            coefs[k] = li[i];
+    }
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            if (this->coefs[(i - 1) * this->n + j - 1] != this->coefs[(j - 1) * this->n + i - 1])
+            {
+                cout << "matrice non symetrique" << endl;
+                exit(-1);
+            }
+        }
+    }
+}
+complex<double> &Matrice::coef(int i, int j) // acces au coef i,j (1->n)
+{
+    if (i <= 0 || j <= 0)
+    {
+        cout << "coef(i,j) : i,j en dehors des bornes" << endl;
+        exit(-1);
+    }
+    return coefs[(i - 1) * n + j - 1];
+}
+
+complex<double> &Matrice::operator()(int i, int j)
+{
+    if (i <= 0 || j <= 0 || j >= n || i >= this->n)
+    {
+        cout << "coef(i,j) : i,j en dehors des bornes" << endl;
+        exit(-1);
+    }
+    return this->coefs[(i - 1) * this->n + j - 1];
+}
+
+complex<double> Matrice::coef(int i, int j) const // acces au coef i,j (1->n) const
+{
+    if (i <= 0 || j <= 0)
+    {
+        cout << "coef(i,j) : i,j en dehors des bornes" << endl;
+        exit(-1);
+    }
+    return coefs[(i - 1) * n + j - 1];
+}
+
+complex<double> Matrice::operator()(int i, int j) const
+{
+    if (i <= 0 || j <= 0 || j >= n || i >= this->n)
+    {
+        cout << "coef(i,j) : i,j en dehors des bornes" << endl;
+        exit(-1);
+    }
+    return this->coefs[(i - 1) * this->n + j - 1];
+}
+
+ostream &operator<<(ostream &out, const Matrice &A)
+{
+    for (int i = 0; i < A.n; i++)
+    {
+        for (int j = 0; j < A.n; j++)
+        {
+            out << A(i, j) << " "; // peut etre pb de commencement de ligne a 1 et pas 0
+>>>>>>> 21fb5b11d87996b1f3be2b1b20cae6bfdb0959d3
         }
         out << endl;
     }
@@ -81,9 +177,65 @@ ostream& operator <<(ostream& out, const MatriceSym& A){
 }
 
 
+<<<<<<< HEAD
 
 
 
+=======
+MatriceSym::MatriceSym(int m, complex<double> v) // constructeur dimensions et coefs constants
+{
+    n = max(m, 0);
+    if (m == 0)
+    {
+        return;
+    }
+    coefs.resize(n * (n + 1) / 2, v); // reduction du nombre de coefs necessaires pour definir la matrice
+}
+
+complex<double> &MatriceSym::coefSym(int i, int j)
+{ // acces au coef i,j (1->n)
+    if (i <= 0 || j <= 0)
+    {
+        cout << "coef(i,j) : i,j en dehors des bornes" << endl;
+        exit(-1);
+    }
+    if (j >= i)
+    {
+        return this->coefs[n * (n + 1) / 2 - (i) * (i + 1) / 2 + j];
+    }
+    else
+    {
+        return this->coefs[n * (n + 1) / 2 - (j) * (j + 1) / 2 + i];
+    }
+}
+
+complex<double> MatriceSym::coefSym(int i, int j) const
+{ // acces au coef i,j (1->n) const
+    if (i <= 0 || j <= 0)
+    {
+        cout << "coef(i,j) : i,j en dehors des bornes" << endl;
+        exit(-1);
+    }
+    if (j >= i)
+    {
+        return this->coefs[n * (n + 1) / 2 - (i) * (i + 1) / 2 + j];
+    }
+    else
+    {
+        return this->coefs[n * (n + 1) / 2 - (j) * (j + 1) / 2 + i];
+    }
+}
+
+complex<double> &MatriceSym::operator()(int i, int j)
+{
+    return this->coefSym(i, j);
+}
+
+complex<double> MatriceSym::operator()(int i, int j) const
+{
+    return this->coefSym(i, j);
+}
+>>>>>>> 21fb5b11d87996b1f3be2b1b20cae6bfdb0959d3
 
 //factorisation LDL
 void MatriceSym::decomposition_LDL( MatriceSym& L, Vecteur& D) {

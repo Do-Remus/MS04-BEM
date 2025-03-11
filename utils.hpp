@@ -2,8 +2,11 @@
 #define UTILS_HPP_INCLUDED
 #include <time.h>
 #include <iostream>
+#include <complex>
 #include "cercle.hpp"
 #include "maillage.hpp"
+#include "matrice.hpp"
+#include "integrale.hpp"
 
 bool obstacle_valide(double rayonAleatoire, double xAleatoire, double yAleatoire, vector<Cercle> obstacles, double hauteur, double epaisseur)
 {
@@ -59,11 +62,23 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
     return maillage;
 }
 
+complex<double> p_theta(const Point &P)
+{
+    return (exp(I * (P.x * cos(theta) + P.y * sin(theta))));
+}
+
+complex<double> green_reguliere(const Point &P1, const Point &P2)
+{
+    return 0.0;
+}
+
 int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pas)
 {
-    for (int i = 0; i < maillage.size(); i++)
+    for (unsigned int i = 0; i < maillage.size(); i++)
     {
-        P[i] = 0.0;
+        Segment seg = maillage[i];
+        int nbPas = (int)(seg.norm() / pas);
+        P[i] = integ_simple(maillage[i], p_theta, nbPas);
     }
 
     return 0;
@@ -71,11 +86,15 @@ int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pa
 
 int genere_coefficient_matrice_A(Matrice &A, const Maillage &maillage, double pas)
 {
-    for (int i = 0; i < maillage.size(); i++)
+    for (unsigned int i = 0; i < maillage.size(); i++)
     {
-        for (int j = 0; j < maillage.size(); j++)
+        for (unsigned int j = 0; j < maillage.size(); j++)
         {
-            A(i, j) = 0.0; // integ_double(maillage[i], maillage[j], f) + integ_log(maillage[i], maillage[j]) / (2 * pi);
+            Segment seg1 = maillage[i];
+            Segment seg2 = maillage[j];
+            int nbPas1 = (int)(seg1.norm() / pas);
+            int nbPas2 = (int)(seg2.norm() / pas);
+            A(i, j) = integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2) + integ_log(seg1, seg2, nbPas1, nbPas2) / (2 * pi);
         }
     }
 
