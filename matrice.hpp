@@ -4,9 +4,10 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <complex>
 using namespace std;
 
-typedef vector<double> Vecteur;
+typedef vector<complex<double>> Vecteur;
 ostream &operator<<(ostream &out, const Vecteur &u)
 {
     int n = u.size();
@@ -25,26 +26,26 @@ protected:
     Vecteur coefs; // coefficients rangés par ligne
 public:
     int n; // ordre de la Matrice
-    Matrice(int m = 0, double v = 0.);
+    Matrice(int m = 0, complex<double> v = 0.);
     Matrice(const Vecteur &d);
     Matrice(const initializer_list<Vecteur> &vs); // constructeur d'une Matrice à partir de vecteurs
-    double &coef(int i, int j);                   // acces au coef i,j (1->n)
-    double coef(int i, int j) const;              // acces au coef i,j (1->n) const
-    double &operator()(int i, int j);
-    double operator()(int i, int j) const;
+    complex<double> &coef(int i, int j);          // acces au coef i,j (1->n)
+    complex<double> coef(int i, int j) const;     // acces au coef i,j (1->n) const
+    complex<double> &operator()(int i, int j);
+    complex<double> operator()(int i, int j) const;
 };
 
 class MatriceSym : public Matrice
 {
 public:
-    MatriceSym(int m = 0, double v = 0.);
-    double &coefSym(int i, int j);      // acces au coef i,j (1->n)
-    double coefSym(int i, int j) const; // acces au coef i,j (1->n) const
-    double &operator()(int i, int j);
-    double operator()(int i, int j) const;
+    MatriceSym(int m = 0, complex<double> v = 0.);
+    complex<double> &coefSym(int i, int j);      // acces au coef i,j (1->n)
+    complex<double> coefSym(int i, int j) const; // acces au coef i,j (1->n) const
+    complex<double> &operator()(int i, int j);
+    complex<double> operator()(int i, int j) const;
 };
 
-Matrice::Matrice(int m, double v) // constructeur dimensions et coefs constants
+Matrice::Matrice(int m, complex<double> v) // constructeur dimensions et coefs constants
 {
     n = max(m, 0);
     if (m == 0)
@@ -88,7 +89,7 @@ Matrice::Matrice(const initializer_list<Vecteur> &vs) // constructeur à partir 
         }
     }
 }
-double &Matrice::coef(int i, int j) // acces au coef i,j (1->n)
+complex<double> &Matrice::coef(int i, int j) // acces au coef i,j (1->n)
 {
     if (i <= 0 || j <= 0)
     {
@@ -98,7 +99,7 @@ double &Matrice::coef(int i, int j) // acces au coef i,j (1->n)
     return coefs[(i - 1) * n + j - 1];
 }
 
-double &Matrice::operator()(int i, int j)
+complex<double> &Matrice::operator()(int i, int j)
 {
     if (i <= 0 || j <= 0 || j >= n || i >= this->n)
     {
@@ -108,7 +109,7 @@ double &Matrice::operator()(int i, int j)
     return this->coefs[(i - 1) * this->n + j - 1];
 }
 
-double Matrice::coef(int i, int j) const // acces au coef i,j (1->n) const
+complex<double> Matrice::coef(int i, int j) const // acces au coef i,j (1->n) const
 {
     if (i <= 0 || j <= 0)
     {
@@ -118,7 +119,7 @@ double Matrice::coef(int i, int j) const // acces au coef i,j (1->n) const
     return coefs[(i - 1) * n + j - 1];
 }
 
-double Matrice::operator()(int i, int j) const
+complex<double> Matrice::operator()(int i, int j) const
 {
     if (i <= 0 || j <= 0 || j >= n || i >= this->n)
     {
@@ -143,7 +144,7 @@ ostream &operator<<(ostream &out, const Matrice &A)
 
 // MatriceSym
 
-MatriceSym::MatriceSym(int m, double v) // constructeur dimensions et coefs constants
+MatriceSym::MatriceSym(int m, complex<double> v) // constructeur dimensions et coefs constants
 {
     n = max(m, 0);
     if (m == 0)
@@ -153,7 +154,7 @@ MatriceSym::MatriceSym(int m, double v) // constructeur dimensions et coefs cons
     coefs.resize(n * (n + 1) / 2, v); // reduction du nombre de coefs necessaires pour definir la matrice
 }
 
-double &MatriceSym::coefSym(int i, int j)
+complex<double> &MatriceSym::coefSym(int i, int j)
 { // acces au coef i,j (1->n)
     if (i <= 0 || j <= 0)
     {
@@ -170,7 +171,7 @@ double &MatriceSym::coefSym(int i, int j)
     }
 }
 
-double MatriceSym::coefSym(int i, int j) const
+complex<double> MatriceSym::coefSym(int i, int j) const
 { // acces au coef i,j (1->n) const
     if (i <= 0 || j <= 0)
     {
@@ -187,11 +188,12 @@ double MatriceSym::coefSym(int i, int j) const
     }
 }
 
-double &MatriceSym::operator()(int i, int j)
+complex<double> &MatriceSym::operator()(int i, int j)
 {
     return this->coefSym(i, j);
 }
-double MatriceSym::operator()(int i, int j) const
+
+complex<double> MatriceSym::operator()(int i, int j) const
 {
     return this->coefSym(i, j);
 }
