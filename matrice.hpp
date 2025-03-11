@@ -6,19 +6,18 @@
 #include <fstream>
 using namespace std;
 
-
-
 typedef vector<double> Vecteur;
-ostream&  operator <<(ostream& out, const Vecteur& u){
-    int n=u.size();
-    out<<'('<<u[0];
-    for (int i=1;i<n;i++){
-        out<<","<<u[i];
+ostream &operator<<(ostream &out, const Vecteur &u)
+{
+    int n = u.size();
+    out << '(' << u[0];
+    for (int i = 1; i < n; i++)
+    {
+        out << "," << u[i];
     }
-    out<<") \n";
+    out << ") \n";
     return out;
 }
-
 
 class MatriceSym
 {protected :
@@ -33,17 +32,12 @@ public:
     
 };
 
-
-
 MatriceSym::MatriceSym (int m, double v)      // constructeur dimensions et coefs constants
 {
     n=max(m,0);
     if(m==0) {return;}
-    coefs.resize(n*(n+1)/2,v);
+    coefs.resize(n*n,v);
 }
-
-
-
 
 MatriceSym::MatriceSym (const Vecteur& d)     // constructeur d'une MatriceSym diagonale
 {
@@ -67,12 +61,9 @@ double& MatriceSym::operator() (int i, int j){
 
 
 
-double MatriceSym::operator() (int i, int j) const {
-    if(i<0 || j<0 || j>=n || i >=n) {cout<<"coef(i,j) : i,j en dehors des bornes"<<endl; exit(-1);}
-    if(j<i){
-        return coefs[n*(n+1)/2 -i*(i+1)/2 + j - i];
-     }
-     return coefs[n*(n+1)/2 -j*(j+1)/2 + i - j];
+double Matrice::operator() (int i, int j) const {
+      if(i<=0 || j<=0 || j>=n || i >=this->n) {cout<<"coef(i,j) : i,j en dehors des bornes"<<endl; exit(-1);}
+     return this->coefs[(i-1)*this->n+j-1];
 
 }
 
@@ -81,7 +72,7 @@ ostream& operator <<(ostream& out, const MatriceSym& A){
         for(int j=0; j<A.n; j++){
             out<<A(i,j)<<" ";
         }
-        out<<endl;
+        out << endl;
     }
     return out;
 }
@@ -95,37 +86,40 @@ ostream& operator <<(ostream& out, const MatriceSym& A){
 void MatriceSym::decomposition_LDL( MatriceSym& L, Vecteur& D) {
     // init MatriceSym L et MatriceSym diagonale D
     D.resize(n);
-    MatriceSym& A=(*this);
+
     for (int i = 0; i <n; ++i) {
         // calcul D[i]
-        D[i] = A(i,i);
-        for (int k = 0; k < i; ++k) {
-            D[i] -= L(i,k) * L(i,k) * D[i];
+        D[i] = A(i, i);
+        for (int k = 0; k < i; ++k)
+        {
+            D[i] -= L(i, k) * L(i, k) * D[i];
         }
 
         // Verification caractère défini positif
         if (D[i] == 0) {
-            cout << "MatriceSym non définie positive!" << endl;
+            cout << "Matrice non définie positive!" << endl;
             exit(-1);
         }
 
         // calcule L(i,j) pour j < i
-        for (int j = i + 1; j < n; ++j) {
-            L(j,i) = A(j,i);
-            for (int k = 0; k < i; ++k) {
-                L(j,i) -= L(j,k) * L(i,k) * D[k];
+        for (int j = i + 1; j < n; ++j)
+        {
+            L(j, i) = A(j, i);
+            for (int k = 0; k < i; ++k)
+            {
+                L(j, i) -= L(j, k) * L(i, k) * D[k];
             }
-            L(j,i) /= D[i];
+            L(j, i) /= D[i];
         }
 
         // elements diagonaux de L sont 1
-        L(i,i) = 1.0;
+        L(i, i) = 1.0;
     }
 
     return;
 }
 
-Vecteur resolution_systeme_lineaire( MatriceSym& A, const Vecteur& P){
+Vecteur resolution_systeme_lineaire(const MatriceSym& A, const Vecteur& P){
     //va resoudre pour Q AQ=P en 3 parties 
     //1 -- A=LDL'
     //2 -- resolution LY=P pour Y
@@ -133,41 +127,40 @@ Vecteur resolution_systeme_lineaire( MatriceSym& A, const Vecteur& P){
 
     int n=A.n;
     //decomposition de A=LDL'
-    MatriceSym L(n, 0);
-    Vecteur D(n); //represente la MatriceSym diagonale D
-    A.decomposition_LDL(L,D);
+    Matrice L(n, 0);
+    Vecteur D(n); //represente la matrice diagonale D
+    decomposition_LDL(A,L,D);
 
-    //resolution LY=P pour Y par recurrence simple grace a la forme finale de la methode de Gauss du systeme lineaire
+    // resolution LY=P pour Y par recurrence simple grace a la forme finale de la methode de Gauss du systeme lineaire
     //(substition)
     Vecteur Y(n);
-    //initialisation
-    Y[1]=P[1];
-    //heredite
-    for(int i=2;i<n;i++){
-        Y[i]+=P[i];
-        for(int k=1;i<k-1;k++){
-            Y[i]-=L(i,k)*Y[k];
+    // initialisation
+    Y[1] = P[1];
+    // heredite
+    for (int i = 2; i < n; i++)
+    {
+        Y[i] += P[i];
+        for (int k = 1; i < k - 1; k++)
+        {
+            Y[i] -= L(i, k) * Y[k];
         }
     }
 
-    //resolution DL'Q=Y : recurrence simple decroissante sur l'indice
+    // resolution DL'Q=Y : recurrence simple decroissante sur l'indice
     Vecteur Q(n);
-    //initialisation
-    Q[1]=Y[1]/D[1];
-    //heredite
-    for(int i=n;i>0;i--){
-        Q[i]+=Y[i]/D[i];
-        for(int k=i+1;k<n;k++){
-            Q[i]-=L(k,i)*Q[k]; //attention L'(i,k)=L(k,i)
+    // initialisation
+    Q[1] = Y[1] / D[1];
+    // heredite
+    for (int i = n; i > 0; i--)
+    {
+        Q[i] += Y[i] / D[i];
+        for (int k = i + 1; k < n; k++)
+        {
+            Q[i] -= L(k, i) * Q[k]; // attention L'(i,k)=L(k,i)
         }
     }
-    //solution
+    // solution
     return Q;
 }
-
-
-
-
-
 
 #endif
