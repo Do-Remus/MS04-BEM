@@ -84,7 +84,7 @@ int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pa
     return 0;
 }
 
-int genere_coefficient_matrice_A(Matrice &A, const Maillage &maillage, double pas)
+int genere_coefficient_matrice_A(MatriceSym &A, const Maillage &maillage, double pas)
 {
     for (unsigned int i = 0; i < maillage.size(); i++)
     {

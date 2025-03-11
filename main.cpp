@@ -9,7 +9,7 @@
 #include "integrale.hpp"
 using namespace std;
 
-double f(const Point &A)
+complex<double> f(const Point &A)
 {
     return A.x * A.x;
 }
@@ -52,21 +52,46 @@ int main()
     Segment Seg(P1, P2);
     cout << "Integrale: " << integ_simple(Seg, f, 100) << endl;
 
-    // test Matrice
-
-    // test MatriceSym
 
     // test decomposition LDL
+    MatriceSym L(5);
+    Vecteur D(5);
+    // test MatriceSym
+    MatriceSym AAA(5);
+    cout<<AAA<<endl;
+    AAA(1,1)=4;
+    AAA(2,2)=9;
+    AAA(0,0)=3;
+    AAA(3,3)=5;
+    AAA(4,4)=1;
+    AAA(1,3)=-2;
+    AAA(2,4)=-0.5;
 
+    cout<<AAA<<endl;
+
+    AAA.decomposition_LDL(L,D);
+    cout<<L<<endl;
+    cout<<D<<endl;
+
+    Vecteur PY(5);
+    PY[0]=4;
+    PY[1]=1;
+    PY[2]=-8;
+    PY[3]=6;
+    PY[4]=0;
+    cout<<PY<<endl;
+    Vecteur Y=resolution_systeme_lineaire(AAA,PY);
+    cout<<PY<<endl;
+    cout<<Y<<endl;
     // programme
-    double h = 10.;
-    double e = 2.;
-    double pas = 0.001;
-    Maillage maillageFinale = genere_maillage_couche_diffusante(1, h, e, pas);
-    MatriceSym A;
-    Vecteur P;
-    genere_coefficient_matrice_A(A, maillageFinale, pas);
-    genere_coefficient_vecteur_P(P, maillageFinale, pas);
-    Vecteur solution = resolution_systeme_lineaire(A, P);
+    // double h = 10.;
+    // double e = 2.;
+    // double pas = 0.001;
+    // Maillage maillageFinale = genere_maillage_couche_diffusante(1, h, e, pas);
+    // MatriceSym A;
+    // Vecteur P;
+    // genere_coefficient_matrice_A(A, maillageFinale, pas);
+    // genere_coefficient_vecteur_P(P, maillageFinale, pas);
+    // Vecteur solution = resolution_systeme_lineaire(A, P);
     return 0;
 }
