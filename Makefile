@@ -4,17 +4,36 @@ CXX = g++
 # Compiler flags
 CXXFLAGS = -Wall -Wextra -std=c++11
 
+# Output directory
+OUT_DIR = out
+
 # Target executable
-TARGET = sim202_program
+TARGET = $(OUT_DIR)/sim202_program
+
+# Source directory
+SRCS_DIR = src
 
 # Source files
-SRCS = main.cpp 
+SRCS = $(wildcard $(SRCS_DIR)/*.cpp)
+
+# Main
+
+MAIN = main.cpp
+
+# Header directory
+HEAD_DIR = src/headers
+
+# Config directory
+CONFIG_DIR = src/config
 
 # Header files
-HEADERS = point.hpp cercle.hpp segment.hpp
+HEADERS = $(wildcard $(HEAD_DIR)/*.hpp) $(wildcard $(CONFIG_DIR)/*.hpp)
+
+# Objets directory
+OBJ_DIR = out/obj
 
 # Object files
-OBJS = $(SRCS:.cpp=.o)
+OBJS = $(MAIN:%.cpp=$(OBJ_DIR)/%.o) $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Default rule
 all: $(TARGET)
@@ -24,9 +43,23 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Compiling source files into object files
-%.o: %.cpp $(HEADERS)
+$(OBJ_DIR)/%.o: %.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean rule to remove compiled files
 clean:
 	rm -f $(OBJS) $(TARGET)
+
+show-headers:
+	@echo "Fichiers d'en-tête :"
+	@echo $(HEADERS)
+
+show-objects:
+	@echo "Fichiers objets :"
+	@echo $(OBJS)
+
+show-sources:
+	@echo "Fichiers sources :"
+	@echo $(SRCS)

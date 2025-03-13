@@ -1,16 +1,6 @@
-#ifndef INTEGRALE_HPP_INCLUDED
-#define INTEGRALE_HPP_INCLUDED
-#include <iostream>
-#include <math.h>
-#include "config.hpp"
-#include "segment.hpp"
-
-typedef complex<double> (*fun_d_P)(const Point &);
-typedef complex<double> (*fun_d_P2)(const Point &, const Point &);
+#include "headers/integrale.hpp"
 
 complex<double> integ_simple(Segment AB, fun_d_P f, int Nbpas1)
-// permet de faire une intÈgrale simple sur le segment AB
-// sur f:R^2->R, avec Nbpas1 intervalles sur AB
 {
     complex<double> result = 0;
     double dAB = AB.norm() / Nbpas1;
@@ -22,8 +12,6 @@ complex<double> integ_simple(Segment AB, fun_d_P f, int Nbpas1)
 }
 
 complex<double> integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
-// permet de faire une intÈgrale double sur les segments AB et CD
-// sur f:R^2xR^2->R, avec pas1 intervalles sur AB et pas2 intervalles sur CD
 {
     complex<double> result = 0;
     double dAB = AB.norm() / Nbpas1;
@@ -77,5 +65,3 @@ complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
         return (integ_double(AB, CD, log_norm, Nbpas1, Nbpas2));
     }
 }
-
-#endif

@@ -1,12 +1,4 @@
-#ifndef UTILS_HPP_INCLUDED
-#define UTILS_HPP_INCLUDED
-#include <time.h>
-#include <iostream>
-#include <complex>
-#include "cercle.hpp"
-#include "maillage.hpp"
-#include "matrice.hpp"
-#include "integrale.hpp"
+#include "headers/utils.hpp"
 
 bool obstacle_valide(double rayonAleatoire, double xAleatoire, double yAleatoire, vector<Cercle> obstacles, double hauteur, double epaisseur)
 {
@@ -62,14 +54,14 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
     return maillage;
 }
 
-complex<double> p_theta(const Point &P)
-{
-    return (exp(I * (P.x * cos(theta) + P.y * sin(theta))));
-}
-
 complex<double> green_reguliere(const Point &P1, const Point &P2)
 {
     return 0.0;
+}
+
+complex<double> p_theta(const Point &P)
+{
+    return p_theta_config(P.x, P.y);
 }
 
 int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pas)
@@ -100,5 +92,3 @@ int genere_coefficient_matrice_A(MatriceSym &A, const Maillage &maillage, double
 
     return 0;
 }
-
-#endif

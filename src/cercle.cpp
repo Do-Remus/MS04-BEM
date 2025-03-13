@@ -1,15 +1,4 @@
-#ifndef Cercle_HPP_INCLUDED
-#define Cercle_HPP_INCLUDED
-#include "point.hpp"
-
-class Cercle
-{
-public:
-    Point centre;
-    double rayon = 1.;
-    Cercle() {};
-    Cercle(const double rayon, const Point &A);
-};
+#include "headers/cercle.hpp"
 
 Cercle::Cercle(const double r, const Point &A)
 {
@@ -21,5 +10,3 @@ Cercle::Cercle(const double r, const Point &A)
     this->rayon = r;
     this->centre = A;
 }
-
-#endif

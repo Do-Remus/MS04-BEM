@@ -1,22 +1,4 @@
-#ifndef MAILLAGE_HPP_INCLUDED
-#define MAILLAGE_HPP_INCLUDED
-#include "cercle.hpp"
-#include "segment.hpp"
-#include <vector>
-#include <iostream>
-#include <fstream>
-using namespace std;
-
-const double pi = atan(1.) * 4;
-
-class Maillage : public vector<Segment>
-{
-public:
-    Maillage() {};
-    Maillage(const vector<Cercle> cercles, const double pas_maillage);
-    void ajoute_cercle(const double pas_mailage, const Cercle &Ob);
-    void export_maillage(const string &filename);
-};
+#include "headers/maillage.hpp"
 
 void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
 {
@@ -68,5 +50,3 @@ Maillage::Maillage(const vector<Cercle> cercles, const double pas_maillage)
         ajoute_cercle(pas_maillage, cercles[i]);
     }
 }
-
-#endif
