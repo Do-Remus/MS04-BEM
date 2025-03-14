@@ -16,7 +16,8 @@ complex<double> integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int
     complex<double> result = 0;
     double dAB = AB.norm() / Nbpas1;
     double dCD = CD.norm() / Nbpas2;
-    double dS = abs((dAB * (AB.P2 - AB.P1)) * (dCD * (CD.P2 - CD.P1))); // produit vectoriel des deux petits vecteurs;
+    double dS= dAB*dCD;
+    //double dS = abs((dAB * (AB.P2 - AB.P1)) * (dCD * (CD.P2 - CD.P1))); // produit vectoriel des deux petits vecteurs;
     for (int i = 0; i < Nbpas1; i++)
     {
         for (int j = 0; j < Nbpas2; j++)
@@ -29,18 +30,53 @@ complex<double> integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int
 
 complex<double> log_norm(const Point &A, const Point &B)
 {
-    return log((A - B).norm());
+    return log(k*(A - B).norm());
 }
 
 complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
 {
     if (AB == CD)
     {
-        complex<double> a = AB.norm() * AB.norm() * log(AB.norm()) - 3 * AB.norm() * AB.norm() / 2;
-        return a;
+        cout<<1<<endl;
+        return (AB.norm() * AB.norm()) * log(k*AB.norm()) - 3 * AB.norm() * AB.norm() / 2;
+        
+        
     }
-    else if (AB.P1 == CD.P1 || AB.P1 == CD.P2 || AB.P2 == CD.P1 || AB.P2 == CD.P2)
-    {
+    else if(AB.P1 == CD.P1 || AB.P1 == CD.P2 || AB.P2 == CD.P1 || AB.P2 == CD.P2)
+    //test si il y a un sommet commun entre les 2 segments
+    // disjonction de cas necessaire ensuite pour revenir aux notations du sujet
+    {   
+        Point Amoins;
+        Point Aplus;
+        Point Bmoins;
+        Point Bplus;
+
+        if (AB.P1 == CD.P1){// cas  A=C
+              Amoins = AB.P1;
+              Aplus = AB.P2;
+              Bmoins = CD.P2;
+              Bplus = CD.P1;
+
+        }else if(AB.P2 == CD.P1){ // cas  B=C
+              Amoins = AB.P2;
+              Aplus = AB.P1;
+              Bmoins = CD.P2;
+              Bplus = CD.P1;
+        }
+        else if(AB.P1 == CD.P2){//cas A=D
+              Amoins = AB.P1;
+              Aplus = AB.P2;
+              Bmoins = CD.P1;
+              Bplus = CD.P2;
+
+        } else// cas B=D ie AB.P2 == CD.P2
+        {
+              Amoins = AB.P2;
+              Aplus = AB.P1;
+              Bmoins = CD.P1;
+              Bplus = CD.P2;
+        }
+
         complex<double> sp = AB.norm() / 2;
         complex<double> sm = -AB.norm() / 2;
         complex<double> tp = CD.norm() / 2;
@@ -53,15 +89,18 @@ complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
         complex<double> sint = (AB.P1 - AB.P2) * (CD.P1 - CD.P2) / AB.norm() / CD.norm();
         complex<double> dalphap = tp * sint - (to + sigma * cost) / sint;
         complex<double> dbetap = sp * sint - (to + sigma * cost) / sint;
-        complex<double> a = AB.norm() / 2 * ((tp - top) * log((CD.P1 - AB.P1).norm()) - (tm - top) * log((CD.P2 - AB.P1).norm()));
-        complex<double> b = CD.norm() / 2 * ((sp - sigmam) * log((AB.P1 - CD.P2).norm()) - (sm - sigmam) * log((AB.P2 - CD.P2).norm()));
-        complex<double> c = dbetap * (atan((tp - top) / dbetap) - atan((tm - top) / dbetap));
-        complex<double> d = dalphap * (atan((sp - sigmam) / dalphap) - atan((sm - sigmam) / dalphap));
-        complex<double> e = -3 * AB.norm() * CD.norm() / 2;
-        return a + b + c + d + e;
+        complex<double> terme1 = AB.norm() / 2 * ((tp - top) * log((Bplus - Aplus).norm()) - (tm - top) * log((Bmoins - Aplus).norm()));
+        complex<double> terme2 = CD.norm() / 2 * ((sp - sigmam) * log((Aplus - Bmoins).norm()) - (sm - sigmam) * log((Amoins - Bmoins).norm()));
+        complex<double> terme3 = dbetap * (atan((tp - top) / dbetap) - atan((tm - top) / dbetap));
+        complex<double> terme4 = dalphap * (atan((sp - sigmam) / dalphap) - atan((sm - sigmam) / dalphap));
+        complex<double> terme5 = (log(k)-3./2) * AB.norm() * CD.norm() ; // terme en k apparait ici
+        cout<<2<<endl;
+        return terme1 + terme2 + terme3 + terme4 + terme5;
     }
+    
     else
     {
+        cout<<3<<endl;
         return (integ_double(AB, CD, log_norm, Nbpas1, Nbpas2));
     }
 }

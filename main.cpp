@@ -47,11 +47,18 @@ int main()
         Vecteur u = {1, 2, 3};
         cout << u;
 
-        // tests Integrales
+        // tests Integrales 
         Point P1(0, 0);
         Point P2(1, 0);
         Segment Seg(P1, P2);
         cout << "Integrale: " << integ_simple(Seg, f, 100) << endl;
+
+        //test green reguliere
+        for(int i=10; i>=0; i--){
+            Point R(i/10.,0);
+            cout<<"G -log("<<i/10.<<") ="<<green_reguliere(R,P1);
+        }
+        cout<<endl;
 
         // tests MatriceSym
         MatriceSym L(5);
@@ -81,6 +88,9 @@ int main()
         Vecteur Y = resolution_systeme_lineaire(AAA, PY);
         cout << PY << endl;
         cout << Y << endl;
+
+
+    
     }
 
     if (effectuerLaSimulation)
@@ -89,15 +99,17 @@ int main()
         cout << "Création du maillage..." << endl;
         double h = 10.;
         double e = 2.;
-        double pas = 0.001;
+        double pas = 0.1;
         Maillage maillageFinale = genere_maillage_couche_diffusante(1, h, e, pas);
         maillageFinale.export_maillage("outputs/maillage.txt");
 
         cout << "Génération des matrices..." << endl;
         MatriceSym A(maillageFinale.size(), 0);
         Vecteur P(maillageFinale.size(), 0);
-        genere_coefficient_matrice_A(A, maillageFinale, pas);
-        genere_coefficient_vecteur_P(P, maillageFinale, pas);
+        genere_coefficient_matrice_A(A, maillageFinale, pas*0.1);
+        cout<<"A= "<<A<<endl;
+        genere_coefficient_vecteur_P(P, maillageFinale, pas*0.1);
+        cout<<"P = "<<P<<endl;
 
         cout << "Résolution du système..." << endl;
         Vecteur solution = resolution_systeme_lineaire(A, P);

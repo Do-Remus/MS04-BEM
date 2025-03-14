@@ -22,4 +22,7 @@ int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pa
 // Genere les coefficients de la matrice A de l'équation
 int genere_coefficient_matrice_A(MatriceSym &A, const Maillage &maillage, double pas);
 
+//derive de hankel nu=0, 1er ordre
+complex<double> hankel_derivate(const Point& P1, const Point& P2)
+
 #endif

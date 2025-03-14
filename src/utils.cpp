@@ -56,7 +56,18 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
 
 complex<double> green_reguliere(const Point &P1, const Point &P2)
 {
-    return 0.0;
+    double x=k*(P1-P2).norm();
+    if (x==0){
+        return 1. + 2.*( I/pi )* (gamma_euler- log(2));
+    }
+    return j0(x) + I*y0(x) - (2.*I/pi)*log(x);
+
+}
+
+complex<double> hankel_derivate(const Point& P1, const Point& P2){
+    double x=k*(P1-P2).norm();
+    return -j1(x) - I*y1(x);
+    
 }
 
 complex<double> p_theta(const Point &P)
@@ -86,9 +97,16 @@ int genere_coefficient_matrice_A(MatriceSym &A, const Maillage &maillage, double
             Segment seg2 = maillage[j];
             int nbPas1 = (int)(seg1.norm() / pas);
             int nbPas2 = (int)(seg2.norm() / pas);
-            A(i, j) = integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2) + integ_log(seg1, seg2, nbPas1, nbPas2) / (2 * pi);
+            cout<< "integ double ="<<integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2)<<endl;
+            cout<< "integ log ="<<integ_log(seg1, seg2, nbPas1, nbPas2)<<endl;
+    
+
+            A(i, j) = (1/4.*I)*integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2) + integ_log(seg1, seg2, nbPas1, nbPas2) / (2 * pi);
         }
     }
 
     return 0;
 }
+
+
+

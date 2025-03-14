@@ -1,5 +1,5 @@
 % Load the data file (change 'data.txt' to your actual filename)
-data = load('outputs/output.txt');
+data = load('outputs/maillage.txt');
 
 % Extract columns
 x1 = data(:,1);
