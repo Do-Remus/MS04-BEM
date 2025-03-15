@@ -151,7 +151,10 @@ void exporte_solution(const string &filename, const Maillage &maillage, vector<C
         {
             Point IJ((i / (double)nbPasVisualisation) * 5 * e, (j / (double)nbPasVisualisation) * 5 * h);
             if (!position_dans_obstacles(IJ, obstacles))
-                f << IJ.x << " " << IJ.y << " " << p(maillage, 0.01 * pasMaillage, solution, P, IJ) << endl;
+            {
+                complex<double> valeur = p(maillage, 0.01 * pasMaillage, solution, P, IJ);
+                f << IJ.x << " " << IJ.y << " " << valeur.real() << " " << valeur.imag() << endl;
+            }
         }
     }
     f.close();
