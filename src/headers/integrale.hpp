@@ -26,4 +26,8 @@ complex<double> log_norm(const Point &A, const Point &B);
 // calcul de l'integral du log de la norme selon 2 segments
 complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2);
 
+
+//fonction integrale utilisé pour le calcul de p : incorporation normale au segment
+complex<double> integrale_pour_p(Segment AB, fun_d_P f, int Nbpas1, const Point& x);
+
 #endif

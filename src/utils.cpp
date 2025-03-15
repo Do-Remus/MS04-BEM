@@ -54,6 +54,12 @@ Maillage genere_maillage_couche_diffusante(unsigned int nbObstacles, double haut
     return maillage;
 }
 
+complex<double> hankel(const Point& P1){
+    Point P=P1;
+    double x=k*P.norm();
+    return j0(x) + I*y0(x);
+}
+
 complex<double> green_reguliere(const Point &P1, const Point &P2)
 {
     double x=k*(P1-P2).norm();
@@ -64,8 +70,9 @@ complex<double> green_reguliere(const Point &P1, const Point &P2)
 
 }
 
-complex<double> hankel_derivate(const Point& P1, const Point& P2){
-    double x=k*(P1-P2).norm();
+complex<double> hankel_derivate(const Point& P1){
+    Point P=P1;
+    double x= k*P.norm();
     return -j1(x) - I*y1(x);
     
 }
@@ -97,8 +104,8 @@ int genere_coefficient_matrice_A(MatriceSym &A, const Maillage &maillage, double
             Segment seg2 = maillage[j];
             int nbPas1 = (int)(seg1.norm() / pas);
             int nbPas2 = (int)(seg2.norm() / pas);
-            cout<< "integ double ="<<integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2)<<endl;
-            cout<< "integ log ="<<integ_log(seg1, seg2, nbPas1, nbPas2)<<endl;
+            //cout<< "integ double ="<<integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2)<<endl;
+            //cout<< "integ log ="<<integ_log(seg1, seg2, nbPas1, nbPas2)<<endl;
     
 
             A(i, j) = (1/4.*I)*integ_double(seg1, seg2, green_reguliere, nbPas1, nbPas2) + integ_log(seg1, seg2, nbPas1, nbPas2) / (2 * pi);
@@ -108,5 +115,15 @@ int genere_coefficient_matrice_A(MatriceSym &A, const Maillage &maillage, double
     return 0;
 }
 
+
+complex<double> p(const Maillage &maillage, double pas, const Vecteur& Q,const Vecteur P,  const Point& x ){
+    complex<double> result =0;
+    for(unsigned int i =0; i< maillage.size(); i++){
+        Segment seg =maillage[i];
+        int nbPas = (int) (seg.norm()/pas);
+        result = result - (1./4*I)* (P[i]*integrale_pour_p(seg, hankel_derivate, nbPas, x) + Q[i]*integ_simple(seg,hankel, nbPas));
+    }
+    return result;
+}
 
 

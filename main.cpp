@@ -115,6 +115,13 @@ int main()
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
+        for(int i=0; i<10;i++){
+            for(int j=0; j<10; j++){
+                Point IJ((i/10.)*e,(j/10.)*h);
+                cout<< "p("<<(i/10.)*e<<","<<(j/10.)*h<<") ="<<p(maillageFinale,pas,solution, P,IJ)<<endl;
+            }
+        }
+
     }
 
     return 0;
