@@ -123,7 +123,7 @@ complex<double> p(const Maillage &maillage, double pas, const Vecteur &Q, const 
     return result;
 }
 
-bool position_dans_obstacles(Point x, vector<Cercle> &obstacles)
+bool position_dans_obstacles(Point x, const vector<Cercle> &obstacles)
 {
     for (unsigned int i = 0; i < obstacles.size(); i++)
     {
@@ -135,7 +135,7 @@ bool position_dans_obstacles(Point x, vector<Cercle> &obstacles)
     return false;
 }
 
-void exporte_solution(const string &filename, const Maillage &maillage, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation)
+void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation)
 {
     ofstream f(filename);
 
@@ -150,7 +150,11 @@ void exporte_solution(const string &filename, const Maillage &maillage, const Ve
         for (unsigned int j = 0; j < nbPasVisualisation; j++)
         {
             Point IJ((i / (double)nbPasVisualisation) * 5 * e, (j / (double)nbPasVisualisation) * 5 * h);
-            f << IJ.x << " " << IJ.y << " " << p(maillage, 0.01 * pasMaillage, solution, P, IJ) << endl;
+            if (!position_dans_obstacles(IJ, obstacles))
+            {
+                complex<double> valeur = p(maillage, 0.01 * pasMaillage, solution, P, IJ);
+                f << IJ.x << " " << IJ.y << " " << valeur.real() << " " << valeur.imag() << endl;
+            }
         }
     }
     f.close();
