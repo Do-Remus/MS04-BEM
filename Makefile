@@ -44,9 +44,9 @@ $(TARGET): $(OBJS)
 
 # Compiling source files into object files
 $(OBJ_DIR)/%.o: %.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -std=gnu++11
 $(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -std=gnu++11
 
 # Clean rule to remove compiled files
 clean:

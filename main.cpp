@@ -40,28 +40,34 @@ int main()
         cout << "segment P2 " << S.P2.x << "," << S.P2.y << endl;
 
         // tests Maillage
-        Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.01);
+        vector<Cercle> obstaclesTest;
+        Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.01, obstaclesTest);
         monMaillage.export_maillage("outputs/test.txt");
+        for (unsigned int i = 0; i < obstaclesTest.size(); i++)
+        {
+            cout << "Cercle " << i << ": r = " << obstaclesTest[i].rayon << " centre = " << obstaclesTest[i].centre;
+        }
 
         // tests Vecteur
         Vecteur u = {1, 2, 3};
         cout << u;
 
-        // tests Integrales 
+        // tests Integrales
         Point P1(0, 0);
         Point P2(1, 0);
         Segment Seg(P1, P2);
         cout << "Integrale: " << integ_simple(Seg, f, 100) << endl;
 
-        //test green reguliere
-        for(int i=10; i>=0; i--){
-            Point R(i/10.,0);
-            cout<<"G -log("<<i/10.<<") ="<<green_reguliere(R,P1);
+        // test green reguliere
+        for (int i = 10; i >= 0; i--)
+        {
+            Point R(i / 10., 0);
+            cout << "G -log(" << i / 10. << ") =" << green_reguliere(R, P1);
         }
-        cout<<endl;
+        cout << endl;
 
-        //test integrale pour p
-        cout<<"integrale pour p"<<integrale_pour_p(S,hankel_derivate, 10, P1)<<endl;
+        // test integrale pour p
+        cout << "integrale pour p" << integrale_pour_p(S, hankel_derivate, 10, P1) << endl;
 
         // tests MatriceSym
         MatriceSym L(5);
@@ -91,9 +97,6 @@ int main()
         Vecteur Y = resolution_systeme_lineaire(AAA, PY);
         cout << PY << endl;
         cout << Y << endl;
-
-
-    
     }
 
     if (effectuerLaSimulation)
@@ -103,29 +106,21 @@ int main()
         double h = 10.;
         double e = 2.;
         double pas = 0.1;
-        Maillage maillageFinale = genere_maillage_couche_diffusante(1, h, e, pas);
-        maillageFinale.export_maillage("outputs/maillage.txt");
+        vector<Cercle> obstables;
+        Maillage maillage = genere_maillage_couche_diffusante(1, h, e, pas, obstables);
+        maillage.export_maillage("outputs/maillage.txt");
 
         cout << "Génération des matrices..." << endl;
-        MatriceSym A(maillageFinale.size(), 0);
-        Vecteur P(maillageFinale.size(), 0);
-        genere_coefficient_matrice_A(A, maillageFinale, pas*0.1);
-        cout<<"A= "<<A<<endl;
-        genere_coefficient_vecteur_P(P, maillageFinale, pas*0.1);
-        cout<<"P = "<<P<<endl;
+        MatriceSym A(maillage.size(), 0);
+        Vecteur P(maillage.size(), 0);
+        genere_coefficient_matrice_A(A, maillage, pas * 0.1);
+        genere_coefficient_vecteur_P(P, maillage, pas * 0.1);
 
         cout << "Résolution du système..." << endl;
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
-        int nbPas=10;
-        for(int i=0; i<nbPas;i++){
-            for(int j=0; j<nbPas; j++){
-                Point IJ((i/(double) nbPas)*5*e,(j/(double) nbPas)*5*h);
-                cout<< "p("<<(i/(double)nbPas)*e<<","<<(j/(double) nbPas)*h<<") ="<<p(maillageFinale,0.01*pas,solution, P,IJ)<<endl;
-            }
-        }
-
+        exporte_solution("outputs/output.txt", maillage, solution, P, e, h, pas, 1000);
     }
 
     return 0;
