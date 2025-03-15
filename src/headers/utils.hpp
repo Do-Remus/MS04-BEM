@@ -35,9 +35,9 @@ complex<double> hankel_derivate(const Point &P1);
 complex<double> p(const Maillage &maillage, double pas, const Vecteur &Q, const Vecteur P, const Point &x);
 
 // Test si le point est dans l'un des obstacles
-bool position_dans_obstacles(Point x, vector<Cercle> &obstacles);
+bool position_dans_obstacles(Point x, const vector<Cercle> &obstacles);
 
 // Reconstruit et exporte les champs p(x)
-void exporte_solution(const string &filename, const Maillage &maillage, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation);
+void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation);
 
 #endif

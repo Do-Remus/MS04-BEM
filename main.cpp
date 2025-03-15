@@ -120,7 +120,7 @@ int main()
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
-        exporte_solution("outputs/output.txt", maillage, solution, P, e, h, pas, 1000);
+        exporte_solution("outputs/output.txt", maillage, obstables, solution, P, e, h, pas, 100);
     }
 
     return 0;
