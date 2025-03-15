@@ -107,13 +107,28 @@ complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
 
 complex<double> integrale_pour_p(Segment AB, fun_d_P f, int Nbpas1, const Point& x){
     complex<double> result = 0;
-    double dAB = AB.norm() / Nbpas1;
+    double dAB = AB.norm() /(double) Nbpas1;
+    //cout<<"dAB"<<dAB<<endl;
     for (int i = 0; i < Nbpas1; i++)
     {   
         Point y = AB.P1 + dAB * i * (AB.P2 - AB.P1);
         Point normale(AB.P2.y - AB.P1.y, AB.P1.x - AB.P2.x);
         double facteur_normale = (x-y) | normale ;
         result += dAB * f(x-y)*facteur_normale/(x-y).norm();
+        //cout<<"resultat inter integ p"<<result<<endl;
+
+    }
+    return result;
+
+}
+
+complex<double> integ_simple_pour_p(Segment AB, fun_d_P f, int Nbpas1, const Point& x)
+{
+    complex<double> result = 0;
+    double dAB = AB.norm() / Nbpas1;
+    for (int i = 0; i < Nbpas1; i++)
+    {
+        result += dAB * f(x -(AB.P1 + dAB * i * (AB.P2 - AB.P1)));
     }
     return result;
 

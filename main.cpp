@@ -60,6 +60,9 @@ int main()
         }
         cout<<endl;
 
+        //test integrale pour p
+        cout<<"integrale pour p"<<integrale_pour_p(S,hankel_derivate, 10, P1)<<endl;
+
         // tests MatriceSym
         MatriceSym L(5);
         Vecteur D(5);
@@ -115,10 +118,11 @@ int main()
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
-        for(int i=0; i<10;i++){
-            for(int j=0; j<10; j++){
-                Point IJ((i/10.)*e,(j/10.)*h);
-                cout<< "p("<<(i/10.)*e<<","<<(j/10.)*h<<") ="<<p(maillageFinale,pas,solution, P,IJ)<<endl;
+        int nbPas=10;
+        for(int i=0; i<nbPas;i++){
+            for(int j=0; j<nbPas; j++){
+                Point IJ((i/(double) nbPas)*5*e,(j/(double) nbPas)*5*h);
+                cout<< "p("<<(i/(double)nbPas)*e<<","<<(j/(double) nbPas)*h<<") ="<<p(maillageFinale,0.01*pas,solution, P,IJ)<<endl;
             }
         }
 

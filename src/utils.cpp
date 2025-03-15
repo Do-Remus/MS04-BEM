@@ -73,7 +73,7 @@ complex<double> green_reguliere(const Point &P1, const Point &P2)
 complex<double> hankel_derivate(const Point& P1){
     Point P=P1;
     double x= k*P.norm();
-    return -j1(x) - I*y1(x);
+    return -k* (j1(x) + I*y1(x));
     
 }
 
@@ -121,7 +121,10 @@ complex<double> p(const Maillage &maillage, double pas, const Vecteur& Q,const V
     for(unsigned int i =0; i< maillage.size(); i++){
         Segment seg =maillage[i];
         int nbPas = (int) (seg.norm()/pas);
-        result = result - (1./4*I)* (P[i]*integrale_pour_p(seg, hankel_derivate, nbPas, x) + Q[i]*integ_simple(seg,hankel, nbPas));
+        result = result - (1./4*I)* (P[i]*integrale_pour_p(seg, hankel_derivate, nbPas, x) + Q[i]*integ_simple_pour_p(seg,hankel, nbPas,x));
+        // cout<<"1er terme"<<integrale_pour_p(seg, hankel_derivate, nbPas, x)<<endl;
+        // cout<<"2nd terme"<<integ_simple(seg,hankel, nbPas)<<endl;
+        // cout<<"result intermediaire"<<result<<endl;
     }
     return result;
 }
