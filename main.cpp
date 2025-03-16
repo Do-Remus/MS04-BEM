@@ -107,7 +107,8 @@ int main()
         double e = 2.;
         double pas = 0.1;
         vector<Cercle> obstables;
-        Maillage maillage = genere_maillage_couche_diffusante(1, h, e, pas, obstables);
+        Maillage maillage = genere_maillage_couche_diffusante(2, h, e, pas, obstables);
+        export_obsctacles("outputs/obstacles.txt",obstables);
         maillage.export_maillage("outputs/maillage.txt");
 
         cout << "Génération des matrices..." << endl;
@@ -120,7 +121,7 @@ int main()
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
-        exporte_solution("outputs/output.txt", maillage, solution, P, e, h, pas, 100);
+        exporte_solution("outputs/output.txt", maillage,obstables, solution, P, e, h, pas, 200);
     }
 
     return 0;
