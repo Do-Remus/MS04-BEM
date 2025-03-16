@@ -107,7 +107,7 @@ int main()
         double e = 2.;
         double pas = 0.1;
         vector<Cercle> obstables;
-        Maillage maillage = genere_maillage_couche_diffusante(2, h, e, pas, obstables);
+        Maillage maillage = genere_maillage_couche_diffusante(30, h, e, pas, obstables);
         export_obsctacles("outputs/obstacles.txt",obstables);
         maillage.export_maillage("outputs/maillage.txt");
 
@@ -121,7 +121,8 @@ int main()
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
-        exporte_solution("outputs/output.txt", maillage,obstables, solution, P, e, h, pas, 200);
+        cout<<" Calcul et export de la pression accoustique ... "<< endl;
+        exporte_solution("outputs/output.txt", maillage,obstables, solution, P, e, h, pas, 100);
     }
 
     return 0;
