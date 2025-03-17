@@ -19,6 +19,6 @@ public:
 
 /* Fonctions associées à la classe Segment */
 
-bool operator==(const Segment AB, const Segment CD);
+bool operator==(const Segment &AB, const Segment &CD);
 
 #endif

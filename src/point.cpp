@@ -110,7 +110,7 @@ bool operator==(const Point &A, const Point &B)
     return false;
 }
 
-double operator|(const Point A, const Point B)
+double operator|(const Point &A, const Point &B)
 {
     return A.x * B.x + A.y * B.y;
 }

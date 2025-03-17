@@ -12,7 +12,7 @@ class Maillage : public vector<Segment>
 {
 public:
     Maillage() {};
-    Maillage(const vector<Cercle> cercles, const double pas_maillage);
+    Maillage(const vector<Cercle> &cercles, const double pas_maillage);
     void ajoute_cercle(const double pas_mailage, const Cercle &Ob);
     void export_maillage(const string &filename);
 };

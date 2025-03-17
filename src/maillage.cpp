@@ -42,7 +42,7 @@ void Maillage::export_maillage(const string &filename)
     return;
 }
 
-Maillage::Maillage(const vector<Cercle> cercles, const double pas_maillage)
+Maillage::Maillage(const vector<Cercle> &cercles, const double pas_maillage)
 {
     // Verification du strict positivité du pas du maillage fait dans ajoute cercle
     for (unsigned int i = 0; i < cercles.size(); i++)

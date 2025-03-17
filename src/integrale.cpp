@@ -1,6 +1,6 @@
 #include "headers/integrale.hpp"
 
-complex<double> integ_simple(Segment AB, fun_d_P f, int Nbpas1)
+complex<double> integ_simple(Segment &AB, fun_d_P f, int Nbpas1)
 {
     complex<double> result = 0;
     double dAB = AB.norm() / Nbpas1;
@@ -11,7 +11,7 @@ complex<double> integ_simple(Segment AB, fun_d_P f, int Nbpas1)
     return result;
 }
 
-complex<double> integ_double(Segment AB, Segment CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
+complex<double> integ_double(Segment &AB, Segment &CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
 {
     complex<double> result = 0;
     double dAB = AB.norm() / Nbpas1;
@@ -33,7 +33,7 @@ complex<double> log_norm(const Point &A, const Point &B)
     return log(k * (A - B).norm());
 }
 
-complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
+complex<double> integ_log(Segment &AB, Segment &CD, int Nbpas1, int Nbpas2)
 {
     if (AB == CD)
     {
@@ -102,7 +102,7 @@ complex<double> integ_log(Segment AB, Segment CD, int Nbpas1, int Nbpas2)
     }
 }
 
-complex<double> integrale_pour_p(Segment AB, fun_d_P f, int Nbpas1, const Point &x)
+complex<double> integrale_pour_p(Segment &AB, fun_d_P f, int Nbpas1, const Point &x)
 {
     complex<double> result = 0;
     double dAB = AB.norm() / (double)Nbpas1;
@@ -118,7 +118,7 @@ complex<double> integrale_pour_p(Segment AB, fun_d_P f, int Nbpas1, const Point 
     return result;
 }
 
-complex<double> integ_simple_pour_p(Segment AB, fun_d_P f, int Nbpas1, const Point &x)
+complex<double> integ_simple_pour_p(Segment &AB, fun_d_P f, int Nbpas1, const Point &x)
 {
     complex<double> result = 0;
     double dAB = AB.norm() / Nbpas1;

@@ -1,0 +1,10 @@
+theta=0
+effectuerTests=true
+effectuerLaSimulation=true
+k=2
+h=10
+e=2
+pasMaillage=0.1
+nbObstacles=1
+pasIntegrale=0.01
+nbPasExport=100

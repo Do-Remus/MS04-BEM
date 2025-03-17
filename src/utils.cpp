@@ -88,7 +88,7 @@ int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pa
     {
         Segment seg = maillage[i];
         int nbPas = (int)(seg.norm() / pas);
-        P[i] = integ_simple(maillage[i], p_theta, nbPas);
+        P[i] = integ_simple(seg, p_theta, nbPas);
     }
 
     return 0;
@@ -135,7 +135,7 @@ bool position_dans_obstacles(Point x, const vector<Cercle> &obstacles)
     return false;
 }
 
-void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation)
+void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasIntegrale, const unsigned int nbPasVisualisation)
 {
     ofstream f(filename);
 
@@ -152,7 +152,7 @@ void exporte_solution(const string &filename, const Maillage &maillage, vector<C
             Point IJ((i / (double)nbPasVisualisation) * 5 * e, (j / (double)nbPasVisualisation) * 5 * h);
             if (!position_dans_obstacles(IJ, obstacles))
             {
-                complex<double> valeur = p(maillage, 0.01 * pasMaillage, solution, P, IJ);
+                complex<double> valeur = p(maillage, pasIntegrale, solution, P, IJ);
                 f << IJ.x << " " << IJ.y << " " << valeur.real() << " " << valeur.imag() << endl;
             }
         }
