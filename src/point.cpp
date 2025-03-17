@@ -91,6 +91,10 @@ Point operator*(const double a, const Point &A)
 
 Point operator/(const Point &A, const double a)
 {
+    if(a==0){
+        cout<<"division par 0 lors d'une division pour Point"<<endl;
+        exit(-1);
+    }
     Point R = A;
     R /= a;
     return R;

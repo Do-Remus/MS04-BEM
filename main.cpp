@@ -107,7 +107,7 @@ int main()
         double e = 2.;
         double pas = 0.1;
         vector<Cercle> obstables;
-        Maillage maillage = genere_maillage_couche_diffusante(30, h, e, pas, obstables);
+        Maillage maillage = genere_maillage_couche_diffusante(40, h, e, pas, obstables);
         export_obsctacles("outputs/obstacles.txt",obstables);
         maillage.export_maillage("outputs/maillage.txt");
 

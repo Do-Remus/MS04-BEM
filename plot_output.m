@@ -29,7 +29,7 @@ xlabel('X');
 ylabel('Y');
 axis equal;
 title('Partie réelle de la pression P');
-set(gca, 'YDir', 'normal'); % Correction pour l'orientation de l'image
+%set(gca, 'YDir', 'normal'); % Correction pour l'orientation de l'image
 % Modifier la taille des axes et de la colorbar
 set(gca, 'FontSize', 40);
 set(colorbar, 'FontSize', 40);
@@ -77,7 +77,7 @@ xlabel('X');
 ylabel('Y');
 axis equal;
 title('Partie imaginaire de la pression P');
-set(gca, 'YDir', 'normal'); % Correction pour l'orientation de l'image
+%set(gca, 'YDir', 'normal'); % Correction pour l'orientation de l'image
 % Modifier la taille des axes et de la colorbar
 set(gca, 'FontSize', 40);
 set(colorbar, 'FontSize', 40);
@@ -125,7 +125,7 @@ xlabel('X');
 ylabel('Y');
 axis equal;
 title('Norme de la pression complexe P');
-set(gca, 'YDir', 'normal'); % Correction pour l'orientation de l'image
+%set(gca, 'YDir', 'normal'); % Correction pour l'orientation de l'image
 % Modifier la taille des axes et de la colorbar
 set(gca, 'FontSize', 40);
 set(colorbar, 'FontSize', 40);
