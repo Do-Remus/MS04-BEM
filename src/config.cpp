@@ -3,7 +3,7 @@
 /* Définition des varibles globales par default */
 
 double theta = 0;
-bool effectuerTests = true;
+bool effectuerTests = false;
 bool effectuerLaSimulation = true;
 double k = 2; // frequence des ondes : il y a un nombre au plus denombrable de frequences pour lesquelles le pb n'est pas bien pose
 double h = 10;

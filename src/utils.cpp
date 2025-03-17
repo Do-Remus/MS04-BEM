@@ -149,7 +149,7 @@ void exporte_solution(const string &filename, const Maillage &maillage, vector<C
     {
         for (unsigned int j = 0; j < nbPasVisualisation; j++)
         {
-            Point IJ((i / (double)nbPasVisualisation) * 5 * e, (j / (double)nbPasVisualisation) * 5 * h);
+            Point IJ(-2*h + (i / (double)nbPasVisualisation) * 4* h,-2*h + (j / (double)nbPasVisualisation) * 4 * h);
             if (!position_dans_obstacles(IJ, obstacles))
             {
                 complex<double> valeur = p(maillage, pasIntegrale, solution, P, IJ);
