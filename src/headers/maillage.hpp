@@ -18,5 +18,5 @@ public:
 };
 
 /* Fonctions associées à la classe Maillage */
-void export_obsctacles(const string &filename, vector<Cercle> cercles);
+
 #endif

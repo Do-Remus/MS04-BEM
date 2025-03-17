@@ -14,6 +14,9 @@ extern double pasMaillage;
 extern unsigned int nbObstacles;
 extern double pasIntegrale;
 extern unsigned int nbPasExport;
+extern string cheminFichierSolution;
+extern string cheminFichierObstacles;
+extern string cheminFichierMaillage;
 
 complex<double> p_theta_config(double x, double y);
 void get_config(const string &filename);

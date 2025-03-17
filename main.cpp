@@ -108,8 +108,8 @@ int main()
         cout << "Création du maillage..." << endl;
         vector<Cercle> obstables;
         Maillage maillage = genere_maillage_couche_diffusante(nbObstacles, h, e, pasMaillage, obstables);
-        export_obsctacles("outputs/obstacles.txt", obstables);
-        maillage.export_maillage("outputs/maillage.txt");
+        export_obsctacles(cheminFichierObstacles, obstables);
+        maillage.export_maillage(cheminFichierMaillage);
 
         cout << "Génération des matrices..." << endl;
         MatriceSym A(maillage.size(), 0);
@@ -123,7 +123,7 @@ int main()
         cout << "La solution est:" << solution << endl;
 
         cout << " Calcul et export de la pression accoustique ... " << endl;
-        exporte_solution("outputs/output.txt", maillage, obstables, solution, P, e, h, pas, 100);
+        exporte_solution(cheminFichierSolution, maillage, obstables, solution, P, e, h, pasIntegrale, nbPasExport);
     }
 
     return 0;

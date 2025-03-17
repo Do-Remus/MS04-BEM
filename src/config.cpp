@@ -12,6 +12,9 @@ double pasMaillage = 0.1;
 unsigned int nbObstacles = 1;
 double pasIntegrale = 0.01;
 unsigned int nbPasExport = 100;
+string cheminFichierSolution = "outputs/output.txt";
+string cheminFichierObstacles = "outputs/obstacles.txt";
+string cheminFichierMaillage = "outputs/maillage.txt";
 
 /* Déclaration des fonctions globales */
 
@@ -166,6 +169,27 @@ void get_config(const string &filename)
                 cout << "La valeur de effectuerLaSimulation doit-être 'true' ou 'false'." << endl;
             }
             cout << "     effectuerLaSimulation = " << effectuerLaSimulation << endl;
+        }
+
+        if (nom == "cheminFichierMaillage")
+        {
+            cout << "Récupération de cheminFichierMaillage:" << endl;
+            cheminFichierMaillage = valeur;
+            cout << "     cheminFichierMaillage = " << cheminFichierMaillage << endl;
+        }
+
+        if (nom == "cheminFichierObstacles")
+        {
+            cout << "Récupération de cheminFichierObstacles:" << endl;
+            cheminFichierObstacles = valeur;
+            cout << "     cheminFichierObstacles = " << cheminFichierObstacles << endl;
+        }
+
+        if (nom == "cheminFichierSolution")
+        {
+            cout << "Récupération de cheminFichierSolution:" << endl;
+            cheminFichierSolution = valeur;
+            cout << "     cheminFichierSolution = " << cheminFichierSolution << endl;
         }
     }
 

@@ -8,3 +8,6 @@ pasMaillage=0.1
 nbObstacles=1
 pasIntegrale=0.01
 nbPasExport=100
+cheminFichierSolution=outputs/output.txt
+cheminFichierObstacles=outputs/obstacles.txt
+cheminFichierMaillage=outputs/maillage.txt
