@@ -42,33 +42,11 @@ void Maillage::export_maillage(const string &filename)
     return;
 }
 
-Maillage::Maillage(const vector<Cercle> cercles, const double pas_maillage)
+Maillage::Maillage(const vector<Cercle> &cercles, const double pas_maillage)
 {
     // Verification du strict positivité du pas du maillage fait dans ajoute cercle
     for (unsigned int i = 0; i < cercles.size(); i++)
     {
         ajoute_cercle(pas_maillage, cercles[i]);
     }
-}
-
-
-void export_obsctacles(const string &filename, vector<Cercle> cercles){
-    ofstream f(filename);
-
-    if (!f.is_open())
-    {
-        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
-        exit(-1);
-    }
-
-    for (unsigned int i = 0; i < cercles.size(); i++)
-    {
-        const Cercle &s = cercles[i];
-        f << s.centre.x << " " << s.centre.y << " ";
-        f << s.rayon<< endl;
-    }
-    f.close();
-
-    return;
-
 }

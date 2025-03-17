@@ -16,7 +16,7 @@ double Segment::norm()
 
 /* Fonction associées à la classe Segment */
 
-bool operator==(const Segment AB, const Segment CD)
+bool operator==(const Segment &AB, const Segment &CD)
 {
     if (AB.P1 == CD.P1 && AB.P2 == CD.P2)
     {

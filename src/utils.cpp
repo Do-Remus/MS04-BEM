@@ -88,7 +88,7 @@ int genere_coefficient_vecteur_P(Vecteur &P, const Maillage &maillage, double pa
     {
         Segment seg = maillage[i];
         int nbPas = (int)(seg.norm() / pas);
-        P[i] = integ_simple(maillage[i], p_theta, nbPas);
+        P[i] = integ_simple(seg, p_theta, nbPas);
     }
 
     return 0;
@@ -135,7 +135,7 @@ bool position_dans_obstacles(Point x, const vector<Cercle> &obstacles)
     return false;
 }
 
-void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation)
+void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasIntegrale, const unsigned int nbPasVisualisation)
 {
     ofstream f(filename);
 
@@ -145,17 +145,40 @@ void exporte_solution(const string &filename, const Maillage &maillage, vector<C
         exit(-1);
     }
 
+    double longeur = max(h, e);
+
     for (unsigned int i = 0; i < nbPasVisualisation; i++)
     {
         for (unsigned int j = 0; j < nbPasVisualisation; j++)
         {
-            Point IJ(-2*h + (i / (double)nbPasVisualisation) * 4* h,-2*h + (j / (double)nbPasVisualisation) * 4 * h);
+            Point IJ(-2 * longeur + (i / (double)nbPasVisualisation) * 4 * longeur, -2 * longeur + (j / (double)nbPasVisualisation) * 4 * longeur);
             if (!position_dans_obstacles(IJ, obstacles))
             {
-                complex<double> valeur = p(maillage, 0.01 * pasMaillage, solution, P, IJ);
+                complex<double> valeur = p(maillage, pasIntegrale, solution, P, IJ);
                 f << IJ.x << " " << IJ.y << " " << valeur.real() << " " << valeur.imag() << endl;
             }
         }
+    }
+    f.close();
+
+    return;
+}
+
+void export_obsctacles(const string &filename, vector<Cercle> cercles)
+{
+    ofstream f(filename);
+
+    if (!f.is_open())
+    {
+        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+        exit(-1);
+    }
+
+    for (unsigned int i = 0; i < cercles.size(); i++)
+    {
+        const Cercle &s = cercles[i];
+        f << s.centre.x << " " << s.centre.y << " ";
+        f << s.rayon << endl;
     }
     f.close();
 

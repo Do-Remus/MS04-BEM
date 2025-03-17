@@ -38,6 +38,6 @@ double operator*(const Point &A, const Point &B);
 
 bool operator==(const Point &A, const Point &B);
 
-double operator|(const Point A, const Point B);
+double operator|(const Point &A, const Point &B);
 
 #endif

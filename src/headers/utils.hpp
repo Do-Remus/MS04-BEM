@@ -40,4 +40,7 @@ bool position_dans_obstacles(Point x, const vector<Cercle> &obstacles);
 // Reconstruit et exporte les champs p(x)
 void exporte_solution(const string &filename, const Maillage &maillage, vector<Cercle> &obstacles, const Vecteur &solution, const Vecteur &P, const double e, const double h, const double pasMaillage, const unsigned int nbPasVisualisation);
 
+// Exporte les obstacles sous forme de cercles
+void export_obsctacles(const string &filename, vector<Cercle> cercles);
+
 #endif

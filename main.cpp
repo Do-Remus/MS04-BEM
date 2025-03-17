@@ -102,27 +102,28 @@ int main()
     if (effectuerLaSimulation)
     {
         // programme
+        cout << "Récupération des paramètres..." << endl;
+        get_config("config.txt");
+
         cout << "Création du maillage..." << endl;
-        double h = 10.;
-        double e = 2.;
-        double pas = 0.1;
         vector<Cercle> obstables;
-        Maillage maillage = genere_maillage_couche_diffusante(40, h, e, pas, obstables);
-        export_obsctacles("outputs/obstacles.txt",obstables);
-        maillage.export_maillage("outputs/maillage.txt");
+        Maillage maillage = genere_maillage_couche_diffusante(nbObstacles, h, e, pasMaillage, obstables);
+        export_obsctacles(cheminFichierObstacles, obstables);
+        maillage.export_maillage(cheminFichierMaillage);
 
         cout << "Génération des matrices..." << endl;
         MatriceSym A(maillage.size(), 0);
         Vecteur P(maillage.size(), 0);
-        genere_coefficient_matrice_A(A, maillage, pas * 0.1);
-        genere_coefficient_vecteur_P(P, maillage, pas * 0.1);
+        genere_coefficient_matrice_A(A, maillage, pasIntegrale);
+        genere_coefficient_vecteur_P(P, maillage, pasIntegrale);
 
         cout << "Résolution du système..." << endl;
         Vecteur solution = resolution_systeme_lineaire(A, P);
 
         cout << "La solution est:" << solution << endl;
-        cout<<" Calcul et export de la pression accoustique ... "<< endl;
-        exporte_solution("outputs/output.txt", maillage,obstables, solution, P, e, h, pas, 100);
+
+        cout << " Calcul et export de la pression accoustique ... " << endl;
+        exporte_solution(cheminFichierSolution, maillage, obstables, solution, P, e, h, pasIntegrale, nbPasExport);
     }
 
     return 0;

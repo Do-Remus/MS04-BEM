@@ -10,4 +10,3 @@ Cercle::Cercle(const double r, const Point &A)
     this->rayon = r;
     this->centre = A;
 }
-
