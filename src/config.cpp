@@ -199,6 +199,11 @@ void get_config(const string &filename)
         exit(-1);
     }
 
+    if (nbPasExport * pi / (max(h, e)) < k)
+    {
+        cout << "ATTENTION : Sous-échantillonage détecté, nous vous recommendons d'augmenté nbPasExport ou de diminuer h, e ou k" << endl;
+    }
+
     return;
 }
 
