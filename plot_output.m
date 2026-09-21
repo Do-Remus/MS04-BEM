@@ -1,5 +1,5 @@
 % Charger les données depuis le fichier (modifier 'data.txt' avec le vrai nom)
-data = load('outputs/output.txt');
+data = load('u_N_plusResu_k=100.000000_a=1.000000_N=150.txt');
 
 % Extraire les colonnes
 x = data(:, 1);

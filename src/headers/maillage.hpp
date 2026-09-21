@@ -13,8 +13,12 @@ class Maillage : public vector<Segment>
 public:
     Maillage() {};
     Maillage(const vector<Cercle> &cercles, const double pas_maillage);
-    void ajoute_cercle(const double pas_mailage, const Cercle &Ob);
+    Maillage(const vector<Point> &points);
+    
+
+    void ajoute_cercle(const double pas_maillage, const Cercle &Ob);
     void export_maillage(const string &filename);
+    vector<Point> PointsMaillage();
 };
 
 /* Fonctions associées à la classe Maillage */

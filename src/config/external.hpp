@@ -8,6 +8,9 @@
 #include <vector>
 #include <time.h>
 #include <cstdlib>
+#include <iomanip>
+#include <functional>
+//#include <mpi.h>
 
 using namespace std;
 

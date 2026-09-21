@@ -17,7 +17,9 @@ public:
     Point &operator-=(const Point &B);
     Point &operator*=(const double a);
     Point &operator/=(const double a);
-    double norm();
+
+    double theta() const;
+    double norm() const ;
 };
 
 /* Fontions associées */

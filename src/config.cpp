@@ -3,11 +3,12 @@
 /* Définition des varibles globales par default */
 
 double theta = 0;
-bool effectuerTests = false;
-bool effectuerLaSimulation = true;
+bool effectuerTests = true;
+bool effectuerLaSimulation = false;
 double k = 2; // frequence des ondes : il y a un nombre au plus denombrable de frequences pour lesquelles le pb n'est pas bien pose
 double h = 10;
 double e = 2;
+int N = 100;
 double pasMaillage = 0.1;
 unsigned int nbObstacles = 1;
 double pasIntegrale = 0.01;
@@ -20,6 +21,7 @@ string cheminFichierMaillage = "outputs/maillage.txt";
 
 void get_config(const string &filename)
 {
+    cout<<"inside get config"<<endl;
     ifstream f(filename);
     if (!f.is_open())
     {
@@ -66,8 +68,8 @@ void get_config(const string &filename)
         if (nom == "h")
         {
             cout << "Récupération de h:" << endl;
-            k = atof(valeur.c_str());
-            if (!(k > 0))
+            h = atof(valeur.c_str());
+            if (!(h > 0))
             {
                 cout << "La valeur de h doit-être strictement positive.";
                 exit(-1);
@@ -78,15 +80,25 @@ void get_config(const string &filename)
         if (nom == "e")
         {
             cout << "Récupération de e:" << endl;
-            k = atof(valeur.c_str());
-            if (!(k > 0))
+            e = atof(valeur.c_str());
+            if (!(e > 0))
             {
                 cout << "La valeur de e doit-être strictement positive.";
                 exit(-1);
             }
             cout << "     e = " << e << endl;
         }
-
+        if (nom == "N")
+        {
+            cout << "Récupération de N:" << endl;
+            N = atof(valeur.c_str());
+            if (!(N > 0))
+            {
+                cout << "La valeur de e doit-être strictement positive.";
+                exit(-1);
+            }
+            cout << "     N = " << N << endl;
+        }
         if (nom == "pasMaillage")
         {
             cout << "Récupération de pasMaillage:" << endl;
@@ -114,7 +126,7 @@ void get_config(const string &filename)
         if (nom == "nbObstacles")
         {
             cout << "Récupération de nbObstacles:" << endl;
-            pasIntegrale = atoi(valeur.c_str());
+            nbObstacles = atoi(valeur.c_str());
             if (!(nbObstacles > 0))
             {
                 cout << "La valeur de nbObstacles doit-être strictement positive.";

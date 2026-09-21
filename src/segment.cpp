@@ -8,10 +8,16 @@ Segment::Segment(const Point &A, const Point &B)
     this->P2 = B;
 }
 
-double Segment::norm()
+double Segment::norm() const
 {
     Point C = this->P1 - this->P2;
     return C.norm();
+}
+
+Point Segment::normale() const
+{
+    Point normale(this->P2.y - this->P1.y, this->P1.x - this->P2.x);
+    return normale;
 }
 
 /* Fonction associées à la classe Segment */

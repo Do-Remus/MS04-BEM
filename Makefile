@@ -8,7 +8,7 @@ CXXFLAGS = -Wall -Wextra -std=c++11
 OUT_DIR = out
 
 # Target executable
-TARGET = $(OUT_DIR)/sim202_program
+TARGET = $(OUT_DIR)/helmholtz
 
 # Source directory
 SRCS_DIR = src

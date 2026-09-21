@@ -14,7 +14,8 @@ public:
     Point P2;
     Segment() {};
     Segment(const Point &A, const Point &B);
-    double norm();
+    double norm() const;
+    Point normale() const;
 };
 
 /* Fonctions associées à la classe Segment */

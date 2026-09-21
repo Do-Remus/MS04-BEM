@@ -1,12 +1,13 @@
 theta=0
 effectuerTests=true
-effectuerLaSimulation=true
-k=2
+effectuerLaSimulation=false
+k=10
 h=10
 e=2
-pasMaillage=0.1
+N=25
+pasMaillage=0.01
 nbObstacles=1
-pasIntegrale=0.01
+pasIntegrale=0.001
 nbPasExport=100
 cheminFichierSolution=outputs/output.txt
 cheminFichierObstacles=outputs/obstacles.txt

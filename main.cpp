@@ -4,6 +4,7 @@
 #include "src/config/constantes.hpp"
 #include "src/config/external.hpp"
 #include "src/headers/utils.hpp"
+#include "src/headers/test_functions.hpp"
 
 complex<double> f(const Point &A)
 {
@@ -14,6 +15,8 @@ int main()
 {
     // initialisation du random
     srand(time(NULL));
+    const string config = "config.txt";
+    get_config(config);
 
     if (effectuerTests)
     {
@@ -30,7 +33,7 @@ int main()
         cout << "produit vectoriel composante z = " << M * C << endl;
 
         // tests Cercle
-        Cercle B;
+        Cercle B(10, M);
         cout << "obstacle point " << B.centre.x << "," << B.centre.y << endl;
         cout << " obstacle rayon = " << B.rayon << endl;
 
@@ -41,90 +44,84 @@ int main()
 
         // tests Maillage
         vector<Cercle> obstaclesTest;
-        Maillage monMaillage = genere_maillage_couche_diffusante(5, 10, 5, 0.01, obstaclesTest);
+        Point O(0,0);
+        double a= 1.;
+        Cercle Cercle0(a, O);
+        obstaclesTest.push_back(Cercle0);
+        Maillage monMaillage;
+        cout<< " k= "<<k<< ", a ="<<a<<" N ="<<N<< endl;
+        monMaillage.ajoute_cercle(pasMaillage, Cercle0 );
         monMaillage.export_maillage("outputs/test.txt");
-        for (unsigned int i = 0; i < obstaclesTest.size(); i++)
+        cout<<"exported maillage"<<endl;
+        //for (unsigned int i = 0; i < obstaclesTest.size(); i++)
+        //{
+        //    cout << "Cercle " << i << ": r = " << obstaclesTest[i].rayon << " centre = " << obstaclesTest[i].centre;
+        //}
+
+
+        // tests sommes partielles U_n^+ , q et p
+        cout<<"tests sommes partielles"<<endl;
+        vector<Point> pointsCercle = monMaillage.PointsMaillage();
+        cout<<"out of PointsMaillage method"<<endl;
+        std::string filename_qConverged = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) +  "_N=" + std::to_string(N) + ".txt";
+        ofstream qC(filename_qConverged);
+        std::string filename_pConverged = "outputs/pResu_k=" + std::to_string(k)  + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) +  ".txt";
+        ofstream pC(filename_pConverged);
+
+        if (!qC.is_open())
         {
-            cout << "Cercle " << i << ": r = " << obstaclesTest[i].rayon << " centre = " << obstaclesTest[i].centre;
+        cout << "ERROR: Le fichier " << filename_qConverged << " n'a pas pu être ouvert" << endl;
+        exit(-1);
         }
-
-        // tests Vecteur
-        Vecteur u = {1, 2, 3};
-        cout << u;
-
-        // tests Integrales
-        Point P1(0, 0);
-        Point P2(1, 0);
-        Segment Seg(P1, P2);
-        cout << "Integrale: " << integ_simple(Seg, f, 100) << endl;
-
-        // test green reguliere
-        for (int i = 10; i >= 0; i--)
+        if (!pC.is_open())
         {
-            Point R(i / 10., 0);
-            cout << "G -log(" << i / 10. << ") =" << green_reguliere(R, P1);
+        cout << "ERROR: Le fichier " << filename_pConverged << " n'a pas pu être ouvert" << endl;
+        exit(-1);
         }
-        cout << endl;
+        qC << "k ="<<k<<" a="<<a<<endl;
+        pC << "k ="<<k<<" a="<<a<<endl;
+        cout<<"number of points in mesh ="<<pointsCercle.size()<<endl;
+        for (unsigned int j =0; j<10;j++){
+            int i = j*pointsCercle.size()/10;
+            Point P = pointsCercle[i];
+            double theta = P.theta();
+            std::string filename_q = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) +  "_N=" + std::to_string(N) + ".txt";
+            std::string filename_p = "outputs/pResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) +  ".txt";
+            std::string filename_solExt = "outputs/solExtResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) +  ".txt";
+            complex<double> q_approche = q(P, N,filename_q);
+            complex<double> p_approche = p(P, N, filename_p);
+            
+            complex<double> sol_ext= u_N_plus(P, a, N, filename_solExt);
+            qC << P << " "<< theta<<" "<< q_approche.real() << " "<< q_approche.imag()<<endl;
+            pC << P << " "<< theta<<" "<< p_approche.real() << " "<< p_approche.imag()<<endl;
+        }
+    
+        double err = 0;
+        for (int t = 0; t < 10; t++) {
+        double th = M_PI * t / 9.0;
+            Point P(3.*a*cos(th), 3.*a*sin(th));
+            std::string bin_theta = "outputs/solExtFarResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(th) +  "_N=" + std::to_string(N)+ ".txt";
+            complex<double> u = u_N_plus(P, a, N, bin_theta);
+            err = max(err, abs(u + exp(-I * k * a * cos(th))));   // +: u = -uinc
+        }
+        cout << "N=" << N << " boundary error = " << err << endl;
 
-        // test integrale pour p
-        cout << "integrale pour p" << integrale_pour_p(S, hankel_derivate, 10, P1) << endl;
+    
 
-        // tests MatriceSym
-        MatriceSym L(5);
-        Vecteur D(5);
-        MatriceSym AAA(5);
-        cout << AAA << endl;
-        AAA(1, 1) = 4;
-        AAA(2, 2) = 9;
-        AAA(0, 0) = 3;
-        AAA(3, 3) = 5;
-        AAA(4, 4) = 1;
-        AAA(1, 3) = -2;
-        AAA(2, 4) = -0.5;
-        cout << AAA << endl;
-        // décomposition LDL
-        AAA.decomposition_LDL(L, D);
-        cout << L << endl;
-        cout << D << endl;
-        // résolution sytème linéaire
-        Vecteur PY(5);
-        PY[0] = 4;
-        PY[1] = 1;
-        PY[2] = -8;
-        PY[3] = 6;
-        PY[4] = 0;
-        cout << PY << endl;
-        Vecteur Y = resolution_systeme_lineaire(AAA, PY);
-        cout << PY << endl;
-        cout << Y << endl;
+    const string sol_externe = "outputs/u_N_plusResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) +  "_N=" + std::to_string(N) + ".txt";
+    export_obsctacles(cheminFichierObstacles,obstaclesTest );
+    exporte_solution_analytique(sol_externe, a, nbPasExport, 10, N);
+    double Hdiff;
+    for(int i=1; i<=8; i++){
+        Hdiff = pow(10., -i);
+        export_fd_q_p("outputs/qFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" +std::to_string(Hdiff) + ".txt",
+              "outputs/pFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" +std::to_string(Hdiff)+ ".txt",
+              a, N, 50, Hdiff);
     }
+}
+    
 
-    if (effectuerLaSimulation)
-    {
-        // programme
-        cout << "Récupération des paramètres..." << endl;
-        get_config("config.txt");
-
-        cout << "Création du maillage..." << endl;
-        vector<Cercle> obstables;
-        Maillage maillage = genere_maillage_couche_diffusante(nbObstacles, h, e, pasMaillage, obstables);
-        export_obsctacles(cheminFichierObstacles, obstables);
-        maillage.export_maillage(cheminFichierMaillage);
-
-        cout << "Génération des matrices..." << endl;
-        MatriceSym A(maillage.size(), 0);
-        Vecteur P(maillage.size(), 0);
-        genere_coefficient_matrice_A(A, maillage, pasIntegrale);
-        genere_coefficient_vecteur_P(P, maillage, pasIntegrale);
-
-        cout << "Résolution du système..." << endl;
-        Vecteur solution = resolution_systeme_lineaire(A, P);
-
-        cout << "La solution est:" << solution << endl;
-
-        cout << " Calcul et export de la pression accoustique ... " << endl;
-        exporte_solution(cheminFichierSolution, maillage, obstables, solution, P, e, h, pasIntegrale, nbPasExport);
-    }
+   
 
     return 0;
 }

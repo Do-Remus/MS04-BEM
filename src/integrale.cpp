@@ -112,7 +112,7 @@ complex<double> integrale_pour_p(Segment &AB, fun_d_P f, int Nbpas1, const Point
         Point y = AB.P1 + dAB * i * (AB.P2 - AB.P1);
         Point normale(AB.P2.y - AB.P1.y, AB.P1.x - AB.P2.x);
         double facteur_normale = (x - y) | normale;
-        result += dAB * f(x - y) * facteur_normale / (x - y).norm();
+        result += p_theta_config((x-y).x,(x-y).y) * f(x - y) * facteur_normale / (x - y).norm();
         // cout<<"resultat inter integ p"<<result<<endl;
     }
     return result;

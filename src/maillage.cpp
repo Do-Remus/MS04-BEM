@@ -42,6 +42,15 @@ void Maillage::export_maillage(const string &filename)
     return;
 }
 
+vector<Point> Maillage::PointsMaillage(){ // only is useful for connex meshings
+    vector<Point> points(this->size());
+    for(unsigned int i =0; i<this->size(); i++){
+        points[i] = this->operator[](i).P1;
+    }
+    cout<<"out of PointsMaillage 0 "<<endl;
+    return points;
+}
+
 Maillage::Maillage(const vector<Cercle> &cercles, const double pas_maillage)
 {
     // Verification du strict positivité du pas du maillage fait dans ajoute cercle
@@ -50,3 +59,12 @@ Maillage::Maillage(const vector<Cercle> &cercles, const double pas_maillage)
         ajoute_cercle(pas_maillage, cercles[i]);
     }
 }
+
+Maillage::Maillage(const vector<Point> &points){
+    //suppose que aucun segment ne s'interecte
+    for(unsigned int i =0 ; i< points.size()-1; i++){
+        this->push_back(Segment(points[i], points[i+1]));
+    }
+    this->push_back(Segment(points[points.size()], points[0]));
+}
+
