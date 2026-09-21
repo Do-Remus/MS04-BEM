@@ -8,6 +8,9 @@
 /* Typedef : type pour passer des fonctions en argument */
 
 typedef complex<double> (*fun_d_P)(const Point &);
+
+typedef complex<double> (*fun_double)(const double &);
+
 typedef complex<double> (*fun_d_P2)(const Point &, const Point &);
 
 /* Fonctions d'integration */
@@ -15,6 +18,11 @@ typedef complex<double> (*fun_d_P2)(const Point &, const Point &);
 // permet de faire une intègrale simple sur le segment AB
 // sur f:R^2->R, avec Nbpas1 intervalles sur AB
 complex<double> integ_simple(Segment &AB, fun_d_P f, int Nbpas1);
+
+complex<double> integ_simple_segsimple(fun_double f);
+
+complex<double> integ_simple_segsimple_n(fun_double f, int n_ordre);
+complex<double> integ_simple_segment_ab_n(fun_double f, int n_ordre, double a, double b);
 
 // permet de faire une intègrale double sur les segments AB et CD
 // sur f:R^2xR^2->R, avec pas1 intervalles sur AB et pas2 intervalles sur CD

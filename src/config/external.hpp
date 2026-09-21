@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <functional>
+#include <boost/math/special_functions/legendre.hpp>
 //#include <mpi.h>
 
 using namespace std;

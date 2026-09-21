@@ -58,7 +58,7 @@ int main()
         //    cout << "Cercle " << i << ": r = " << obstaclesTest[i].rayon << " centre = " << obstaclesTest[i].centre;
         //}
 
-
+        /*
         // tests sommes partielles U_n^+ , q et p
         cout<<"tests sommes partielles"<<endl;
         vector<Point> pointsCercle = monMaillage.PointsMaillage();
@@ -118,6 +118,29 @@ int main()
               "outputs/pFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" +std::to_string(Hdiff)+ ".txt",
               a, N, 50, Hdiff);
     }
+    */
+
+    //test des quadratures (calculs d'intégrales)
+    fun_double func = [](const double &x) -> complex<double>
+        {
+           return 3*x + x*x + 2 - x*x*x*x;
+        };
+    
+    fun_double x2 = [](const double &x) -> complex<double>
+        {
+           return  x*x;
+        };
+
+    complex<double> result = integ_simple_segsimple(func);
+    cout<<"value ="<< result<<"error ="<<result - 14./3. + 2./5.<<endl;
+    
+    complex<double> result1 = integ_simple_segsimple_n(func,2);
+    complex<double> result2 = integ_simple_segsimple_n(func,4);
+    cout<<"for integ_n, n=2 value ="<< result1<<"error ="<<result1 - 14./3. + 2./5.<<endl;
+    cout<<"for integ_n, n=4 value ="<< result2<<"error ="<<result2 - 14./3. + 2./5.<<endl;
+
+    complex<double> result3 = integ_simple_segment_ab_n(x2, 2, 0, 4);
+    cout<<"x2 btw 0 and 4 ="<<result3<<endl;
 }
     
 

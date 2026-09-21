@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -Wall -Wextra -std=c++11
+CXXFLAGS = -Wall -Wextra -std=c++17
 
 # Output directory
 OUT_DIR = out
@@ -44,9 +44,9 @@ $(TARGET): $(OBJS)
 
 # Compiling source files into object files
 $(OBJ_DIR)/%.o: %.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@ -std=gnu++11
+	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 $(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@ -std=gnu++11
+	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 # Clean rule to remove compiled files
 clean:
