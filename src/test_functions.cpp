@@ -44,7 +44,7 @@ void export_fd_q_p(const string &filename_q, const string &filename_p,
     double maxErrQ = 0, maxErrP = 0;
     for (unsigned int j = 0; j < nbPoints; j++)
     {
-        const double th = 2* M_PI * (j + 0.5) / nbPoints;
+        const double th = 2 * pi * (j + 0.5) / nbPoints;
         const Point P(a * cos(th), a * sin(th));
 
         // u+ (scattered) and u+ + uinc (total) at radius r along the ray of angle theta
@@ -56,7 +56,7 @@ void export_fd_q_p(const string &filename_q, const string &filename_p,
         {
             if (centered)
                 return (f(a + h) - f(a - h)) / (2. * h);
-            return ( f(a + h) - f(a)) / (h);
+            return (f(a + h) - f(a)) / (h);
         };
 
         const complex<double> q_fd = deriv(u_scat);

@@ -21,7 +21,7 @@ string cheminFichierMaillage = "outputs/maillage.txt";
 
 void get_config(const string &filename)
 {
-    cout<<"inside get config"<<endl;
+    cout << "inside get config" << endl;
     ifstream f(filename);
     if (!f.is_open())
     {
@@ -221,5 +221,5 @@ void get_config(const string &filename)
 
 complex<double> p_theta_config(double x, double y)
 {
-    return (exp(I * k*(x * cos(theta) + y * sin(theta))));
+    return (exp(I * k * (x * cos(theta) + y * sin(theta))));
 }

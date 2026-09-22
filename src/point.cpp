@@ -53,7 +53,6 @@ double Point::norm() const
     return sqrt(this->x * this->x + this->y * this->y);
 }
 
-
 double Point::theta() const { return std::atan2(this->y, this->x); }
 
 /* Fonctions associées à la classe Points */
@@ -94,8 +93,9 @@ Point operator*(const double a, const Point &A)
 
 Point operator/(const Point &A, const double a)
 {
-    if(a==0){
-        cout<<"division par 0 lors d'une division pour Point"<<endl;
+    if (a == 0)
+    {
+        cout << "division par 0 lors d'une division pour Point" << endl;
         exit(-1);
     }
     Point R = A;

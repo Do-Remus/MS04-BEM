@@ -11,54 +11,51 @@ complex<double> integ_simple(Segment &AB, fun_d_P f, int Nbpas1)
     return result;
 }
 
-
 complex<double> integ_simple_segsimple(fun_double f)
-{//integrale sur [-1;1]
-    double x = sqrt(1./3.);
+{ // integrale sur [-1;1]
+    double x = sqrt(1. / 3.);
     complex<double> result = f(x) + f(-x);
     return result;
 }
 
-
 complex<double> integ_simple_segsimple_n(fun_double f, int n_ordre)
-{   // integrale sur [-1;1]
+{                                                                          // integrale sur [-1;1]
     vector<double> roots = boost::math::legendre_p_zeros<double>(n_ordre); // racines >= 0 seulement
 
     complex<double> result = 0;
-    for (double x : roots) {
+    for (double x : roots)
+    {
         double dp = boost::math::legendre_p_prime(n_ordre, x);
-        double w = 2. / ((1. - x*x) * dp * dp);
-        
-        //cout<<"w = "<<w<<endl;
-        //cout<<"root= "<<x<<endl;
+        double w = 2. / ((1. - x * x) * dp * dp);
+
+        // cout<<"w = "<<w<<endl;
+        // cout<<"root= "<<x<<endl;
         result += w * f(x);
-        if (x != 0.)                 // racine symétrique -x (la racine 0 existe une seule fois, n impair)
+        if (x != 0.) // racine symétrique -x (la racine 0 existe une seule fois, n impair)
             result += w * f(-x);
     }
     return result;
 }
 
-
 complex<double> integ_simple_segment_ab_n(fun_double f, int n_ordre, double a, double b)
-{   // integrale sur [a;b]
+{                                                                          // integrale sur [a;b]
     vector<double> roots = boost::math::legendre_p_zeros<double>(n_ordre); // racines >= 0 seulement
 
-    const double c = (a + b) / 2.;   // milieu
-    const double h = (b - a) / 2.;   // demi-longueur
+    const double c = (a + b) / 2.; // milieu
+    const double h = (b - a) / 2.; // demi-longueur
 
     complex<double> result = 0;
-    for (double r : roots) {
+    for (double r : roots)
+    {
         double dp = boost::math::legendre_p_prime(n_ordre, r);
-        double w = 2. / ((1. - r*r) * dp * dp);   // poids sur [-1;1], calculé avec la racine r
+        double w = 2. / ((1. - r * r) * dp * dp); // poids sur [-1;1], calculé avec la racine r
 
-        result += w * f(c + h*r);
-        if (r > 0.)                               // racine symétrique -r
-            result += w * f(c - h*r);
+        result += w * f(c + h * r);
+        if (r > 0.) // racine symétrique -r
+            result += w * f(c - h * r);
     }
-    return h * result;                             // facteur (b-a)/2
+    return h * result; // facteur (b-a)/2
 }
-
-
 
 complex<double> integ_double(Segment &AB, Segment &CD, fun_d_P2 f, int Nbpas1, int Nbpas2)
 {
@@ -161,7 +158,7 @@ complex<double> integrale_pour_p(Segment &AB, fun_d_P f, int Nbpas1, const Point
         Point y = AB.P1 + dAB * i * (AB.P2 - AB.P1);
         Point normale(AB.P2.y - AB.P1.y, AB.P1.x - AB.P2.x);
         double facteur_normale = (x - y) | normale;
-        result += p_theta_config((x-y).x,(x-y).y) * f(x - y) * facteur_normale / (x - y).norm();
+        result += p_theta_config((x - y).x, (x - y).y) * f(x - y) * facteur_normale / (x - y).norm();
         // cout<<"resultat inter integ p"<<result<<endl;
     }
     return result;
