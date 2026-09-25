@@ -49,7 +49,7 @@ void export_fd_q_p(const string &filename_q, const string &filename_p,
 
         // u+ (scattered) and u+ + uinc (total) at radius r along the ray of angle theta
         auto u_scat = [&](double r) -> complex<double>
-        { return u_N_plus(Point(r * cos(th), r * sin(th)), a, N, bin); };
+        { return u_N_plus_analytique(Point(r * cos(th), r * sin(th)), a, N, bin); };
         auto u_tot = [&](double r) -> complex<double>
         { return u_scat(r) + exp(-I * k * r * cos(th)); };
         auto deriv = [&](const function<complex<double>(double)> &f) -> complex<double>
@@ -61,8 +61,8 @@ void export_fd_q_p(const string &filename_q, const string &filename_p,
 
         const complex<double> q_fd = deriv(u_scat);
         const complex<double> p_fd = -deriv(u_tot);
-        const complex<double> q_ex = q(P, N, bin);
-        const complex<double> p_ex = p(P, N, bin);
+        const complex<double> q_ex = q_analytique(P, N, bin);
+        const complex<double> p_ex = p_analytique(P, N, bin);
 
         fq << th << " " << q_fd.real() << " " << q_fd.imag() << " " << q_ex.real() << " "
            << q_ex.imag() << " " << abs(q_fd - q_ex) << "\n";

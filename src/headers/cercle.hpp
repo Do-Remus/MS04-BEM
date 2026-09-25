@@ -18,5 +18,4 @@ public:
 
 /* Fonctions associées à la classe Cercle */
 
-
 #endif

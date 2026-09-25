@@ -1,6 +1,6 @@
 theta=0
 effectuerTests=false
-effectuerLaSimulation=false
+effectuerLaSimulation=true
 k=10
 h=10
 e=2

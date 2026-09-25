@@ -53,118 +53,132 @@ int main()
         monMaillage.ajoute_cercle(pasMaillage, Cercle0);
         monMaillage.export_maillage("outputs/test.txt");
         cout << "exported maillage" << endl;
-        // for (unsigned int i = 0; i < obstaclesTest.size(); i++)
-        //{
-        //     cout << "Cercle " << i << ": r = " << obstaclesTest[i].rayon << " centre = " << obstaclesTest[i].centre;
-        // }
+    }
 
-        /*
-        // tests sommes partielles U_n^+ , q et p
-        cout<<"tests sommes partielles"<<endl;
+    if (effectuerLaSimulation)
+    {
+        /* ----- TP0 ----- */
+
+        // Creation Maillage
+        vector<Cercle> obstaclesTest;
+        Point O(0, 0);
+        double a = 1.;
+        Cercle Cercle0(a, O);
+        obstaclesTest.push_back(Cercle0);
+        Maillage monMaillage;
+        cout << " k= " << k << ", a =" << a << " N =" << N << endl;
+        monMaillage.ajoute_cercle(pasMaillage, Cercle0);
+        monMaillage.export_maillage("outputs/test.txt");
+        cout << "exported maillage" << endl;
+
+        // Sommes partielles U_n^+ , q et p
+        cout << "Sommes partielles" << endl;
         vector<Point> pointsCercle = monMaillage.PointsMaillage();
-        cout<<"out of PointsMaillage method"<<endl;
-        std::string filename_qConverged = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) +  "_N=" + std::to_string(N) + ".txt";
+        cout << "out of PointsMaillage method" << endl;
+        std::string filename_qConverged = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + ".txt";
         ofstream qC(filename_qConverged);
-        std::string filename_pConverged = "outputs/pResu_k=" + std::to_string(k)  + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) +  ".txt";
+        std::string filename_pConverged = "outputs/pResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + ".txt";
         ofstream pC(filename_pConverged);
 
         if (!qC.is_open())
         {
-        cout << "ERROR: Le fichier " << filename_qConverged << " n'a pas pu être ouvert" << endl;
-        exit(-1);
+            cout << "ERROR: Le fichier " << filename_qConverged << " n'a pas pu être ouvert" << endl;
+            exit(-1);
         }
         if (!pC.is_open())
         {
-        cout << "ERROR: Le fichier " << filename_pConverged << " n'a pas pu être ouvert" << endl;
-        exit(-1);
+            cout << "ERROR: Le fichier " << filename_pConverged << " n'a pas pu être ouvert" << endl;
+            exit(-1);
         }
-        qC << "k ="<<k<<" a="<<a<<endl;
-        pC << "k ="<<k<<" a="<<a<<endl;
-        cout<<"number of points in mesh ="<<pointsCercle.size()<<endl;
-        for (unsigned int j =0; j<10;j++){
-            int i = j*pointsCercle.size()/10;
+        qC << "k =" << k << " a=" << a << endl;
+        pC << "k =" << k << " a=" << a << endl;
+        cout << "number of points in mesh =" << pointsCercle.size() << endl;
+        for (unsigned int j = 0; j < 10; j++)
+        {
+            int i = j * pointsCercle.size() / 10;
             Point P = pointsCercle[i];
             double theta = P.theta();
-            std::string filename_q = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) +  "_N=" + std::to_string(N) + ".txt";
-            std::string filename_p = "outputs/pResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) +  ".txt";
-            std::string filename_solExt = "outputs/solExtResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) +  ".txt";
-            complex<double> q_approche = q(P, N,filename_q);
-            complex<double> p_approche = p(P, N, filename_p);
+            std::string filename_q = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) + ".txt";
+            std::string filename_p = "outputs/pResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) + ".txt";
+            std::string filename_solExt = "outputs/solExtResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(theta) + "_N=" + std::to_string(N) + ".txt";
+            complex<double> q_approche = q_analytique(P, N, filename_q);
+            complex<double> p_approche = p_analytique(P, N, filename_p);
 
-            complex<double> sol_ext= u_N_plus(P, a, N, filename_solExt);
-            qC << P << " "<< theta<<" "<< q_approche.real() << " "<< q_approche.imag()<<endl;
-            pC << P << " "<< theta<<" "<< p_approche.real() << " "<< p_approche.imag()<<endl;
+            u_N_plus_analytique(P, a, N, filename_solExt); // complex<double> sol_ext =
+            qC << P << " " << theta << " " << q_approche.real() << " " << q_approche.imag() << endl;
+            pC << P << " " << theta << " " << p_approche.real() << " " << p_approche.imag() << endl;
         }
 
         double err = 0;
-        for (int t = 0; t < 10; t++) {
-        double th = M_PI * t / 9.0;
-            Point P(3.*a*cos(th), 3.*a*sin(th));
-            std::string bin_theta = "outputs/solExtFarResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(th) +  "_N=" + std::to_string(N)+ ".txt";
-            complex<double> u = u_N_plus(P, a, N, bin_theta);
-            err = max(err, abs(u + exp(-I * k * a * cos(th))));   // +: u = -uinc
+        for (int t = 0; t < 10; t++)
+        {
+            double th = M_PI * t / 9.0;
+            Point P(3. * a * cos(th), 3. * a * sin(th));
+            std::string bin_theta = "outputs/solExtFarResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(th) + "_N=" + std::to_string(N) + ".txt";
+            complex<double> u = u_N_plus_analytique(P, a, N, bin_theta);
+            err = max(err, abs(u + exp(-I * k * a * cos(th)))); // +: u = -uinc
         }
         cout << "N=" << N << " boundary error = " << err << endl;
 
+        const string sol_externe = "outputs/u_N_plusResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + ".txt";
+        export_obsctacles(cheminFichierObstacles, obstaclesTest);
+        exporte_solution_analytique(sol_externe, a, nbPasExport, 10, N);
+        double Hdiff;
+        for (int i = 1; i <= 8; i++)
+        {
+            Hdiff = pow(10., -i);
+            export_fd_q_p("outputs/qFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" + std::to_string(Hdiff) + ".txt",
+                          "outputs/pFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" + std::to_string(Hdiff) + ".txt",
+                          a, N, 50, Hdiff);
+        }
 
+        /* ----- TP1 -----
+        // ---- Flamegraph ----
 
-    const string sol_externe = "outputs/u_N_plusResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) +  "_N=" + std::to_string(N) + ".txt";
-    export_obsctacles(cheminFichierObstacles,obstaclesTest );
-    exporte_solution_analytique(sol_externe, a, nbPasExport, 10, N);
-    double Hdiff;
-    for(int i=1; i<=8; i++){
-        Hdiff = pow(10., -i);
-        export_fd_q_p("outputs/qFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" +std::to_string(Hdiff) + ".txt",
-              "outputs/pFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" +std::to_string(Hdiff)+ ".txt",
-              a, N, 50, Hdiff);
+        constexpr int NB_ITERATIONS = 1000000000;
 
- */
+        volatile double benchmark_sink = 0.0;
+
+        // ---- Test 1D ----
+        // fun_double func = [](const double &x) -> complex<double>
+        // {
+        //     return 3 * x + x * x + 2 - x * x * x * x;
+        // };
+
+        // const double a = 0.0;
+        // const double b = 5.0;
+
+        // for (int i = 0; i < NB_ITERATIONS; ++i)
+        // {
+        //     benchmark_sink += integ_simple_legendre_n(func, a, b, 2).real();
+        //     benchmark_sink += integ_simple_legendre_n(func, a, b, 4).real();
+        //     benchmark_sink += integ_simple_legendre_n(func, a, b, 6).real();
+        // }
+
+        // ---- Test 2D ----
+        fun_d_P func = [](const Point &P) -> complex<double>
+        {
+            const double x = P.x;
+            const double y = P.y;
+
+            return 2.0 + 3.0 * x - 2.0 * y + 4.0 * x * x + x * y + 3.0 * y * y - 2.0 * x * x * x + 2.0 * x * y * y - y * y * y + x * x * x * x;
+            ;
+        };
+
+        Segment AB{
+            Point(0.0, 0.0),
+            Point(2.0, 5.0)};
+
+        for (int i = 0; i < NB_ITERATIONS; ++i)
+        {
+            benchmark_sink += integ_simple(func, AB, 2).real();
+            benchmark_sink += integ_simple(func, AB, 4).real();
+            benchmark_sink += integ_simple(func, AB, 6).real();
+        }
+
+        cout << "Benchmark result = " << benchmark_sink << endl;
+        */
     }
-
-    /* Flamegraph : tests */
-
-    constexpr int NB_ITERATIONS = 1000000000;
-
-    volatile double benchmark_sink = 0.0;
-
-    /* Test 1D */
-    // fun_double func = [](const double &x) -> complex<double>
-    // {
-    //     return 3 * x + x * x + 2 - x * x * x * x;
-    // };
-
-    // const double a = 0.0;
-    // const double b = 5.0;
-
-    // for (int i = 0; i < NB_ITERATIONS; ++i)
-    // {
-    //     benchmark_sink += integ_simple_legendre_n(func, a, b, 2).real();
-    //     benchmark_sink += integ_simple_legendre_n(func, a, b, 4).real();
-    //     benchmark_sink += integ_simple_legendre_n(func, a, b, 6).real();
-    // }
-
-    /* Test 2D */
-    fun_d_P func = [](const Point &P) -> complex<double>
-    {
-        const double x = P.x;
-        const double y = P.y;
-
-        return 2.0 + 3.0 * x - 2.0 * y + 4.0 * x * x + x * y + 3.0 * y * y - 2.0 * x * x * x + 2.0 * x * y * y - y * y * y + x * x * x * x;
-        ;
-    };
-
-    Segment AB{
-        Point(0.0, 0.0),
-        Point(2.0, 5.0)};
-
-    for (int i = 0; i < NB_ITERATIONS; ++i)
-    {
-        benchmark_sink += integ_simple_legendre_n(func, AB, 2).real();
-        benchmark_sink += integ_simple_legendre_n(func, AB, 4).real();
-        benchmark_sink += integ_simple_legendre_n(func, AB, 6).real();
-    }
-
-    cout << "Benchmark result = " << benchmark_sink << endl;
 
     return 0;
 }
