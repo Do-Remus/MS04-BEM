@@ -11,50 +11,72 @@ complex<double> integ_simple(Segment &AB, fun_d_P f, int Nbpas1)
     return result;
 }
 
-complex<double> integ_simple_segsimple(fun_double f)
-{ // integrale sur [-1;1]
-    double x = sqrt(1. / 3.);
-    complex<double> result = f(x) + f(-x);
-    return result;
-}
+complex<double> integ_simple_legendre_n(fun_double f, int n_ordre)
+{
+    const LegendreData &data = get_legendre_data(n_ordre);
 
-complex<double> integ_simple_segsimple_n(fun_double f, int n_ordre)
-{                                                                          // integrale sur [-1;1]
-    vector<double> roots = boost::math::legendre_p_zeros<double>(n_ordre); // racines >= 0 seulement
+    complex<double> result = 0.0;
 
-    complex<double> result = 0;
-    for (double x : roots)
+    for (std::size_t i = 0; i < data.roots.size(); ++i)
     {
-        double dp = boost::math::legendre_p_prime(n_ordre, x);
-        double w = 2. / ((1. - x * x) * dp * dp);
+        const double x = data.roots[i];
+        const double w = data.weights[i];
 
-        // cout<<"w = "<<w<<endl;
-        // cout<<"root= "<<x<<endl;
         result += w * f(x);
-        if (x != 0.) // racine symétrique -x (la racine 0 existe une seule fois, n impair)
+
+        if (x != 0.0) // racine symétrique -x (la racine 0 existe une seule fois, n impair)
             result += w * f(-x);
     }
+
     return result;
 }
 
-complex<double> integ_simple_segment_ab_n(fun_double f, int n_ordre, double a, double b)
-{                                                                          // integrale sur [a;b]
-    vector<double> roots = boost::math::legendre_p_zeros<double>(n_ordre); // racines >= 0 seulement
+complex<double> integ_simple_legendre_n(fun_double f, double a, double b, int n_ordre)
+{
+    const LegendreData &data = get_legendre_data(n_ordre);
 
-    const double c = (a + b) / 2.; // milieu
-    const double h = (b - a) / 2.; // demi-longueur
+    const double milieu = (a + b) / 2.0;
+    const double demi_longueur = (b - a) / 2.0;
 
-    complex<double> result = 0;
-    for (double r : roots)
+    complex<double> result = 0.0;
+
+    for (std::size_t i = 0; i < data.roots.size(); ++i)
     {
-        double dp = boost::math::legendre_p_prime(n_ordre, r);
-        double w = 2. / ((1. - r * r) * dp * dp); // poids sur [-1;1], calculé avec la racine r
+        const double r = data.roots[i];
+        const double w = data.weights[i];
+        const double correction = r * demi_longueur;
 
-        result += w * f(c + h * r);
-        if (r > 0.) // racine symétrique -r
-            result += w * f(c - h * r);
+        result += w * f(milieu + correction);
+
+        if (r > 0.0) // racine symétrique -r
+            result += w * f(milieu - correction);
     }
-    return h * result; // facteur (b-a)/2
+
+    return demi_longueur * result;
+}
+
+complex<double> integ_simple_legendre_n(fun_d_P f, Segment &AB, int n_ordre)
+{
+    const LegendreData &data = get_legendre_data(n_ordre);
+
+    const Point milieu = (AB.P1 + AB.P2) * 0.5;
+    const Point vecteur_demi_longueur = (AB.P1 - AB.P2) * 0.5;
+
+    complex<double> result = 0.0;
+
+    for (std::size_t i = 0; i < data.roots.size(); ++i)
+    {
+        const double r = data.roots[i];
+        const double w = data.weights[i];
+        const Point correction = r * vecteur_demi_longueur;
+
+        result += w * f(milieu + correction);
+
+        if (r > 0.0)
+            result += w * f(milieu - correction);
+    }
+
+    return vecteur_demi_longueur.norm() * result;
 }
 
 complex<double> integ_double(Segment &AB, Segment &CD, fun_d_P2 f, int Nbpas1, int Nbpas2)

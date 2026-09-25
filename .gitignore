@@ -1,3 +1,4 @@
 outputs/*
 out/*
 .vscode
+perf*

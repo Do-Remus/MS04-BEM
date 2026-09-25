@@ -121,27 +121,50 @@ int main()
  */
     }
 
-    // test des quadratures (calculs d'intégrales)
-    fun_double func = [](const double &x) -> complex<double>
+    /* Flamegraph : tests */
+
+    constexpr int NB_ITERATIONS = 1000000000;
+
+    volatile double benchmark_sink = 0.0;
+
+    /* Test 1D */
+    // fun_double func = [](const double &x) -> complex<double>
+    // {
+    //     return 3 * x + x * x + 2 - x * x * x * x;
+    // };
+
+    // const double a = 0.0;
+    // const double b = 5.0;
+
+    // for (int i = 0; i < NB_ITERATIONS; ++i)
+    // {
+    //     benchmark_sink += integ_simple_legendre_n(func, a, b, 2).real();
+    //     benchmark_sink += integ_simple_legendre_n(func, a, b, 4).real();
+    //     benchmark_sink += integ_simple_legendre_n(func, a, b, 6).real();
+    // }
+
+    /* Test 2D */
+    fun_d_P func = [](const Point &P) -> complex<double>
     {
-        return 3 * x + x * x + 2 - x * x * x * x;
+        const double x = P.x;
+        const double y = P.y;
+
+        return 2.0 + 3.0 * x - 2.0 * y + 4.0 * x * x + x * y + 3.0 * y * y - 2.0 * x * x * x + 2.0 * x * y * y - y * y * y + x * x * x * x;
+        ;
     };
 
-    fun_double x2 = [](const double &x) -> complex<double>
+    Segment AB{
+        Point(0.0, 0.0),
+        Point(2.0, 5.0)};
+
+    for (int i = 0; i < NB_ITERATIONS; ++i)
     {
-        return x * x;
-    };
+        benchmark_sink += integ_simple_legendre_n(func, AB, 2).real();
+        benchmark_sink += integ_simple_legendre_n(func, AB, 4).real();
+        benchmark_sink += integ_simple_legendre_n(func, AB, 6).real();
+    }
 
-    complex<double> result = integ_simple_segsimple(func);
-    cout << "value =" << result << "error =" << result - 14. / 3. + 2. / 5. << endl;
-
-    complex<double> result1 = integ_simple_segsimple_n(func, 2);
-    complex<double> result2 = integ_simple_segsimple_n(func, 4);
-    cout << "for integ_n, n=2 value =" << result1 << "error =" << result1 - 14. / 3. + 2. / 5. << endl;
-    cout << "for integ_n, n=4 value =" << result2 << "error =" << result2 - 14. / 3. + 2. / 5. << endl;
-
-    complex<double> result3 = integ_simple_segment_ab_n(x2, 2, 0, 4);
-    cout << "x2 btw 0 and 4 =" << result3 << endl;
+    cout << "Benchmark result = " << benchmark_sink << endl;
 
     return 0;
 }

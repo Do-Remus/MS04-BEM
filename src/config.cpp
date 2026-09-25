@@ -46,6 +46,9 @@ void get_config(const string &filename)
             continue;
         }
 
+        nom = trim(nom);
+        valeur = trim(valeur);
+
         if (nom == "theta")
         {
             cout << "Récupération de theta:" << endl;
@@ -222,4 +225,14 @@ void get_config(const string &filename)
 complex<double> p_theta_config(double x, double y)
 {
     return (exp(I * k * (x * cos(theta) + y * sin(theta))));
+}
+
+string trim(const string &str)
+{
+    const auto first = str.find_first_not_of(" \t\r\n");
+    if (first == string::npos)
+        return "";
+
+    const auto last = str.find_last_not_of(" \t\r\n");
+    return str.substr(first, last - first + 1);
 }
