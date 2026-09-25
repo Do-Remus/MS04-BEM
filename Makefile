@@ -106,6 +106,9 @@ clean:
 	rm -f $(OBJS) $(TARGET)
 	rm -f $(PERF_DATA) $(PERF_SCRIPT) $(PERF_FOLDED) $(FLAMEGRAPH_SVG)
 
+clean_output:
+	rm -f ./outputs/*
+
 
 # ============================================================
 # Information

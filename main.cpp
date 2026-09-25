@@ -55,26 +55,32 @@ int main()
         cout << "exported maillage" << endl;
     }
 
+#define TP1
+
     if (effectuerLaSimulation)
     {
+#ifdef TP0
         /* ----- TP0 ----- */
 
-        // Creation Maillage
+        // -- Creation Maillage --
         vector<Cercle> obstaclesTest;
         Point O(0, 0);
         double a = 1.;
         Cercle Cercle0(a, O);
         obstaclesTest.push_back(Cercle0);
         Maillage monMaillage;
-        cout << " k= " << k << ", a =" << a << " N =" << N << endl;
+        cout << "Info Générales: fréquence k = " << k << ", Centre du maillage a = " << a << ", Pas du maillage = " << pasMaillage << endl;
         monMaillage.ajoute_cercle(pasMaillage, Cercle0);
-        monMaillage.export_maillage("outputs/test.txt");
-        cout << "exported maillage" << endl;
+        cout << "Export du maillage..." << endl;
+        monMaillage.export_maillage(cheminFichierMaillage);
 
-        // Sommes partielles U_n^+ , q et p
-        cout << "Sommes partielles" << endl;
+        // -- Sommes partielles U_n^+ , q et p --
+        cout << "Sommes partielles..." << endl;
+
         vector<Point> pointsCercle = monMaillage.PointsMaillage();
-        cout << "out of PointsMaillage method" << endl;
+        cout << "Nombre de point du maillage = " << pointsCercle.size() << endl;
+
+        cout << "Création des fichiers..." << endl;
         std::string filename_qConverged = "outputs/qResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + ".txt";
         ofstream qC(filename_qConverged);
         std::string filename_pConverged = "outputs/pResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + ".txt";
@@ -90,9 +96,10 @@ int main()
             cout << "ERROR: Le fichier " << filename_pConverged << " n'a pas pu être ouvert" << endl;
             exit(-1);
         }
+
         qC << "k =" << k << " a=" << a << endl;
         pC << "k =" << k << " a=" << a << endl;
-        cout << "number of points in mesh =" << pointsCercle.size() << endl;
+
         for (unsigned int j = 0; j < 10; j++)
         {
             int i = j * pointsCercle.size() / 10;
@@ -112,7 +119,7 @@ int main()
         double err = 0;
         for (int t = 0; t < 10; t++)
         {
-            double th = M_PI * t / 9.0;
+            double th = pi * t / 9.0;
             Point P(3. * a * cos(th), 3. * a * sin(th));
             std::string bin_theta = "outputs/solExtFarResu_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_theta=" + std::to_string(th) + "_N=" + std::to_string(N) + ".txt";
             complex<double> u = u_N_plus_analytique(P, a, N, bin_theta);
@@ -127,12 +134,14 @@ int main()
         for (int i = 1; i <= 8; i++)
         {
             Hdiff = pow(10., -i);
-            export_fd_q_p("outputs/qFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" + std::to_string(Hdiff) + ".txt",
-                          "outputs/pFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_N=" + std::to_string(N) + "_h=" + std::to_string(Hdiff) + ".txt",
+            export_fd_q_p("outputs/qFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_h=" + std::to_string(Hdiff) + "_N=" + std::to_string(N) + ".txt",
+                          "outputs/pFD_k=" + std::to_string(k) + "_a=" + std::to_string(a) + "_h=" + std::to_string(Hdiff) + "_N=" + std::to_string(N) + ".txt",
                           a, N, 50, Hdiff);
         }
+#endif
 
-        /* ----- TP1 -----
+#ifdef TP1
+        /* ----- TP1 ----- */
         // ---- Flamegraph ----
 
         constexpr int NB_ITERATIONS = 1000000000;
@@ -177,7 +186,8 @@ int main()
         }
 
         cout << "Benchmark result = " << benchmark_sink << endl;
-        */
+
+#endif
     }
 
     return 0;
