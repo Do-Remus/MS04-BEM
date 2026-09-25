@@ -1,5 +1,5 @@
 theta=0
-effectuerTests=true
+effectuerTests=false
 effectuerLaSimulation=false
 k=10
 h=10
