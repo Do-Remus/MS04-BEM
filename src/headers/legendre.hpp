@@ -3,6 +3,7 @@
 #include "../config/config.hpp"
 #include "../config/external.hpp"
 #include "../config/constantes.hpp"
+#include "segment.hpp"
 
 /* Datatype */
 struct LegendreData

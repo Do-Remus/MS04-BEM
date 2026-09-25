@@ -6,13 +6,15 @@ Segment::Segment(const Point &A, const Point &B)
 {
     this->P1 = A;
     this->P2 = B;
+    this->milieu = (A + B) * 0.5;
+    this->vecteur_norm = A - B;
+    this->norm = vecteur_norm.norm();
 }
 
-double Segment::norm() const
-{
-    Point C = this->P1 - this->P2;
-    return C.norm();
-}
+// double Segment::norm() const
+// {
+//     return (this->P1 - this->P2).norm();
+// }
 
 Point Segment::normale() const
 {
@@ -20,12 +22,11 @@ Point Segment::normale() const
     return normale;
 }
 
-Point Segment::milieu() const
-{
-    Point milieu((this->P2.x + this->P1.x) / 2, (this->P2.y + this->P1.y) / 2);
-    return milieu;
-}
-/* Fonction associées à la classe Segment */
+// Point Segment::milieu() const
+// {
+//     Point milieu((this->P2.x + this->P1.x) / 2, (this->P2.y + this->P1.y) / 2);
+//     return milieu;
+// }
 
 bool operator==(const Segment &AB, const Segment &CD)
 {

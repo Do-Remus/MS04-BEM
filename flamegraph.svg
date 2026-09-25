@@ -1,6 +1,6 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" width="1200" height="230" onload="init(evt)" viewBox="0 0 1200 230" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg version="1.1" width="1200" height="198" onload="init(evt)" viewBox="0 0 1200 198" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
 <!-- NOTES:  -->
 <defs>
@@ -422,337 +422,177 @@
 	}
 ]]>
 </script>
-<rect x="0.0" y="0" width="1200.0" height="230.0" fill="url(#background)"  />
+<rect x="0.0" y="0" width="1200.0" height="198.0" fill="url(#background)"  />
 <text id="title" x="600.00" y="24" >Flame Graph</text>
-<text id="details" x="10.00" y="213" > </text>
+<text id="details" x="10.00" y="181" > </text>
 <text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
 <text id="search" x="1090.00" y="24" >Search</text>
 <text id="ignorecase" x="1174.00" y="24" >ic</text>
-<text id="matched" x="1090.00" y="213" > </text>
+<text id="matched" x="1090.00" y="181" > </text>
 <g id="frames">
 <g >
-<title>std::_Function_handler&lt;std::complex&lt;double&gt;  (841,892,508 samples, 0.23%)</title><rect x="1160.3" y="117" width="2.7" height="15.0" fill="rgb(212,32,7)" rx="2" ry="2" />
-<text  x="1163.33" y="127.5" ></text>
+<title>green_cached_bis (539,096,791 samples, 3.82%)</title><rect x="107.4" y="101" width="45.1" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
+<text  x="110.40" y="111.5" >gree..</text>
 </g>
 <g >
-<title>integ_simple (114,666,215 samples, 0.03%)</title><rect x="589.8" y="133" width="0.3" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
-<text  x="592.77" y="143.5" ></text>
+<title>boost::math::detail::bessel_y1&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (214,328,720 samples, 1.52%)</title><rect x="1121.5" y="37" width="18.0" height="15.0" fill="rgb(240,162,38)" rx="2" ry="2" />
+<text  x="1124.52" y="47.5" ></text>
 </g>
 <g >
-<title>__dynamic_cast (39,729,248 samples, 0.01%)</title><rect x="227.8" y="85" width="0.1" height="15.0" fill="rgb(227,102,24)" rx="2" ry="2" />
-<text  x="230.82" y="95.5" ></text>
+<title>std::basic_filebuf&lt;char, std::char_traits&lt;char&gt; &gt;::sync (26,865,532 samples, 0.19%)</title><rect x="1181.6" y="101" width="2.3" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="1184.63" y="111.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (582,993,936 samples, 0.16%)</title><rect x="636.8" y="85" width="1.8" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
-<text  x="639.77" y="95.5" ></text>
+<title>__iscanonicall (141,655,061 samples, 1.00%)</title><rect x="26.5" y="101" width="11.8" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="29.46" y="111.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_j1&lt;long double&gt; (42,938,992 samples, 0.01%)</title><rect x="1157.7" y="85" width="0.1" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
-<text  x="1160.71" y="95.5" ></text>
+<title>Point::norm (713,134,370 samples, 5.06%)</title><rect x="495.6" y="85" width="59.7" height="15.0" fill="rgb(223,87,20)" rx="2" ry="2" />
+<text  x="498.60" y="95.5" >Point:..</text>
 </g>
 <g >
-<title>__iscanonicall (423,325,937 samples, 0.11%)</title><rect x="912.7" y="53" width="1.4" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
-<text  x="915.72" y="63.5" ></text>
+<title>__nss_database_lookup (25,089,008 samples, 0.18%)</title><rect x="1183.9" y="69" width="2.1" height="15.0" fill="rgb(206,7,1)" rx="2" ry="2" />
+<text  x="1186.87" y="79.5" ></text>
 </g>
 <g >
-<title>_GLOBAL__sub_I__Z8hankel_ndi (4,126,493,225 samples, 1.10%)</title><rect x="228.3" y="149" width="13.0" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
-<text  x="231.33" y="159.5" ></text>
+<title>operator* (226,954,345 samples, 1.61%)</title><rect x="1139.5" y="101" width="18.9" height="15.0" fill="rgb(233,130,31)" rx="2" ry="2" />
+<text  x="1142.45" y="111.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_y0&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (43,436,448 samples, 0.01%)</title><rect x="1159.4" y="69" width="0.1" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
-<text  x="1162.37" y="79.5" ></text>
+<title>vscanf (73,239,422 samples, 0.52%)</title><rect x="1183.9" y="101" width="6.1" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="1186.87" y="111.5" ></text>
 </g>
 <g >
-<title>std::_Function_base::_Base_manager&lt;main::{lambda (241,827,255 samples, 0.06%)</title><rect x="1163.0" y="133" width="0.7" height="15.0" fill="rgb(247,196,47)" rx="2" ry="2" />
-<text  x="1165.98" y="143.5" ></text>
+<title>psiginfo (73,239,422 samples, 0.52%)</title><rect x="1183.9" y="85" width="6.1" height="15.0" fill="rgb(238,154,37)" rx="2" ry="2" />
+<text  x="1186.87" y="95.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_j0&lt;long double&gt; (506,673,380 samples, 0.14%)</title><rect x="656.3" y="69" width="1.6" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
-<text  x="659.28" y="79.5" ></text>
+<title>operator+ (199,216,241 samples, 1.41%)</title><rect x="1158.4" y="101" width="16.7" height="15.0" fill="rgb(226,100,24)" rx="2" ry="2" />
+<text  x="1161.44" y="111.5" ></text>
 </g>
 <g >
-<title>pthread_attr_setschedparam (43,291,446 samples, 0.01%)</title><rect x="1189.6" y="149" width="0.1" height="15.0" fill="rgb(253,223,53)" rx="2" ry="2" />
-<text  x="1192.60" y="159.5" ></text>
+<title>p_analytique (1,288,055,535 samples, 9.13%)</title><rect x="1031.7" y="85" width="107.8" height="15.0" fill="rgb(217,56,13)" rx="2" ry="2" />
+<text  x="1034.70" y="95.5" >p_analytique</text>
 </g>
 <g >
-<title>boost::math::detail::bessel_j0&lt;long double&gt; (146,243,200 samples, 0.04%)</title><rect x="931.5" y="53" width="0.5" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
-<text  x="934.55" y="63.5" ></text>
+<title>[unknown] (390,476,234 samples, 2.77%)</title><rect x="10.0" y="117" width="32.7" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="127.5" >[u..</text>
 </g>
 <g >
-<title>__iscanonicall (110,449,147,426 samples, 29.53%)</title><rect x="241.3" y="149" width="348.5" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
-<text  x="244.35" y="159.5" >__iscanonicall</text>
+<title>boost::math::detail::bessel_j0&lt;long double&gt; (30,407,767 samples, 0.22%)</title><rect x="1003.5" y="37" width="2.5" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="1006.50" y="47.5" ></text>
 </g>
 <g >
-<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::_M_pad (82,076,378 samples, 0.02%)</title><rect x="1189.7" y="149" width="0.3" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
-<text  x="1192.74" y="159.5" ></text>
+<title>write (25,226,223 samples, 0.18%)</title><rect x="40.6" y="101" width="2.1" height="15.0" fill="rgb(228,107,25)" rx="2" ry="2" />
+<text  x="43.55" y="111.5" ></text>
 </g>
 <g >
-<title>write (39,957,563 samples, 0.01%)</title><rect x="228.2" y="133" width="0.1" height="15.0" fill="rgb(228,107,25)" rx="2" ry="2" />
-<text  x="231.20" y="143.5" ></text>
+<title>__libc_start_main (12,868,439,567 samples, 91.23%)</title><rect x="107.4" y="117" width="1076.5" height="15.0" fill="rgb(236,142,34)" rx="2" ry="2" />
+<text  x="110.40" y="127.5" >__libc_start_main</text>
 </g>
 <g >
-<title>__exp2f128_finite (2,128,686,892 samples, 0.57%)</title><rect x="1163.9" y="133" width="6.7" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="1166.87" y="143.5" ></text>
+<title>helmholtz (14,106,077,061 samples, 100.00%)</title><rect x="10.0" y="133" width="1180.0" height="15.0" fill="rgb(213,38,9)" rx="2" ry="2" />
+<text  x="13.00" y="143.5" >helmholtz</text>
 </g>
 <g >
-<title>Point::norm (4,758,422,322 samples, 1.27%)</title><rect x="608.4" y="101" width="15.0" height="15.0" fill="rgb(223,87,20)" rx="2" ry="2" />
-<text  x="611.43" y="111.5" ></text>
+<title>boost::math::detail::bessel_j0&lt;long double&gt; (39,185,441 samples, 0.28%)</title><rect x="1047.5" y="53" width="3.3" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="1050.52" y="63.5" ></text>
 </g>
 <g >
-<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::~num_put (78,847,633 samples, 0.02%)</title><rect x="227.8" y="133" width="0.3" height="15.0" fill="rgb(221,76,18)" rx="2" ry="2" />
-<text  x="230.82" y="143.5" ></text>
+<title>boost::math::unchecked_factorial&lt;long double&gt; (30,606,125 samples, 0.22%)</title><rect x="1053.3" y="37" width="2.5" height="15.0" fill="rgb(212,34,8)" rx="2" ry="2" />
+<text  x="1056.29" y="47.5" ></text>
 </g>
 <g >
-<title>helmholtz (374,054,098,745 samples, 100.00%)</title><rect x="10.0" y="165" width="1180.0" height="15.0" fill="rgb(213,38,9)" rx="2" ry="2" />
-<text  x="13.00" y="175.5" >helmholtz</text>
+<title>boost::math::detail::gamma_imp&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt;, boost::math::lanczos::lanczos17m64&gt; (30,606,125 samples, 0.22%)</title><rect x="1053.3" y="53" width="2.5" height="15.0" fill="rgb(227,105,25)" rx="2" ry="2" />
+<text  x="1056.29" y="63.5" ></text>
 </g>
 <g >
-<title>__exp2f128_finite (17,345,478,140 samples, 4.64%)</title><rect x="858.0" y="53" width="54.7" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="861.00" y="63.5" >__exp..</text>
+<title>sincosl (26,835,653 samples, 0.19%)</title><rect x="38.3" y="101" width="2.3" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
+<text  x="41.31" y="111.5" ></text>
 </g>
 <g >
-<title>operator* (761,472,235 samples, 0.20%)</title><rect x="1150.0" y="117" width="2.4" height="15.0" fill="rgb(233,130,31)" rx="2" ry="2" />
-<text  x="1153.05" y="127.5" ></text>
+<title>boost::math::detail::bessel_j1&lt;long double&gt; (136,783,332 samples, 0.97%)</title><rect x="1096.5" y="37" width="11.4" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
+<text  x="1099.50" y="47.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_yn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (95,648,987,223 samples, 25.57%)</title><rect x="843.0" y="69" width="301.8" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
-<text  x="846.04" y="79.5" >boost::math::detail::bessel_yn&lt;long doub..</text>
+<title>operator- (78,004,659 samples, 0.55%)</title><rect x="1175.1" y="101" width="6.5" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
+<text  x="1178.10" y="111.5" ></text>
 </g>
 <g >
-<title>p_analytique (1,205,256,425 samples, 0.32%)</title><rect x="1156.5" y="117" width="3.8" height="15.0" fill="rgb(217,56,13)" rx="2" ry="2" />
-<text  x="1159.52" y="127.5" ></text>
+<title>boost::math::detail::bessel_j0&lt;long double&gt; (121,740,127 samples, 0.86%)</title><rect x="1086.3" y="37" width="10.2" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="1089.31" y="47.5" ></text>
 </g>
 <g >
-<title>integ_simple (174,850,384,546 samples, 46.74%)</title><rect x="598.5" y="117" width="551.5" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
-<text  x="601.46" y="127.5" >integ_simple</text>
+<title>boost::math::detail::bessel_j1&lt;long double&gt; (29,732,389 samples, 0.21%)</title><rect x="1050.8" y="53" width="2.5" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
+<text  x="1053.80" y="63.5" ></text>
 </g>
 <g >
-<title>__uselocale (39,321,061 samples, 0.01%)</title><rect x="1163.7" y="149" width="0.2" height="15.0" fill="rgb(254,225,53)" rx="2" ry="2" />
-<text  x="1166.74" y="159.5" ></text>
+<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (30,407,767 samples, 0.22%)</title><rect x="1003.5" y="53" width="2.5" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="1006.50" y="63.5" ></text>
 </g>
 <g >
-<title>[helmholtz] (638,069,762 samples, 0.17%)</title><rect x="856.0" y="53" width="2.0" height="15.0" fill="rgb(224,91,21)" rx="2" ry="2" />
-<text  x="858.99" y="63.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_y0&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (951,772,270 samples, 0.25%)</title><rect x="840.0" y="69" width="3.0" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
-<text  x="843.03" y="79.5" ></text>
-</g>
-<g >
-<title>__exp2f128_finite (3,035,941,765 samples, 0.81%)</title><rect x="228.3" y="133" width="9.6" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="231.33" y="143.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (433,923,445 samples, 0.12%)</title><rect x="1157.8" y="85" width="1.4" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
-<text  x="1160.84" y="95.5" ></text>
-</g>
-<g >
-<title>std::ostream::_M_insert&lt;double&gt; (78,847,633 samples, 0.02%)</title><rect x="227.8" y="101" width="0.3" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
-<text  x="230.82" y="111.5" ></text>
-</g>
-<g >
-<title>main (181,589,650,901 samples, 48.55%)</title><rect x="590.1" y="133" width="572.9" height="15.0" fill="rgb(243,179,42)" rx="2" ry="2" />
-<text  x="593.13" y="143.5" >main</text>
-</g>
-<g >
-<title>__exp2f128_finite (44,249,694 samples, 0.01%)</title><rect x="1159.2" y="69" width="0.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="1162.21" y="79.5" ></text>
-</g>
-<g >
-<title>hankel_0 (160,180,564,394 samples, 42.82%)</title><rect x="639.5" y="85" width="505.3" height="15.0" fill="rgb(239,158,37)" rx="2" ry="2" />
-<text  x="642.46" y="95.5" >hankel_0</text>
-</g>
-<g >
-<title>operator- (1,240,157,046 samples, 0.33%)</title><rect x="1146.1" y="101" width="3.9" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
-<text  x="1149.13" y="111.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_y1&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (260,399,142 samples, 0.07%)</title><rect x="1159.5" y="69" width="0.8" height="15.0" fill="rgb(240,162,38)" rx="2" ry="2" />
-<text  x="1162.50" y="79.5" ></text>
-</g>
-<g >
-<title>get_legendre_data (75,189,305 samples, 0.02%)</title><rect x="596.1" y="117" width="0.2" height="15.0" fill="rgb(207,9,2)" rx="2" ry="2" />
-<text  x="599.08" y="127.5" ></text>
-</g>
-<g >
-<title>__libc_start_main (181,946,144,371 samples, 48.64%)</title><rect x="589.8" y="149" width="573.9" height="15.0" fill="rgb(236,142,34)" rx="2" ry="2" />
-<text  x="592.77" y="159.5" >__libc_start_main</text>
-</g>
-<g >
-<title>[unknown] (39,957,563 samples, 0.01%)</title><rect x="228.2" y="117" width="0.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="231.20" y="127.5" ></text>
-</g>
-<g >
-<title>[libstdc++.so.6.0.28] (40,251,400 samples, 0.01%)</title><rect x="10.0" y="149" width="0.1" height="15.0" fill="rgb(240,162,38)" rx="2" ry="2" />
+<title>all (14,106,077,061 samples, 100%)</title><rect x="10.0" y="149" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
 <text  x="13.00" y="159.5" ></text>
 </g>
 <g >
-<title>modf (5,078,889,785 samples, 1.36%)</title><rect x="1173.6" y="149" width="16.0" height="15.0" fill="rgb(237,149,35)" rx="2" ry="2" />
-<text  x="1176.58" y="159.5" ></text>
+<title>main (11,798,301,999 samples, 83.64%)</title><rect x="152.5" y="101" width="987.0" height="15.0" fill="rgb(243,179,42)" rx="2" ry="2" />
+<text  x="155.50" y="111.5" >main</text>
 </g>
 <g >
-<title>boost::math::detail::lgamma_small_imp&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt;, boost::math::lanczos::lanczos17m64&gt; (3,079,189,950 samples, 0.82%)</title><rect x="1163.9" y="149" width="9.7" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
-<text  x="1166.87" y="159.5" ></text>
+<title>operator- (306,709,718 samples, 2.17%)</title><rect x="1006.0" y="85" width="25.7" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
+<text  x="1009.05" y="95.5" >o..</text>
 </g>
 <g >
-<title>logf64x (276,956,820 samples, 0.07%)</title><rect x="1131.6" y="53" width="0.9" height="15.0" fill="rgb(214,44,10)" rx="2" ry="2" />
-<text  x="1134.62" y="63.5" ></text>
+<title>boost::math::detail::bessel_y0&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (28,762,357 samples, 0.20%)</title><rect x="1119.1" y="37" width="2.4" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
+<text  x="1122.12" y="47.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_j0&lt;long double&gt; (53,246,447,772 samples, 14.23%)</title><rect x="671.6" y="53" width="167.9" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
-<text  x="674.57" y="63.5" >boost::math::detail::..</text>
+<title>green_cached_bis (5,388,926,442 samples, 38.20%)</title><rect x="555.3" y="85" width="450.7" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
+<text  x="558.25" y="95.5" >green_cached_bis</text>
 </g>
 <g >
-<title>__iscanonicall (34,365,211,972 samples, 9.19%)</title><rect x="87.5" y="133" width="108.4" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
-<text  x="90.51" y="143.5" >__iscanonicall</text>
+<title>__exp2f128_finite (196,759,297 samples, 1.39%)</title><rect x="10.0" y="101" width="16.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="111.5" ></text>
 </g>
 <g >
-<title>vprintf (41,998,141 samples, 0.01%)</title><rect x="1189.9" y="101" width="0.1" height="15.0" fill="rgb(244,180,43)" rx="2" ry="2" />
-<text  x="1192.87" y="111.5" ></text>
+<title>[unknown] (25,226,223 samples, 0.18%)</title><rect x="40.6" y="85" width="2.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="43.55" y="95.5" ></text>
 </g>
 <g >
-<title>hankel_0 (431,542,457 samples, 0.12%)</title><rect x="1144.8" y="101" width="1.3" height="15.0" fill="rgb(239,158,37)" rx="2" ry="2" />
-<text  x="1147.77" y="111.5" ></text>
+<title>vprintf (48,150,414 samples, 0.34%)</title><rect x="1186.0" y="69" width="4.0" height="15.0" fill="rgb(244,180,43)" rx="2" ry="2" />
+<text  x="1188.97" y="79.5" ></text>
 </g>
 <g >
-<title>sincosl (156,062,493 samples, 0.04%)</title><rect x="839.5" y="53" width="0.5" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
-<text  x="842.54" y="63.5" ></text>
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::_M_pad (73,239,422 samples, 0.52%)</title><rect x="1183.9" y="117" width="6.1" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
+<text  x="1186.87" y="127.5" ></text>
 </g>
 <g >
-<title>[helmholtz] (165,458,735 samples, 0.04%)</title><rect x="671.0" y="53" width="0.6" height="15.0" fill="rgb(224,91,21)" rx="2" ry="2" />
-<text  x="674.05" y="63.5" ></text>
+<title>hankel_n (30,407,767 samples, 0.22%)</title><rect x="1003.5" y="69" width="2.5" height="15.0" fill="rgb(238,156,37)" rx="2" ry="2" />
+<text  x="1006.50" y="79.5" ></text>
 </g>
 <g >
-<title>psiginfo (82,076,378 samples, 0.02%)</title><rect x="1189.7" y="117" width="0.3" height="15.0" fill="rgb(238,154,37)" rx="2" ry="2" />
-<text  x="1192.74" y="127.5" ></text>
+<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (288,626,387 samples, 2.05%)</title><rect x="1031.7" y="69" width="24.1" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="1034.70" y="79.5" >b..</text>
 </g>
 <g >
-<title>__exp2f128_finite (43,291,446 samples, 0.01%)</title><rect x="1189.6" y="133" width="0.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="1192.60" y="143.5" ></text>
+<title>__iscanonicall (773,921,838 samples, 5.49%)</title><rect x="42.7" y="117" width="64.7" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="45.66" y="127.5" >__iscan..</text>
 </g>
 <g >
-<title>Point::norm (942,778,728 samples, 0.25%)</title><rect x="593.1" y="117" width="3.0" height="15.0" fill="rgb(223,87,20)" rx="2" ry="2" />
-<text  x="596.11" y="127.5" ></text>
+<title>hankel_n (999,429,148 samples, 7.09%)</title><rect x="1055.8" y="69" width="83.7" height="15.0" fill="rgb(238,156,37)" rx="2" ry="2" />
+<text  x="1058.85" y="79.5" >hankel_n</text>
 </g>
 <g >
-<title>std::basic_streambuf&lt;char, std::char_traits&lt;char&gt; &gt;::xsputn (39,118,385 samples, 0.01%)</title><rect x="227.9" y="85" width="0.2" height="15.0" fill="rgb(244,181,43)" rx="2" ry="2" />
-<text  x="230.95" y="95.5" ></text>
+<title>boost::math::detail::bessel_yn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (376,703,269 samples, 2.67%)</title><rect x="1107.9" y="53" width="31.6" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="1110.94" y="63.5" >bo..</text>
 </g>
 <g >
-<title>green (164,714,557,671 samples, 44.03%)</title><rect x="625.2" y="101" width="519.6" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
-<text  x="628.16" y="111.5" >green</text>
+<title>__exp2f128_finite (74,815,763 samples, 0.53%)</title><rect x="1112.9" y="37" width="6.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1115.86" y="47.5" ></text>
 </g>
 <g >
-<title>boost::math::detail::bessel_j1&lt;long double&gt; (88,185,463 samples, 0.02%)</title><rect x="1158.9" y="69" width="0.3" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
-<text  x="1161.93" y="79.5" ></text>
-</g>
-<g >
-<title>[unknown] (36,550,675 samples, 0.01%)</title><rect x="589.7" y="133" width="0.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="592.66" y="143.5" ></text>
-</g>
-<g >
-<title>vscanf (82,076,378 samples, 0.02%)</title><rect x="1189.7" y="133" width="0.3" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
-<text  x="1192.74" y="143.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_j0&lt;long double&gt; (134,961,947 samples, 0.04%)</title><rect x="1157.3" y="85" width="0.4" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
-<text  x="1160.28" y="95.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_j0&lt;long double&gt; (8,729,741,426 samples, 2.33%)</title><rect x="1104.1" y="37" width="27.5" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
-<text  x="1107.08" y="47.5" >b..</text>
-</g>
-<g >
-<title>boost::math::detail::bessel_j0&lt;long double&gt; (86,129,925 samples, 0.02%)</title><rect x="1158.7" y="69" width="0.2" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
-<text  x="1161.66" y="79.5" ></text>
-</g>
-<g >
-<title>operator+ (940,745,190 samples, 0.25%)</title><rect x="1152.4" y="117" width="3.0" height="15.0" fill="rgb(226,100,24)" rx="2" ry="2" />
-<text  x="1155.45" y="127.5" ></text>
-</g>
-<g >
-<title>operator- (351,331,390 samples, 0.09%)</title><rect x="1155.4" y="117" width="1.1" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
-<text  x="1158.42" y="127.5" ></text>
-</g>
-<g >
-<title>swapcontext (40,078,237 samples, 0.01%)</title><rect x="1189.7" y="101" width="0.2" height="15.0" fill="rgb(208,15,3)" rx="2" ry="2" />
-<text  x="1192.74" y="111.5" ></text>
-</g>
-<g >
-<title>[unknown] (69,169,293,703 samples, 18.49%)</title><rect x="10.1" y="149" width="218.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="13.13" y="159.5" >[unknown]</text>
-</g>
-<g >
-<title>__exp2f128_finite (24,529,013,333 samples, 6.56%)</title><rect x="10.1" y="133" width="77.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="13.13" y="143.5" >__exp2f1..</text>
-</g>
-<g >
-<title>sincosl (10,114,814,238 samples, 2.70%)</title><rect x="195.9" y="133" width="31.9" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
-<text  x="198.92" y="143.5" >si..</text>
-</g>
-<g >
-<title>boost::math::detail::bessel_y0&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (63,273,979,720 samples, 16.92%)</title><rect x="932.0" y="53" width="199.6" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
-<text  x="935.01" y="63.5" >boost::math::detail::besse..</text>
-</g>
-<g >
-<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (57,741,291,537 samples, 15.44%)</title><rect x="657.9" y="69" width="182.1" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
-<text  x="660.88" y="79.5" >boost::math::detail::be..</text>
-</g>
-<g >
-<title>[unknown] (78,847,633 samples, 0.02%)</title><rect x="227.8" y="117" width="0.3" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="230.82" y="127.5" ></text>
-</g>
-<g >
-<title>sincosl (950,503,058 samples, 0.25%)</title><rect x="1170.6" y="133" width="3.0" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
-<text  x="1173.58" y="143.5" ></text>
-</g>
-<g >
-<title>hankel_n (787,059,234 samples, 0.21%)</title><rect x="1157.8" y="101" width="2.5" height="15.0" fill="rgb(238,156,37)" rx="2" ry="2" />
-<text  x="1160.84" y="111.5" ></text>
-</g>
-<g >
-<title>std::ostream::sentry::sentry (41,448,964 samples, 0.01%)</title><rect x="228.1" y="133" width="0.1" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
-<text  x="231.07" y="143.5" ></text>
-</g>
-<g >
-<title>__lgammal_r_finite (5,545,949,675 samples, 1.48%)</title><rect x="914.1" y="53" width="17.4" height="15.0" fill="rgb(222,79,19)" rx="2" ry="2" />
-<text  x="917.05" y="63.5" ></text>
-</g>
-<g >
-<title>all (374,054,098,745 samples, 100%)</title><rect x="10.0" y="181" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
-<text  x="13.00" y="191.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_yn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (271,406,751 samples, 0.07%)</title><rect x="638.6" y="85" width="0.9" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
-<text  x="641.61" y="95.5" ></text>
-</g>
-<g >
-<title>get_legendre_data (545,849,062 samples, 0.15%)</title><rect x="623.4" y="101" width="1.8" height="15.0" fill="rgb(207,9,2)" rx="2" ry="2" />
-<text  x="626.44" y="111.5" ></text>
-</g>
-<g >
-<title>sincosl (1,090,551,460 samples, 0.29%)</title><rect x="237.9" y="133" width="3.4" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
-<text  x="240.91" y="143.5" ></text>
-</g>
-<g >
-<title>green (678,285,973 samples, 0.18%)</title><rect x="596.3" y="117" width="2.2" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
-<text  x="599.32" y="127.5" ></text>
-</g>
-<g >
-<title>__exp2f128_finite (43,734,745 samples, 0.01%)</title><rect x="1157.1" y="85" width="0.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
-<text  x="1160.14" y="95.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (351,607,212 samples, 0.09%)</title><rect x="1156.7" y="101" width="1.1" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
-<text  x="1159.73" y="111.5" ></text>
-</g>
-<g >
-<title>sincosl (3,893,731,484 samples, 1.04%)</title><rect x="1132.5" y="53" width="12.3" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
-<text  x="1135.49" y="63.5" ></text>
-</g>
-<g >
-<title>boost::math::detail::bessel_yn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (353,135,789 samples, 0.09%)</title><rect x="1159.2" y="85" width="1.1" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
-<text  x="1162.21" y="95.5" ></text>
+<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (622,725,879 samples, 4.41%)</title><rect x="1055.8" y="53" width="52.1" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="1058.85" y="63.5" >boost..</text>
 </g>
 </g>
 </svg>
