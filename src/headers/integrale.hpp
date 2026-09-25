@@ -8,11 +8,9 @@
 
 /* Typedef : type pour passer des fonctions en argument */
 
-typedef complex<double> (*fun_d_P)(const Point &);
-
-typedef complex<double> (*fun_double)(const double &);
-
-typedef complex<double> (*fun_d_P2)(const Point &, const Point &);
+using fun_d_P = function<complex<double>(const Point &)>;
+using fun_double = function<complex<double>(const double &)>;
+using fun_d_P2 = function<complex<double>(const Point &, const Point &)>;
 
 /* Fonctions d'integration */
 
