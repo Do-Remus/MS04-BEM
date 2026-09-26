@@ -12,6 +12,23 @@ typedef vector<complex<double>> Vecteur;
 
 ostream &operator<<(ostream &out, const Vecteur &u);
 
+
+/*Classe Matrice générale*/
+class Matrice 
+{
+    protected:
+        Vecteur coefs; //coeficients rangés par ligne
+    public:
+        int n; //nombre de lignes
+        int m; //nombre de colonnes
+        Matrice(int n, int m, complex<double> v = (complex<double>)0);
+        complex<double> &operator()(int i, int j);
+        complex<double> operator()(int i, int j) const;
+        Vecteur operator*(const Vecteur v) const;  
+};
+
+ostream &operator<<(ostream &out, const Matrice &A);
+
 /* Classe MatriceSym */
 
 class MatriceSym

@@ -26,6 +26,8 @@ int main()
         std::cout << "norme C = " << C.norm() << endl;
         std::cout << "produit vectoriel composante z = " << M * C << endl;
 
+        
+
         // tests Cercle
         Cercle B(10, M);
         std::cout << "obstacle point " << B.centre.x << "," << B.centre.y << endl;
@@ -47,6 +49,27 @@ int main()
         monMaillage.ajoute_cercle(pasMaillage, Cercle0);
         monMaillage.export_maillage("outputs/test.txt");
         std::cout << "exported maillage" << endl;
+
+        //Tests Matrice
+        Matrice MMM(3,3);
+        cout<<MMM<<endl;
+        MMM(1,1) =1;
+        MMM(1,2) =2;
+        MMM(3,2) = 3;
+        cout<<MMM<<endl;
+
+        Matrice BBB(3,2);
+        cout<<BBB<<endl;
+        BBB(3,2) =1;
+        BBB(1,2) =2;
+        BBB(2,1) = 0;
+        BBB(1,1) = 3;
+        cout<<BBB<<endl;
+
+        Vecteur v(2);
+        v[0] =1;
+        v[1] =1;
+        cout<<BBB*v<<endl;
     }
 
     if (effectuerLaSimulation)
