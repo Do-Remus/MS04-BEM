@@ -1,4 +1,4 @@
 outputs/*
 out/*
 .vscode
-perf*
+profiling/*
