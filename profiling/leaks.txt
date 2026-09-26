@@ -1,0 +1,177 @@
+==57640== Memcheck, a memory error detector
+==57640== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==57640== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==57640== Command: out/helmholtz
+==57640== Parent PID: 57637
+==57640== 
+==57640== 
+==57640== Process terminating with default action of signal 15 (SIGTERM)
+==57640==    at 0x10F7CA: operator*= (complex:1303)
+==57640==    by 0x10F7CA: operator*<double> (complex:412)
+==57640==    by 0x10F7CA: integ_simple<main()::<lambda(const Point&)> > (integrale.hpp:66)
+==57640==    by 0x10F7CA: main (main.cpp:256)
+==57640== 
+==57640== HEAP SUMMARY:
+==57640==     in use at exit: 38,026,239 bytes in 14 blocks
+==57640==   total heap usage: 76 allocs, 62 frees, 43,876,499 bytes allocated
+==57640== 
+==57640== 16 bytes in 1 blocks are still reachable in loss record 1 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11F509: allocate (new_allocator.h:114)
+==57640==    by 0x11F509: allocate (alloc_traits.h:443)
+==57640==    by 0x11F509: _M_allocate (stl_vector.h:343)
+==57640==    by 0x11F509: std::vector<double, std::allocator<double> >::_M_fill_insert(__gnu_cxx::__normal_iterator<double*, std::vector<double, std::allocator<double> > >, unsigned long, double const&) (vector.tcc:561)
+==57640==    by 0x120D05: resize (stl_vector.h:957)
+==57640==    by 0x120D05: std::vector<double, std::allocator<double> > boost::math::detail::legendre_p_zeros_imp<double, boost::math::policies::policy<boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy> >(int, boost::math::policies::policy<boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy> const&) (legendre.hpp:181)
+==57640==    by 0x11EAF9: legendre_p_zeros<double, boost::math::policies::policy<boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy> > (legendre.hpp:264)
+==57640==    by 0x11EAF9: legendre_p_zeros<double> (legendre.hpp:271)
+==57640==    by 0x11EAF9: get_legendre_data(unsigned int) (legendre.cpp:28)
+==57640==    by 0x10F5C9: main (main.cpp:234)
+==57640== 
+==57640== 16 bytes in 1 blocks are still reachable in loss record 2 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11ED27: allocate (new_allocator.h:114)
+==57640==    by 0x11ED27: allocate (alloc_traits.h:443)
+==57640==    by 0x11ED27: _M_allocate (stl_vector.h:343)
+==57640==    by 0x11ED27: reserve (vector.tcc:78)
+==57640==    by 0x11ED27: get_legendre_data(unsigned int) (legendre.cpp:30)
+==57640==    by 0x10F5C9: main (main.cpp:234)
+==57640== 
+==57640== 19 bytes in 1 blocks are still reachable in loss record 3 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11749D: _M_construct<char const*> (basic_string.tcc:219)
+==57640==    by 0x11749D: _M_construct_aux<char const*> (basic_string.h:251)
+==57640==    by 0x11749D: _M_construct<char const*> (basic_string.h:270)
+==57640==    by 0x11749D: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<std::allocator<char> >(char const*, std::allocator<char> const&) (basic_string.h:531)
+==57640==    by 0x11050E: __static_initialization_and_destruction_0 (config.cpp:16)
+==57640==    by 0x11050E: _GLOBAL__sub_I_theta (config.cpp:238)
+==57640==    by 0x1236AC: __libc_csu_init (in /home/thomas/cours/MS04-BEM/out/helmholtz)
+==57640==    by 0x4BC700F: (below main) (libc-start.c:264)
+==57640== 
+==57640== 21 bytes in 1 blocks are still reachable in loss record 4 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11749D: _M_construct<char const*> (basic_string.tcc:219)
+==57640==    by 0x11749D: _M_construct_aux<char const*> (basic_string.h:251)
+==57640==    by 0x11749D: _M_construct<char const*> (basic_string.h:270)
+==57640==    by 0x11749D: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<std::allocator<char> >(char const*, std::allocator<char> const&) (basic_string.h:531)
+==57640==    by 0x11056D: __static_initialization_and_destruction_0 (config.cpp:18)
+==57640==    by 0x11056D: _GLOBAL__sub_I_theta (config.cpp:238)
+==57640==    by 0x1236AC: __libc_csu_init (in /home/thomas/cours/MS04-BEM/out/helmholtz)
+==57640==    by 0x4BC700F: (below main) (libc-start.c:264)
+==57640== 
+==57640== 22 bytes in 1 blocks are still reachable in loss record 5 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11749D: _M_construct<char const*> (basic_string.tcc:219)
+==57640==    by 0x11749D: _M_construct_aux<char const*> (basic_string.h:251)
+==57640==    by 0x11749D: _M_construct<char const*> (basic_string.h:270)
+==57640==    by 0x11749D: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<std::allocator<char> >(char const*, std::allocator<char> const&) (basic_string.h:531)
+==57640==    by 0x110541: __static_initialization_and_destruction_0 (config.cpp:17)
+==57640==    by 0x110541: _GLOBAL__sub_I_theta (config.cpp:238)
+==57640==    by 0x1236AC: __libc_csu_init (in /home/thomas/cours/MS04-BEM/out/helmholtz)
+==57640==    by 0x4BC700F: (below main) (libc-start.c:264)
+==57640== 
+==57640== 64 bytes in 1 blocks are still reachable in loss record 6 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11F9A6: allocate (new_allocator.h:114)
+==57640==    by 0x11F9A6: allocate (alloc_traits.h:443)
+==57640==    by 0x11F9A6: _M_allocate_node<unsigned int&, LegendreData> (hashtable_policy.h:2081)
+==57640==    by 0x11F9A6: std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, LegendreData>, false, false>, bool> std::_Hashtable<unsigned int, std::pair<unsigned int const, LegendreData>, std::allocator<std::pair<unsigned int const, LegendreData> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_emplace<unsigned int&, LegendreData>(std::integral_constant<bool, true>, unsigned int&, LegendreData&&) (hashtable.h:1673)
+==57640==    by 0x11ECC9: emplace<unsigned int&, LegendreData> (hashtable.h:781)
+==57640==    by 0x11ECC9: emplace<unsigned int&, LegendreData> (unordered_map.h:389)
+==57640==    by 0x11ECC9: get_legendre_data(unsigned int) (legendre.cpp:41)
+==57640==    by 0x10F5C9: main (main.cpp:234)
+==57640== 
+==57640== 104 bytes in 1 blocks are still reachable in loss record 7 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11E918: allocate (new_allocator.h:114)
+==57640==    by 0x11E918: allocate (alloc_traits.h:443)
+==57640==    by 0x11E918: std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, LegendreData>, false> > >::_M_allocate_buckets(unsigned long) [clone .isra.0] (hashtable_policy.h:2134)
+==57640==    by 0x11F88B: _M_allocate_buckets (hashtable.h:361)
+==57640==    by 0x11F88B: _M_rehash_aux (hashtable.h:2123)
+==57640==    by 0x11F88B: std::_Hashtable<unsigned int, std::pair<unsigned int const, LegendreData>, std::allocator<std::pair<unsigned int const, LegendreData> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_rehash(unsigned long, unsigned long const&) (hashtable.h:2102)
+==57640==    by 0x11FB2B: _M_insert_unique_node (hashtable.h:1748)
+==57640==    by 0x11FB2B: std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, LegendreData>, false, false>, bool> std::_Hashtable<unsigned int, std::pair<unsigned int const, LegendreData>, std::allocator<std::pair<unsigned int const, LegendreData> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_emplace<unsigned int&, LegendreData>(std::integral_constant<bool, true>, unsigned int&, LegendreData&&) (hashtable.h:1695)
+==57640==    by 0x11ECC9: emplace<unsigned int&, LegendreData> (hashtable.h:781)
+==57640==    by 0x11ECC9: emplace<unsigned int&, LegendreData> (unordered_map.h:389)
+==57640==    by 0x11ECC9: get_legendre_data(unsigned int) (legendre.cpp:41)
+==57640==    by 0x10F5C9: main (main.cpp:234)
+==57640== 
+==57640== 121 bytes in 1 blocks are still reachable in loss record 8 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x499A38D: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x499BB82: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x1109B3: append (basic_string.h:1272)
+==57640==    by 0x1109B3: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > std::operator+<char, std::char_traits<char>, std::allocator<char> >(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&&, char const*) (basic_string.h:6126)
+==57640==    by 0x10F2EC: main (main.cpp:224)
+==57640== 
+==57640== 472 bytes in 1 blocks are still reachable in loss record 9 of 14
+==57640==    at 0x483B7F3: malloc (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x4C2592D: __fopen_internal (iofopen.c:65)
+==57640==    by 0x4C2592D: fopen@@GLIBC_2.2.5 (iofopen.c:86)
+==57640==    by 0x4923633: std::__basic_file<char>::open(char const*, std::_Ios_Openmode, int) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x4966F7E: std::basic_filebuf<char, std::char_traits<char> >::open(char const*, std::_Ios_Openmode) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x4968017: std::basic_ofstream<char, std::char_traits<char> >::basic_ofstream(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::_Ios_Openmode) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x10F5AB: main (main.cpp:225)
+==57640== 
+==57640== 8,192 bytes in 1 blocks are still reachable in loss record 10 of 14
+==57640==    at 0x483C583: operator new[](unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x4962D33: std::basic_filebuf<char, std::char_traits<char> >::_M_allocate_internal_buffer() (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x4966F96: std::basic_filebuf<char, std::char_traits<char> >::open(char const*, std::_Ios_Openmode) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x4968017: std::basic_ofstream<char, std::char_traits<char> >::basic_ofstream(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::_Ios_Openmode) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+==57640==    by 0x10F5AB: main (main.cpp:225)
+==57640== 
+==57640== 250,008 bytes in 1 blocks are still reachable in loss record 11 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x111BC7: allocate (new_allocator.h:114)
+==57640==    by 0x111BC7: allocate (alloc_traits.h:443)
+==57640==    by 0x111BC7: _M_allocate (stl_bvector.h:534)
+==57640==    by 0x111BC7: _M_initialize (stl_bvector.h:1124)
+==57640==    by 0x111BC7: vector (stl_bvector.h:652)
+==57640==    by 0x111BC7: green_cached_vec(Point const&, Point const&) (utils.cpp:43)
+==57640==    by 0x10F7C9: operator() (main.cpp:253)
+==57640==    by 0x10F7C9: integ_simple<main()::<lambda(const Point&)> > (integrale.hpp:66)
+==57640==    by 0x10F7C9: main (main.cpp:256)
+==57640== 
+==57640== 1,048,576 bytes in 1 blocks are still reachable in loss record 12 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x10EFFE: allocate (new_allocator.h:114)
+==57640==    by 0x10EFFE: allocate (alloc_traits.h:443)
+==57640==    by 0x10EFFE: _M_allocate (stl_vector.h:343)
+==57640==    by 0x10EFFE: _M_realloc_insert<std::complex<double> > (vector.tcc:440)
+==57640==    by 0x10EFFE: emplace_back<std::complex<double> > (vector.tcc:121)
+==57640==    by 0x10EFFE: push_back (stl_vector.h:1201)
+==57640==    by 0x10EFFE: main (main.cpp:220)
+==57640== 
+==57640== 4,718,592 bytes in 1 blocks are still reachable in loss record 13 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x11E6B6: allocate (new_allocator.h:114)
+==57640==    by 0x11E6B6: allocate (alloc_traits.h:443)
+==57640==    by 0x11E6B6: _M_allocate (stl_vector.h:343)
+==57640==    by 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+==57640==    by 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+==57640==    by 0x11E3E8: push_back (stl_vector.h:1201)
+==57640==    by 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+==57640==    by 0x10EEFF: main (main.cpp:213)
+==57640== 
+==57640== 32,000,016 bytes in 1 blocks are still reachable in loss record 14 of 14
+==57640==    at 0x483BE63: operator new(unsigned long) (in /usr/lib/x86_64-linux-gnu/valgrind/vgpreload_memcheck-amd64-linux.so)
+==57640==    by 0x111AA6: allocate (new_allocator.h:114)
+==57640==    by 0x111AA6: allocate (alloc_traits.h:443)
+==57640==    by 0x111AA6: _M_allocate (stl_vector.h:343)
+==57640==    by 0x111AA6: _M_create_storage (stl_vector.h:358)
+==57640==    by 0x111AA6: _Vector_base (stl_vector.h:302)
+==57640==    by 0x111AA6: vector (stl_vector.h:508)
+==57640==    by 0x111AA6: green_cached_vec(Point const&, Point const&) (utils.cpp:42)
+==57640==    by 0x10F7C9: operator() (main.cpp:253)
+==57640==    by 0x10F7C9: integ_simple<main()::<lambda(const Point&)> > (integrale.hpp:66)
+==57640==    by 0x10F7C9: main (main.cpp:256)
+==57640== 
+==57640== LEAK SUMMARY:
+==57640==    definitely lost: 0 bytes in 0 blocks
+==57640==    indirectly lost: 0 bytes in 0 blocks
+==57640==      possibly lost: 0 bytes in 0 blocks
+==57640==    still reachable: 38,026,239 bytes in 14 blocks
+==57640==         suppressed: 0 bytes in 0 blocks
+==57640== 
+==57640== For lists of detected and suppressed errors, rerun with: -s
+==57640== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

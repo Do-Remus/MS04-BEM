@@ -1,0 +1,603 @@
+desc: --massif-out-file=profiling/massif.out
+cmd: out/helmholtz
+time_unit: i
+#-----------
+snapshot=0
+#-----------
+time=0
+mem_heap_B=0
+mem_heap_extra_B=0
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=1
+#-----------
+time=2417549
+mem_heap_B=72704
+mem_heap_extra_B=8
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=2
+#-----------
+time=3060187
+mem_heap_B=221246
+mem_heap_extra_B=82
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=3
+#-----------
+time=3406071
+mem_heap_B=368702
+mem_heap_extra_B=82
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=4
+#-----------
+time=4049218
+mem_heap_B=958526
+mem_heap_extra_B=90
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=5
+#-----------
+time=4106628
+mem_heap_B=663614
+mem_heap_extra_B=82
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=6
+#-----------
+time=5392847
+mem_heap_B=1843262
+mem_heap_extra_B=90
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=7
+#-----------
+time=5507601
+mem_heap_B=1253438
+mem_heap_extra_B=82
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=8
+#-----------
+time=8201052
+mem_heap_B=3612734
+mem_heap_extra_B=90
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=9
+#-----------
+time=8430494
+mem_heap_B=2433086
+mem_heap_extra_B=82
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=10
+#-----------
+time=14068002
+mem_heap_B=7151678
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=11
+#-----------
+time=14526820
+mem_heap_B=4792382
+mem_heap_extra_B=4114
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=12
+#-----------
+time=25910220
+mem_heap_B=4792398
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=13
+#-----------
+time=26553649
+mem_heap_B=4792430
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=14
+#-----------
+time=26553711
+mem_heap_B=4792414
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=15
+#-----------
+time=27197120
+mem_heap_B=4792478
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=16
+#-----------
+time=27197190
+mem_heap_B=4792446
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=17
+#-----------
+time=28483958
+mem_heap_B=4792574
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=18
+#-----------
+time=28484044
+mem_heap_B=4792510
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=19
+#-----------
+time=31057530
+mem_heap_B=4792766
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=20
+#-----------
+time=31057648
+mem_heap_B=4792638
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=detailed
+n3: 4792638 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 4718592 0x11E6B6: allocate (new_allocator.h:114)
+  n1: 4718592 0x11E6B6: allocate (alloc_traits.h:443)
+   n1: 4718592 0x11E6B6: _M_allocate (stl_vector.h:343)
+    n1: 4718592 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+     n1: 4718592 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+      n1: 4718592 0x11E3E8: push_back (stl_vector.h:1201)
+       n1: 4718592 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+        n0: 4718592 0x10EEFF: main (main.cpp:213)
+ n1: 72704 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+  n1: 72704 0x4011B99: call_init.part.0 (dl-init.c:72)
+   n1: 72704 0x4011CA0: call_init (dl-init.c:30)
+    n1: 72704 0x4011CA0: _dl_init (dl-init.c:119)
+     n0: 72704 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+ n0: 1342 in 7 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=21
+#-----------
+time=36205122
+mem_heap_B=4793150
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=22
+#-----------
+time=36205304
+mem_heap_B=4792894
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=23
+#-----------
+time=46499098
+mem_heap_B=4793918
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=24
+#-----------
+time=46499408
+mem_heap_B=4793406
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=25
+#-----------
+time=67088050
+mem_heap_B=4795454
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=26
+#-----------
+time=67088616
+mem_heap_B=4794430
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=27
+#-----------
+time=108265298
+mem_heap_B=4798526
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=28
+#-----------
+time=108266376
+mem_heap_B=4796478
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=29
+#-----------
+time=190617766
+mem_heap_B=4804670
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=30
+#-----------
+time=190619868
+mem_heap_B=4800574
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=detailed
+n3: 4800574 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 4718592 0x11E6B6: allocate (new_allocator.h:114)
+  n1: 4718592 0x11E6B6: allocate (alloc_traits.h:443)
+   n1: 4718592 0x11E6B6: _M_allocate (stl_vector.h:343)
+    n1: 4718592 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+     n1: 4718592 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+      n1: 4718592 0x11E3E8: push_back (stl_vector.h:1201)
+       n1: 4718592 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+        n0: 4718592 0x10EEFF: main (main.cpp:213)
+ n1: 72704 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+  n1: 72704 0x4011B99: call_init.part.0 (dl-init.c:72)
+   n1: 72704 0x4011CA0: call_init (dl-init.c:30)
+    n1: 72704 0x4011CA0: _dl_init (dl-init.c:119)
+     n0: 72704 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+ n0: 9278 in 7 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=31
+#-----------
+time=355344981
+mem_heap_B=4816958
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=32
+#-----------
+time=355349131
+mem_heap_B=4808766
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=33
+#-----------
+time=684913990
+mem_heap_B=4841534
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=34
+#-----------
+time=684922236
+mem_heap_B=4825150
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=35
+#-----------
+time=1344342284
+mem_heap_B=4890686
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=36
+#-----------
+time=1344358722
+mem_heap_B=4857918
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=37
+#-----------
+time=2663567890
+mem_heap_B=4988990
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=38
+#-----------
+time=2663600712
+mem_heap_B=4923454
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=39
+#-----------
+time=5302436972
+mem_heap_B=5185598
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=40
+#-----------
+time=5302502562
+mem_heap_B=5054526
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=detailed
+n4: 5054526 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 4718592 0x11E6B6: allocate (new_allocator.h:114)
+  n1: 4718592 0x11E6B6: allocate (alloc_traits.h:443)
+   n1: 4718592 0x11E6B6: _M_allocate (stl_vector.h:343)
+    n1: 4718592 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+     n1: 4718592 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+      n1: 4718592 0x11E3E8: push_back (stl_vector.h:1201)
+       n1: 4718592 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+        n0: 4718592 0x10EEFF: main (main.cpp:213)
+ n1: 262144 0x10EFFE: allocate (new_allocator.h:114)
+  n1: 262144 0x10EFFE: allocate (alloc_traits.h:443)
+   n1: 262144 0x10EFFE: _M_allocate (stl_vector.h:343)
+    n1: 262144 0x10EFFE: _M_realloc_insert<std::complex<double> > (vector.tcc:440)
+     n1: 262144 0x10EFFE: emplace_back<std::complex<double> > (vector.tcc:121)
+      n1: 262144 0x10EFFE: push_back (stl_vector.h:1201)
+       n0: 262144 0x10EFFE: main (main.cpp:220)
+ n1: 72704 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+  n1: 72704 0x4011B99: call_init.part.0 (dl-init.c:72)
+   n1: 72704 0x4011CA0: call_init (dl-init.c:30)
+    n1: 72704 0x4011CA0: _dl_init (dl-init.c:119)
+     n0: 72704 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+ n0: 1086 in 6 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=41
+#-----------
+time=10580444972
+mem_heap_B=5578814
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=42
+#-----------
+time=10580576098
+mem_heap_B=5316670
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=43
+#-----------
+time=21136866597
+mem_heap_B=6365246
+mem_heap_extra_B=4130
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=44
+#-----------
+time=21137128795
+mem_heap_B=5840958
+mem_heap_extra_B=4122
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=45
+#-----------
+time=40505697261
+mem_heap_B=5840989
+mem_heap_extra_B=4131
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=46
+#-----------
+time=40505708599
+mem_heap_B=37849959
+mem_heap_extra_B=6177
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=47
+#-----------
+time=40515708775
+mem_heap_B=38099967
+mem_heap_extra_B=6193
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=48
+#-----------
+time=3629645634050
+mem_heap_B=38099967
+mem_heap_extra_B=6193
+mem_stacks_B=0
+heap_tree=peak
+n4: 38099967 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 32000016 0x111AA6: allocate (new_allocator.h:114)
+  n1: 32000016 0x111AA6: allocate (alloc_traits.h:443)
+   n1: 32000016 0x111AA6: _M_allocate (stl_vector.h:343)
+    n1: 32000016 0x111AA6: _M_create_storage (stl_vector.h:358)
+     n1: 32000016 0x111AA6: _Vector_base (stl_vector.h:302)
+      n1: 32000016 0x111AA6: vector (stl_vector.h:508)
+       n1: 32000016 0x111AA6: green_cached_vec(Point const&, Point const&) (utils.cpp:42)
+        n1: 32000016 0x10F7C9: operator() (main.cpp:253)
+         n1: 32000016 0x10F7C9: integ_simple<main()::<lambda(const Point&)> > (integrale.hpp:66)
+          n0: 32000016 0x10F7C9: main (main.cpp:256)
+ n1: 4718592 0x11E6B6: allocate (new_allocator.h:114)
+  n1: 4718592 0x11E6B6: allocate (alloc_traits.h:443)
+   n1: 4718592 0x11E6B6: _M_allocate (stl_vector.h:343)
+    n1: 4718592 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+     n1: 4718592 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+      n1: 4718592 0x11E3E8: push_back (stl_vector.h:1201)
+       n1: 4718592 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+        n0: 4718592 0x10EEFF: main (main.cpp:213)
+ n1: 1048576 0x10EFFE: allocate (new_allocator.h:114)
+  n1: 1048576 0x10EFFE: allocate (alloc_traits.h:443)
+   n1: 1048576 0x10EFFE: _M_allocate (stl_vector.h:343)
+    n1: 1048576 0x10EFFE: _M_realloc_insert<std::complex<double> > (vector.tcc:440)
+     n1: 1048576 0x10EFFE: emplace_back<std::complex<double> > (vector.tcc:121)
+      n1: 1048576 0x10EFFE: push_back (stl_vector.h:1201)
+       n0: 1048576 0x10EFFE: main (main.cpp:220)
+ n0: 332783 in 12 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=49
+#-----------
+time=3629645634050
+mem_heap_B=38091775
+mem_heap_extra_B=6185
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=50
+#-----------
+time=3629645634419
+mem_heap_B=38091303
+mem_heap_extra_B=6169
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=51
+#-----------
+time=3629645641607
+mem_heap_B=38091182
+mem_heap_extra_B=6154
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=52
+#-----------
+time=3629645641672
+mem_heap_B=32324014
+mem_heap_extra_B=2106
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=53
+#-----------
+time=3629645641794
+mem_heap_B=32074006
+mem_heap_extra_B=2090
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=54
+#-----------
+time=3629645641860
+mem_heap_B=73990
+mem_heap_extra_B=114
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=55
+#-----------
+time=3629645641939
+mem_heap_B=73974
+mem_heap_extra_B=106
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=56
+#-----------
+time=3629645642001
+mem_heap_B=73894
+mem_heap_extra_B=90
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=57
+#-----------
+time=3629645642068
+mem_heap_B=73790
+mem_heap_extra_B=74
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=58
+#-----------
+time=3629645642179
+mem_heap_B=73769
+mem_heap_extra_B=55
+mem_stacks_B=0
+heap_tree=detailed
+n3: 73769 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+ n1: 72704 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+  n1: 72704 0x4011B99: call_init.part.0 (dl-init.c:72)
+   n1: 72704 0x4011CA0: call_init (dl-init.c:30)
+    n1: 72704 0x4011CA0: _dl_init (dl-init.c:119)
+     n0: 72704 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+ n1: 1024 0x4C1BD03: _IO_file_doallocate (filedoalloc.c:101)
+  n1: 1024 0x4C2BECF: _IO_doallocbuf (genops.c:347)
+   n1: 1024 0x4C2AF2F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:745)
+    n1: 1024 0x4C296B4: _IO_new_file_xsputn (fileops.c:1244)
+     n1: 1024 0x4C296B4: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1197)
+      n1: 1024 0x4C1D3C0: fwrite (iofwrite.c:39)
+       n1: 1024 0x4981853: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+        n1: 1024 0x121011: operator<< <std::char_traits<char> > (ostream:570)
+         n1: 1024 0x121011: get_config(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (config.cpp:24)
+          n0: 1024 0x10E7AC: main (main.cpp:13)
+ n0: 41 in 13 places, all below massif's threshold (1.00%)
+#-----------
+snapshot=59
+#-----------
+time=3629645642247
+mem_heap_B=73747
+mem_heap_extra_B=37
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=60
+#-----------
+time=3629645642315
+mem_heap_B=73728
+mem_heap_extra_B=16
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=61
+#-----------
+time=3629645650213
+mem_heap_B=1024
+mem_heap_extra_B=8
+mem_stacks_B=0
+heap_tree=empty
+#-----------
+snapshot=62
+#-----------
+time=3629645651944
+mem_heap_B=0
+mem_heap_extra_B=0
+mem_stacks_B=0
+heap_tree=empty

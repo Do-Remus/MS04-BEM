@@ -1,0 +1,228 @@
+--------------------------------------------------------------------------------
+Command:            out/helmholtz
+Massif arguments:   --massif-out-file=profiling/massif.out
+ms_print arguments: profiling/massif.out
+--------------------------------------------------------------------------------
+
+
+    MB
+36.34^:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::#
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |:                                                                      #
+     |@                                                                      #
+     |@                                                                      #
+   0 +----------------------------------------------------------------------->Ti
+     0                                                                   3.301
+
+Number of snapshots: 63
+ Detailed snapshots: [20, 30, 40, 48 (peak), 58]
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  0              0                0                0             0            0
+  1      2,417,549           72,712           72,704             8            0
+  2      3,060,187          221,328          221,246            82            0
+  3      3,406,071          368,784          368,702            82            0
+  4      4,049,218          958,616          958,526            90            0
+  5      4,106,628          663,696          663,614            82            0
+  6      5,392,847        1,843,352        1,843,262            90            0
+  7      5,507,601        1,253,520        1,253,438            82            0
+  8      8,201,052        3,612,824        3,612,734            90            0
+  9      8,430,494        2,433,168        2,433,086            82            0
+ 10     14,068,002        7,155,800        7,151,678         4,122            0
+ 11     14,526,820        4,796,496        4,792,382         4,114            0
+ 12     25,910,220        4,796,520        4,792,398         4,122            0
+ 13     26,553,649        4,796,560        4,792,430         4,130            0
+ 14     26,553,711        4,796,536        4,792,414         4,122            0
+ 15     27,197,120        4,796,608        4,792,478         4,130            0
+ 16     27,197,190        4,796,568        4,792,446         4,122            0
+ 17     28,483,958        4,796,704        4,792,574         4,130            0
+ 18     28,484,044        4,796,632        4,792,510         4,122            0
+ 19     31,057,530        4,796,896        4,792,766         4,130            0
+ 20     31,057,648        4,796,760        4,792,638         4,122            0
+99.91% (4,792,638B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.37% (4,718,592B) 0x11E6B6: allocate (new_allocator.h:114)
+| ->98.37% (4,718,592B) 0x11E6B6: allocate (alloc_traits.h:443)
+|   ->98.37% (4,718,592B) 0x11E6B6: _M_allocate (stl_vector.h:343)
+|     ->98.37% (4,718,592B) 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+|       ->98.37% (4,718,592B) 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+|         ->98.37% (4,718,592B) 0x11E3E8: push_back (stl_vector.h:1201)
+|           ->98.37% (4,718,592B) 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+|             ->98.37% (4,718,592B) 0x10EEFF: main (main.cpp:213)
+|               
+->01.52% (72,704B) 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+| ->01.52% (72,704B) 0x4011B99: call_init.part.0 (dl-init.c:72)
+|   ->01.52% (72,704B) 0x4011CA0: call_init (dl-init.c:30)
+|     ->01.52% (72,704B) 0x4011CA0: _dl_init (dl-init.c:119)
+|       ->01.52% (72,704B) 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+|         
+->00.03% (1,342B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 21     36,205,122        4,797,280        4,793,150         4,130            0
+ 22     36,205,304        4,797,016        4,792,894         4,122            0
+ 23     46,499,098        4,798,048        4,793,918         4,130            0
+ 24     46,499,408        4,797,528        4,793,406         4,122            0
+ 25     67,088,050        4,799,584        4,795,454         4,130            0
+ 26     67,088,616        4,798,552        4,794,430         4,122            0
+ 27    108,265,298        4,802,656        4,798,526         4,130            0
+ 28    108,266,376        4,800,600        4,796,478         4,122            0
+ 29    190,617,766        4,808,800        4,804,670         4,130            0
+ 30    190,619,868        4,804,696        4,800,574         4,122            0
+99.91% (4,800,574B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.21% (4,718,592B) 0x11E6B6: allocate (new_allocator.h:114)
+| ->98.21% (4,718,592B) 0x11E6B6: allocate (alloc_traits.h:443)
+|   ->98.21% (4,718,592B) 0x11E6B6: _M_allocate (stl_vector.h:343)
+|     ->98.21% (4,718,592B) 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+|       ->98.21% (4,718,592B) 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+|         ->98.21% (4,718,592B) 0x11E3E8: push_back (stl_vector.h:1201)
+|           ->98.21% (4,718,592B) 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+|             ->98.21% (4,718,592B) 0x10EEFF: main (main.cpp:213)
+|               
+->01.51% (72,704B) 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+| ->01.51% (72,704B) 0x4011B99: call_init.part.0 (dl-init.c:72)
+|   ->01.51% (72,704B) 0x4011CA0: call_init (dl-init.c:30)
+|     ->01.51% (72,704B) 0x4011CA0: _dl_init (dl-init.c:119)
+|       ->01.51% (72,704B) 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+|         
+->00.19% (9,278B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 31    355,344,981        4,821,088        4,816,958         4,130            0
+ 32    355,349,131        4,812,888        4,808,766         4,122            0
+ 33    684,913,990        4,845,664        4,841,534         4,130            0
+ 34    684,922,236        4,829,272        4,825,150         4,122            0
+ 35  1,344,342,284        4,894,816        4,890,686         4,130            0
+ 36  1,344,358,722        4,862,040        4,857,918         4,122            0
+ 37  2,663,567,890        4,993,120        4,988,990         4,130            0
+ 38  2,663,600,712        4,927,576        4,923,454         4,122            0
+ 39  5,302,436,972        5,189,728        5,185,598         4,130            0
+ 40  5,302,502,562        5,058,648        5,054,526         4,122            0
+99.92% (5,054,526B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->93.28% (4,718,592B) 0x11E6B6: allocate (new_allocator.h:114)
+| ->93.28% (4,718,592B) 0x11E6B6: allocate (alloc_traits.h:443)
+|   ->93.28% (4,718,592B) 0x11E6B6: _M_allocate (stl_vector.h:343)
+|     ->93.28% (4,718,592B) 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+|       ->93.28% (4,718,592B) 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+|         ->93.28% (4,718,592B) 0x11E3E8: push_back (stl_vector.h:1201)
+|           ->93.28% (4,718,592B) 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+|             ->93.28% (4,718,592B) 0x10EEFF: main (main.cpp:213)
+|               
+->05.18% (262,144B) 0x10EFFE: allocate (new_allocator.h:114)
+| ->05.18% (262,144B) 0x10EFFE: allocate (alloc_traits.h:443)
+|   ->05.18% (262,144B) 0x10EFFE: _M_allocate (stl_vector.h:343)
+|     ->05.18% (262,144B) 0x10EFFE: _M_realloc_insert<std::complex<double> > (vector.tcc:440)
+|       ->05.18% (262,144B) 0x10EFFE: emplace_back<std::complex<double> > (vector.tcc:121)
+|         ->05.18% (262,144B) 0x10EFFE: push_back (stl_vector.h:1201)
+|           ->05.18% (262,144B) 0x10EFFE: main (main.cpp:220)
+|             
+->01.44% (72,704B) 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+| ->01.44% (72,704B) 0x4011B99: call_init.part.0 (dl-init.c:72)
+|   ->01.44% (72,704B) 0x4011CA0: call_init (dl-init.c:30)
+|     ->01.44% (72,704B) 0x4011CA0: _dl_init (dl-init.c:119)
+|       ->01.44% (72,704B) 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+|         
+->00.02% (1,086B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 41 10,580,444,972        5,582,944        5,578,814         4,130            0
+ 42 10,580,576,098        5,320,792        5,316,670         4,122            0
+ 43 21,136,866,597        6,369,376        6,365,246         4,130            0
+ 44 21,137,128,795        5,845,080        5,840,958         4,122            0
+ 45 40,505,697,261        5,845,120        5,840,989         4,131            0
+ 46 40,505,708,599       37,856,136       37,849,959         6,177            0
+ 47 40,515,708,775       38,106,160       38,099,967         6,193            0
+ 48 3,629,645,634,050       38,106,160       38,099,967         6,193            0
+99.98% (38,099,967B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->83.98% (32,000,016B) 0x111AA6: allocate (new_allocator.h:114)
+| ->83.98% (32,000,016B) 0x111AA6: allocate (alloc_traits.h:443)
+|   ->83.98% (32,000,016B) 0x111AA6: _M_allocate (stl_vector.h:343)
+|     ->83.98% (32,000,016B) 0x111AA6: _M_create_storage (stl_vector.h:358)
+|       ->83.98% (32,000,016B) 0x111AA6: _Vector_base (stl_vector.h:302)
+|         ->83.98% (32,000,016B) 0x111AA6: vector (stl_vector.h:508)
+|           ->83.98% (32,000,016B) 0x111AA6: green_cached_vec(Point const&, Point const&) (utils.cpp:42)
+|             ->83.98% (32,000,016B) 0x10F7C9: operator() (main.cpp:253)
+|               ->83.98% (32,000,016B) 0x10F7C9: integ_simple<main()::<lambda(const Point&)> > (integrale.hpp:66)
+|                 ->83.98% (32,000,016B) 0x10F7C9: main (main.cpp:256)
+|                   
+->12.38% (4,718,592B) 0x11E6B6: allocate (new_allocator.h:114)
+| ->12.38% (4,718,592B) 0x11E6B6: allocate (alloc_traits.h:443)
+|   ->12.38% (4,718,592B) 0x11E6B6: _M_allocate (stl_vector.h:343)
+|     ->12.38% (4,718,592B) 0x11E6B6: void std::vector<Segment, std::allocator<Segment> >::_M_realloc_insert<Segment>(__gnu_cxx::__normal_iterator<Segment*, std::vector<Segment, std::allocator<Segment> > >, Segment&&) (vector.tcc:440)
+|       ->12.38% (4,718,592B) 0x11E8A2: Segment& std::vector<Segment, std::allocator<Segment> >::emplace_back<Segment>(Segment&&) (vector.tcc:121)
+|         ->12.38% (4,718,592B) 0x11E3E8: push_back (stl_vector.h:1201)
+|           ->12.38% (4,718,592B) 0x11E3E8: Maillage::ajoute_cercle(double, Cercle const&) (maillage.cpp:19)
+|             ->12.38% (4,718,592B) 0x10EEFF: main (main.cpp:213)
+|               
+->02.75% (1,048,576B) 0x10EFFE: allocate (new_allocator.h:114)
+| ->02.75% (1,048,576B) 0x10EFFE: allocate (alloc_traits.h:443)
+|   ->02.75% (1,048,576B) 0x10EFFE: _M_allocate (stl_vector.h:343)
+|     ->02.75% (1,048,576B) 0x10EFFE: _M_realloc_insert<std::complex<double> > (vector.tcc:440)
+|       ->02.75% (1,048,576B) 0x10EFFE: emplace_back<std::complex<double> > (vector.tcc:121)
+|         ->02.75% (1,048,576B) 0x10EFFE: push_back (stl_vector.h:1201)
+|           ->02.75% (1,048,576B) 0x10EFFE: main (main.cpp:220)
+|             
+->00.87% (332,783B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 49 3,629,645,634,050       38,097,960       38,091,775         6,185            0
+ 50 3,629,645,634,419       38,097,472       38,091,303         6,169            0
+ 51 3,629,645,641,607       38,097,336       38,091,182         6,154            0
+ 52 3,629,645,641,672       32,326,120       32,324,014         2,106            0
+ 53 3,629,645,641,794       32,076,096       32,074,006         2,090            0
+ 54 3,629,645,641,860           74,104           73,990           114            0
+ 55 3,629,645,641,939           74,080           73,974           106            0
+ 56 3,629,645,642,001           73,984           73,894            90            0
+ 57 3,629,645,642,068           73,864           73,790            74            0
+ 58 3,629,645,642,179           73,824           73,769            55            0
+99.93% (73,769B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->98.48% (72,704B) 0x48F4A69: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+| ->98.48% (72,704B) 0x4011B99: call_init.part.0 (dl-init.c:72)
+|   ->98.48% (72,704B) 0x4011CA0: call_init (dl-init.c:30)
+|     ->98.48% (72,704B) 0x4011CA0: _dl_init (dl-init.c:119)
+|       ->98.48% (72,704B) 0x4001139: ??? (in /usr/lib/x86_64-linux-gnu/ld-2.31.so)
+|         
+->01.39% (1,024B) 0x4C1BD03: _IO_file_doallocate (filedoalloc.c:101)
+| ->01.39% (1,024B) 0x4C2BECF: _IO_doallocbuf (genops.c:347)
+|   ->01.39% (1,024B) 0x4C2AF2F: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:745)
+|     ->01.39% (1,024B) 0x4C296B4: _IO_new_file_xsputn (fileops.c:1244)
+|       ->01.39% (1,024B) 0x4C296B4: _IO_file_xsputn@@GLIBC_2.2.5 (fileops.c:1197)
+|         ->01.39% (1,024B) 0x4C1D3C0: fwrite (iofwrite.c:39)
+|           ->01.39% (1,024B) 0x4981853: std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28)
+|             ->01.39% (1,024B) 0x121011: operator<< <std::char_traits<char> > (ostream:570)
+|               ->01.39% (1,024B) 0x121011: get_config(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (config.cpp:24)
+|                 ->01.39% (1,024B) 0x10E7AC: main (main.cpp:13)
+|                   
+->00.06% (41B) in 1+ places, all below ms_print's threshold (01.00%)
+
+--------------------------------------------------------------------------------
+  n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+ 59 3,629,645,642,247           73,784           73,747            37            0
+ 60 3,629,645,642,315           73,744           73,728            16            0
+ 61 3,629,645,650,213            1,032            1,024             8            0
+ 62 3,629,645,651,944                0                0             0            0

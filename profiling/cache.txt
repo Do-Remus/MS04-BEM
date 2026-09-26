@@ -1,0 +1,23 @@
+# started on Sat Sep 26 08:58:03 2026
+
+
+ Performance counter stats for 'out/helmholtz':
+
+     1218176977598      cycles:u                                                    
+     3209130459289      instructions:u            #    2.63  insn per cycle         
+       17676255326      cache-references:u                                          
+        3896585109      cache-misses:u            #   22.044 % of all cache refs    
+     1188858217734      L1-dcache-loads:u                                           
+       19048877287      L1-dcache-load-misses:u   #    1.60% of all L1-dcache hits  
+   <not supported>      LLC-loads:u                                                 
+   <not supported>      LLC-load-misses:u                                           
+             10685      page-faults:u                                               
+             10685      minor-faults:u                                              
+                 0      major-faults:u                                              
+
+     404.260258016 seconds time elapsed
+
+     399.305409000 seconds user
+       4.773628000 seconds sys
+
+

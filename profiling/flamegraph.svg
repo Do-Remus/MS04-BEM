@@ -1,0 +1,678 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="198" onload="init(evt)" viewBox="0 0 1200 198" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom(true);
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				// we have basically done a clearzoom so clear the url
+				var params = get_params();
+				if (params.x) delete params.x;
+				if (params.y) delete params.y;
+				history.replaceState(null, null, parse_params(params));
+				unzoombtn.classList.add("hide");
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		var sl = t.getSubStringLength(0, txt.length);
+		// check if only whitespace or if we can fit the entire string into width w
+		if (/^ *$/.test(txt) || sl < w)
+			return;
+
+		// this isn't perfect, but gives a good starting point
+		// and avoids calling getSubStringLength too often
+		var start = Math.floor((w/sl) * txt.length);
+		for (var x = start; x > 0; x = x-2) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom(dont_update_text) {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			if(!dont_update_text) update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+		if (currentSearchTerm === null) return;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="198.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="181" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="181" > </text>
+<g id="frames">
+<g >
+<title>sincos (171,262,248 samples, 0.01%)</title><rect x="1185.3" y="101" width="0.2" height="15.0" fill="rgb(232,125,30)" rx="2" ry="2" />
+<text  x="1188.33" y="111.5" ></text>
+</g>
+<g >
+<title>swapcontext (99,905,916 samples, 0.01%)</title><rect x="1189.0" y="69" width="0.1" height="15.0" fill="rgb(208,15,3)" rx="2" ry="2" />
+<text  x="1192.04" y="79.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_j1&lt;long double&gt; (644,929,692 samples, 0.06%)</title><rect x="1120.9" y="37" width="0.7" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
+<text  x="1123.91" y="47.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::~num_put (1,336,830,181 samples, 0.11%)</title><rect x="15.4" y="101" width="1.3" height="15.0" fill="rgb(221,76,18)" rx="2" ry="2" />
+<text  x="18.36" y="111.5" ></text>
+</g>
+<g >
+<title>operator- (17,623,251,042 samples, 1.52%)</title><rect x="1167.4" y="101" width="17.9" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
+<text  x="1170.45" y="111.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_j1&lt;long double&gt; (413,840,775 samples, 0.04%)</title><rect x="1116.3" y="53" width="0.5" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
+<text  x="1119.34" y="63.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_y1&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (1,461,703,749 samples, 0.13%)</title><rect x="1124.8" y="37" width="1.5" height="15.0" fill="rgb(240,162,38)" rx="2" ry="2" />
+<text  x="1127.79" y="47.5" ></text>
+</g>
+<g >
+<title>sincosl (127,232,650 samples, 0.01%)</title><rect x="1186.9" y="101" width="0.1" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
+<text  x="1189.88" y="111.5" ></text>
+</g>
+<g >
+<title>__dynamic_cast (140,177,912 samples, 0.01%)</title><rect x="15.7" y="53" width="0.2" height="15.0" fill="rgb(227,102,24)" rx="2" ry="2" />
+<text  x="18.72" y="63.5" ></text>
+</g>
+<g >
+<title>__libc_start_main (1,144,241,181,473 samples, 98.41%)</title><rect x="24.6" y="117" width="1161.3" height="15.0" fill="rgb(236,142,34)" rx="2" ry="2" />
+<text  x="27.63" y="127.5" >__libc_start_main</text>
+</g>
+<g >
+<title>fileno (112,262,604 samples, 0.01%)</title><rect x="14.6" y="101" width="0.1" height="15.0" fill="rgb(248,200,47)" rx="2" ry="2" />
+<text  x="17.59" y="111.5" ></text>
+</g>
+<g >
+<title>operator* (27,173,236,908 samples, 2.34%)</title><rect x="1126.5" y="101" width="27.6" height="15.0" fill="rgb(233,130,31)" rx="2" ry="2" />
+<text  x="1129.53" y="111.5" >o..</text>
+</g>
+<g >
+<title>operator- (25,614,641,942 samples, 2.20%)</title><rect x="1086.3" y="85" width="26.0" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
+<text  x="1089.27" y="95.5" >o..</text>
+</g>
+<g >
+<title>hankel_n (9,525,482,442 samples, 0.82%)</title><rect x="1116.9" y="69" width="9.6" height="15.0" fill="rgb(238,156,37)" rx="2" ry="2" />
+<text  x="1119.87" y="79.5" ></text>
+</g>
+<g >
+<title>std::use_facet&lt;std::ctype&lt;char&gt; &gt; (142,786,338 samples, 0.01%)</title><rect x="16.6" y="53" width="0.1" height="15.0" fill="rgb(242,174,41)" rx="2" ry="2" />
+<text  x="19.57" y="63.5" ></text>
+</g>
+<g >
+<title>modf (397,773,235 samples, 0.03%)</title><rect x="1187.2" y="117" width="0.4" height="15.0" fill="rgb(237,149,35)" rx="2" ry="2" />
+<text  x="1190.18" y="127.5" ></text>
+</g>
+<g >
+<title>[unknown] (280,367,636 samples, 0.02%)</title><rect x="16.8" y="85" width="0.3" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="19.79" y="95.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_yn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (111,075,024 samples, 0.01%)</title><rect x="1086.2" y="53" width="0.1" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="1089.15" y="63.5" ></text>
+</g>
+<g >
+<title>green_cached_vec (169,680,210 samples, 0.01%)</title><rect x="1187.0" y="117" width="0.2" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
+<text  x="1190.01" y="127.5" ></text>
+</g>
+<g >
+<title>sincosl (406,799,992 samples, 0.03%)</title><rect x="14.8" y="101" width="0.5" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
+<text  x="17.84" y="111.5" ></text>
+</g>
+<g >
+<title>psiginfo (1,793,162,680 samples, 0.15%)</title><rect x="1188.1" y="85" width="1.9" height="15.0" fill="rgb(238,154,37)" rx="2" ry="2" />
+<text  x="1191.15" y="95.5" ></text>
+</g>
+<g >
+<title>green_cached_vec (40,936,769,073 samples, 3.52%)</title><rect x="24.8" y="101" width="41.6" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
+<text  x="27.80" y="111.5" >gre..</text>
+</g>
+<g >
+<title>__uselocale (141,117,360 samples, 0.01%)</title><rect x="16.0" y="53" width="0.1" height="15.0" fill="rgb(254,225,53)" rx="2" ry="2" />
+<text  x="18.95" y="63.5" ></text>
+</g>
+<g >
+<title>[unknown] (1,336,830,181 samples, 0.11%)</title><rect x="15.4" y="85" width="1.3" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="18.36" y="95.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (4,462,787,828 samples, 0.38%)</title><rect x="1117.1" y="53" width="4.5" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="1120.07" y="63.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::_M_insert_float&lt;double&gt; (241,566,947 samples, 0.02%)</title><rect x="16.3" y="53" width="0.2" height="15.0" fill="rgb(250,208,49)" rx="2" ry="2" />
+<text  x="19.29" y="63.5" ></text>
+</g>
+<g >
+<title>Point::norm (68,393,197,120 samples, 5.88%)</title><rect x="486.0" y="85" width="69.4" height="15.0" fill="rgb(223,87,20)" rx="2" ry="2" />
+<text  x="488.98" y="95.5" >Point::..</text>
+</g>
+<g >
+<title>boost::math::detail::bessel_y0&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (1,644,705,160 samples, 0.14%)</title><rect x="1123.1" y="37" width="1.7" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
+<text  x="1126.12" y="47.5" ></text>
+</g>
+<g >
+<title>__exp2f128_finite (487,713,561 samples, 0.04%)</title><rect x="1122.6" y="37" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1125.62" y="47.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::do_put (105,589,018 samples, 0.01%)</title><rect x="15.4" y="69" width="0.1" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="18.44" y="79.5" ></text>
+</g>
+<g >
+<title>vprintf (814,718,068 samples, 0.07%)</title><rect x="1189.1" y="69" width="0.9" height="15.0" fill="rgb(244,180,43)" rx="2" ry="2" />
+<text  x="1192.14" y="79.5" ></text>
+</g>
+<g >
+<title>std::num_put&lt;char, std::ostreambuf_iterator&lt;char, std::char_traits&lt;char&gt; &gt; &gt;::_M_pad (2,252,282,208 samples, 0.19%)</title><rect x="1187.7" y="117" width="2.3" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
+<text  x="1190.68" y="127.5" ></text>
+</g>
+<g >
+<title>psiginfo (152,851,741 samples, 0.01%)</title><rect x="1187.7" y="101" width="0.1" height="15.0" fill="rgb(238,154,37)" rx="2" ry="2" />
+<text  x="1190.68" y="111.5" ></text>
+</g>
+<g >
+<title>__exp2f128_finite (219,824,763 samples, 0.02%)</title><rect x="1114.9" y="53" width="0.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1117.89" y="63.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_yn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (4,587,217,029 samples, 0.39%)</title><rect x="1121.7" y="53" width="4.7" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="1124.71" y="63.5" ></text>
+</g>
+<g >
+<title>operator+ (13,136,893,990 samples, 1.13%)</title><rect x="1154.1" y="101" width="13.3" height="15.0" fill="rgb(226,100,24)" rx="2" ry="2" />
+<text  x="1157.11" y="111.5" ></text>
+</g>
+<g >
+<title>get_config (886,740,029 samples, 0.08%)</title><rect x="1186.1" y="117" width="0.9" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="1189.11" y="127.5" ></text>
+</g>
+<g >
+<title>hankel_n (189,376,116 samples, 0.02%)</title><rect x="1086.1" y="69" width="0.2" height="15.0" fill="rgb(238,156,37)" rx="2" ry="2" />
+<text  x="1089.07" y="79.5" ></text>
+</g>
+<g >
+<title>__exp2f128_finite (2,068,719,133 samples, 0.18%)</title><rect x="10.2" y="101" width="2.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.16" y="111.5" ></text>
+</g>
+<g >
+<title>helmholtz (1,162,675,739,376 samples, 100.00%)</title><rect x="10.0" y="133" width="1180.0" height="15.0" fill="rgb(213,38,9)" rx="2" ry="2" />
+<text  x="13.00" y="143.5" >helmholtz</text>
+</g>
+<g >
+<title>__nss_database_lookup (196,213,946 samples, 0.02%)</title><rect x="1187.9" y="85" width="0.2" height="15.0" fill="rgb(206,7,1)" rx="2" ry="2" />
+<text  x="1190.87" y="95.5" ></text>
+</g>
+<g >
+<title>std::ostream::_M_insert&lt;double&gt; (1,156,844,029 samples, 0.10%)</title><rect x="15.5" y="69" width="1.2" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="18.54" y="79.5" ></text>
+</g>
+<g >
+<title>all (1,162,675,739,376 samples, 100%)</title><rect x="10.0" y="149" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<text  x="13.00" y="159.5" ></text>
+</g>
+<g >
+<title>sincos (134,205,813 samples, 0.01%)</title><rect x="14.7" y="101" width="0.1" height="15.0" fill="rgb(232,125,30)" rx="2" ry="2" />
+<text  x="17.71" y="111.5" ></text>
+</g>
+<g >
+<title>std::basic_filebuf&lt;char, std::char_traits&lt;char&gt; &gt;::sync (108,906,683 samples, 0.01%)</title><rect x="1185.6" y="101" width="0.1" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="1188.59" y="111.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_j0&lt;long double&gt; (1,293,814,139 samples, 0.11%)</title><rect x="1119.6" y="37" width="1.3" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="1122.59" y="47.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_j0&lt;long double&gt; (1,207,479,280 samples, 0.10%)</title><rect x="1115.1" y="53" width="1.2" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="1118.11" y="63.5" ></text>
+</g>
+<g >
+<title>boost::math::detail::bessel_jn&lt;long double, boost::math::policies::policy&lt;boost::math::policies::promote_float&lt;false&gt;, boost::math::policies::promote_double&lt;false&gt;, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy, boost::math::policies::default_policy&gt; &gt; (4,441,751,993 samples, 0.38%)</title><rect x="1112.3" y="69" width="4.5" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="1115.29" y="79.5" ></text>
+</g>
+<g >
+<title>__exp2f128_finite (739,871,428 samples, 0.06%)</title><rect x="1186.1" y="101" width="0.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1189.11" y="111.5" ></text>
+</g>
+<g >
+<title>vscanf (2,099,430,467 samples, 0.18%)</title><rect x="1187.8" y="101" width="2.2" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="1190.84" y="111.5" ></text>
+</g>
+<g >
+<title>main (1,044,618,457,336 samples, 89.85%)</title><rect x="66.4" y="101" width="1060.1" height="15.0" fill="rgb(243,179,42)" rx="2" ry="2" />
+<text  x="69.35" y="111.5" >main</text>
+</g>
+<g >
+<title>std::ostream::sentry::sentry (169,680,210 samples, 0.01%)</title><rect x="1187.0" y="101" width="0.2" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="1190.01" y="111.5" ></text>
+</g>
+<g >
+<title>green_cached_vec (522,928,046,742 samples, 44.98%)</title><rect x="555.5" y="85" width="530.8" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
+<text  x="558.55" y="95.5" >green_cached_vec</text>
+</g>
+<g >
+<title>std::ostream::_M_insert&lt;double&gt; (137,795,267 samples, 0.01%)</title><rect x="1185.7" y="101" width="0.1" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="1188.70" y="111.5" ></text>
+</g>
+<g >
+<title>fesetmode (164,609,884 samples, 0.01%)</title><rect x="1126.4" y="53" width="0.1" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="1129.37" y="63.5" ></text>
+</g>
+<g >
+<title>write (280,367,636 samples, 0.02%)</title><rect x="16.8" y="101" width="0.3" height="15.0" fill="rgb(228,107,25)" rx="2" ry="2" />
+<text  x="19.79" y="111.5" ></text>
+</g>
+<g >
+<title>__iscanonicall (2,296,492,532 samples, 0.20%)</title><rect x="12.3" y="101" width="2.3" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="15.26" y="111.5" ></text>
+</g>
+<g >
+<title>[unknown] (6,933,992,391 samples, 0.60%)</title><rect x="10.0" y="117" width="7.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.04" y="127.5" ></text>
+</g>
+<g >
+<title>p_analytique (14,063,460,023 samples, 1.21%)</title><rect x="1112.3" y="85" width="14.2" height="15.0" fill="rgb(217,56,13)" rx="2" ry="2" />
+<text  x="1115.26" y="95.5" ></text>
+</g>
+<g >
+<title>__iscanonicall (7,370,594,167 samples, 0.63%)</title><rect x="17.2" y="117" width="7.4" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="20.15" y="127.5" ></text>
+</g>
+<g >
+<title>[libstdc++.so.6.0.28] (101,503,498 samples, 0.01%)</title><rect x="15.6" y="53" width="0.1" height="15.0" fill="rgb(240,162,38)" rx="2" ry="2" />
+<text  x="18.61" y="63.5" ></text>
+</g>
+</g>
+</svg>

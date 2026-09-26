@@ -192,13 +192,18 @@ int main()
         // -- Parametres --
         const double rayon = 1.;
         const double delta = 0.2;
-        const double pas = 0.001;
-        const unsigned int nbPointSolution = 10000;
+        const double pas = 0.0001;
+        const unsigned int nbPointSolution = 100000;
         const unsigned int idxTroncature = 25;
         const unsigned int ordre = 4;
+        const unsigned int max_distance = 20;
 
-        green_cache_step = pas * 0.1;
-        max_index = 200000;
+        green_cache_step = pas / k;
+        max_index = max_distance / green_cache_step;
+
+        // -- Start time --
+
+        std::clock_t start = std::clock();
 
         // -- Création maillage --
         Point O(0, 0);
@@ -256,6 +261,15 @@ int main()
         }
 
         file.close();
+
+        // -- End time --
+
+        std::clock_t end = std::clock();
+
+        double seconds =
+            static_cast<double>(end - start) / CLOCKS_PER_SEC;
+
+        std::cout << "Time: " << seconds << " seconds\n";
 
 #endif
     }
