@@ -7,7 +7,59 @@ complex<double> hankel_n(const double x, const int n)
 
 complex<double> green(const Point &p1, const Point &p2)
 {
-    return (I / 4.0) * hankel_n(k * (p1 - p2).norm(), 0);
+    double r = (p1 - p2).norm();
+
+    return (I / 4.0) * hankel_n(k * r, 0);
+}
+
+complex<double> green_cached_map(const Point &p1, const Point &p2)
+{
+    static std::unordered_map<std::size_t, complex<double>> green_cache;
+
+    const double distance = (p1 - p2).norm();
+
+    const std::size_t index = static_cast<std::size_t>(distance / green_cache_step + 0.5);
+
+    auto it = green_cache.find(index);
+
+    if (it != green_cache.end())
+    {
+        return it->second;
+    }
+
+    const double quantized_distance = index * green_cache_step;
+
+    const complex<double> value =
+        (I / 4.0) * hankel_n(k * quantized_distance, 0);
+
+    green_cache[index] = value;
+
+    return value;
+}
+
+complex<double> green_cached_vec(const Point &p1, const Point &p2)
+{
+    static std::vector<std::complex<double>> green_cache(max_index + 1);
+    static std::vector<bool> computed(max_index + 1, false);
+
+    const double distance = (p1 - p2).norm();
+
+    const std::size_t index = static_cast<std::size_t>(distance / green_cache_step + 0.5);
+
+    assert(index < max_index + 1);
+
+    if (computed[index])
+        return green_cache[index];
+
+    const double quantized_distance = index * green_cache_step;
+
+    const complex<double> value =
+        (I / 4.0) * hankel_n(k * quantized_distance, 0);
+
+    green_cache[index] = value;
+    computed[index] = true;
+
+    return value;
 }
 
 #ifdef TP0

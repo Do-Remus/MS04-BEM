@@ -220,6 +220,9 @@ int main()
         const unsigned int idxTroncature = 25;
         const unsigned int ordre = 4;
 
+        green_cache_step = pas * 0.1;
+        max_index = 200000;
+
         // -- Création maillage --
         Point O(0, 0);
         std::cout << "Info Maillage: centre du cercle = " << O << ", rayon du cercle = " << rayon << ", pas du maillage = " << pas << endl;
@@ -232,7 +235,7 @@ int main()
         vector<complex<double>> vect_p;
         for (unsigned int i = 0; i < maillage.size(); i++)
         {
-            vect_p.push_back(p_analytique(maillage[i].milieu(), idxTroncature));
+            vect_p.push_back(p_analytique(maillage[i].milieu, idxTroncature));
         }
 
         // -- Créqtion du fichier de résultat --
@@ -244,6 +247,9 @@ int main()
             std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
             exit(-1);
         }
+
+        // -- Récupération des coefficients de Legendre --
+        const LegendreData &legendreData = get_legendre_data(ordre);
 
         // -- Construction solution approchée--
         double rayon_sol = rayon + delta;
@@ -257,14 +263,16 @@ int main()
 
             const Point Pj{rayon_sol * std::cos(theta), rayon_sol * std::sin(theta)};
 
-            fun_d_P f = [&Pj](const Point &Q)
-            {
-                return green(Pj, Q);
-            };
-
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
             {
-                uPj += integ_simple(f, maillage[i], ordre) * vect_p[i];
+                uPj += integ_simple(
+                           [&Pj](const Point &Q)
+                           {
+                               return green_cached_vec(Pj, Q);
+                           },
+                           maillage[i],
+                           legendreData) *
+                       vect_p[i];
             }
 
             file << Pj.x << " " << Pj.y << " " << uPj.real() << " " << uPj.imag() << endl;

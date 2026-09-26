@@ -12,11 +12,14 @@ class Segment
 public:
     Point P1;
     Point P2;
+    Point milieu;
+    Point vecteur_norm;
+    double norm;
     Segment() {};
     Segment(const Point &A, const Point &B);
-    double norm() const;
+    // double norm() const;
     Point normale() const;
-    Point milieu() const;
+    // Point milieu() const;
 };
 
 /* Fonctions associées à la classe Segment */

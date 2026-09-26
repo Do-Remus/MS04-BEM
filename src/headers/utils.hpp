@@ -13,6 +13,12 @@ complex<double> hankel_n(const double x, const int n);
 // Green
 complex<double> green(const Point &p1, const Point &p2);
 
+// Green cached with unordered map (slower but no size limit at compile time)
+complex<double> green_cached_map(const Point &p1, const Point &p2);
+
+// Green cached with a vector (faster but fixed size at compile time)
+complex<double> green_cached_vec(const Point &p1, const Point &p2);
+
 // solution approche (jusqu'au terme N de la somme) exterieure pour cas 1 disque de rayon radius evalué au point P = (r, theta)
 #ifdef TP0
 complex<double> u_N_plus_analytique(const Point &P1, double radius, int N, const string &filename);
