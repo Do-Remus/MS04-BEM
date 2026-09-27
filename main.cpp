@@ -215,10 +215,10 @@ int main()
 
         // -- Parametres Maillage --
         const double rayon = 1.; // rayon cercle du maillage
-        pasMaillage = 0.1;       // pas du maillage
+        pasMaillage = 0.01;       // pas du maillage
 
         // -- Parametres Solution --
-        const double L = 4.;              // Domaine LxL pour le calcul de la solution
+        const double L = 10.;              // Domaine LxL pour le calcul de la solution
         const double pasSolution = 0.1;   // pas de la solution
         const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
 
