@@ -215,10 +215,10 @@ int main()
 
         // -- Parametres Maillage --
         const double rayon = 1.; // rayon cercle du maillage
-        pasMaillage = 0.01;       // pas du maillage
+        pasMaillage = 0.1;       // pas du maillage
 
         // -- Parametres Solution --
-        const double L = 10.;              // Domaine LxL pour le calcul de la solution
+        const double L = 4.;              // Domaine LxL pour le calcul de la solution
         const double pasSolution = 0.1;   // pas de la solution
         const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
 
@@ -292,9 +292,16 @@ int main()
 
         // -- Calcul du vecteur de p sur les milieux des bords --
         vector<complex<double>> vect_p;
-        for (unsigned int i = 0; i < maillage.size(); i++)
+        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
             vect_p.push_back(p_analytique(maillage[i].milieu, idxTroncature));
+        }
+
+        // -- Calcul du vecteur de p aux noeuds
+        std::vector<std::complex<double>> pNoeuds;
+        for (unsigned int i = 0; i < nbSegmentsMaillage; ++i)
+        {
+            pNoeuds.push_back(p_analytique(maillage[i].P1, idxTroncature));
         }
 
         // -- Création du fichier de résultat --
@@ -322,13 +329,30 @@ int main()
         double tempsGreen = 0.0;
         double tempsCached = 0.0;
 
+        double erreurCacheL2Lin = 0.0;
+        double erreurExacteL2Lin = 0.0;
+        double erreurTotaleL2Lin = 0.0;
+
+        double erreurCacheMaxLin = 0.0;
+        double erreurExacteMaxLin = 0.0;
+        double erreurTotaleMaxLin = 0.0;
+
+        double tempsGreenLin = 0.0;
+        double tempsCachedLin = 0.0;
+
         for (const Point &Pj : pointsSolution)
         {
             complex<double> uGreen = 0.0;
             complex<double> uCached = 0.0;
 
-            // Solution analytique
+            complex<double> uGreenLin = 0.0;
+            complex<double> uCachedLin = 0.0;
+
+            // -- Solution analytique --
+
             const complex<double> uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
+
+            // -- Interpolation cte --
 
             // Green exacte
             std::clock_t startGreen = std::clock();
@@ -336,7 +360,7 @@ int main()
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
             {
                 uGreen += vect_p[i] * integ_simple(
-                                          [&Pj](const Point &Q)
+                                          [&Pj](const Point &Q, double)
                                           {
                                               return green(Pj, Q);
                                           },
@@ -354,7 +378,7 @@ int main()
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
             {
                 uCached += vect_p[i] * integ_simple(
-                                           [&Pj](const Point &Q)
+                                           [&Pj](const Point &Q, double)
                                            {
                                                return green_cached_vec(Pj, Q);
                                            },
@@ -380,7 +404,70 @@ int main()
             erreurExacteMax = std::max(erreurExacteMax, erreurExacte);
             erreurTotaleMax = std::max(erreurTotaleMax, erreurTotale);
 
-            // Fichier
+            // -- Interpolation linéaire --
+
+            // Green exacte Lin
+            std::clock_t startGreenLin = std::clock();
+
+            for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+            {
+                const std::complex<double> pA = pNoeuds[i];
+                const std::complex<double> pB = pNoeuds[(i + 1) % nbSegmentsMaillage];
+                uGreenLin += integ_simple([&Pj, pA, pB](const Point &Q, double r)
+                                          {
+                                            const double N1 = 0.5 * (1.0 - r);
+                                            const double N2 = 0.5 * (1.0 + r);
+
+                                            const std::complex<double> p = N1 * pA + N2 * pB;
+
+                                            return green(Pj, Q) * p; },
+                                          maillage[i],
+                                          legendreData);
+            }
+
+            std::clock_t endGreenLin = std::clock();
+
+            tempsGreenLin += static_cast<double>(endGreenLin - startGreenLin) / CLOCKS_PER_SEC;
+
+            // Green cached Lin
+            std::clock_t startCachedLin = std::clock();
+
+            for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+            {
+                const std::complex<double> pA = pNoeuds[i];
+                const std::complex<double> pB = pNoeuds[(i + 1) % nbSegmentsMaillage];
+                uCachedLin += integ_simple([&Pj, pA, pB](const Point &Q, double r)
+                                           {
+                                            const double N1 = 0.5 * (1.0 - r);
+                                            const double N2 = 0.5 * (1.0 + r);
+
+                                            const std::complex<double> p = N1 * pA + N2 * pB;
+
+                                            return green_cached_vec(Pj, Q) * p; },
+                                           maillage[i],
+                                           legendreData);
+            }
+
+            std::clock_t endCachedLin = std::clock();
+
+            tempsCachedLin += static_cast<double>(endCachedLin - startCachedLin) / CLOCKS_PER_SEC;
+
+            // Erreurs locales
+            const double erreurCacheLin = std::abs(uGreenLin - uCachedLin);
+            const double erreurExacteLin = std::abs(uGreenLin - uExact);
+            const double erreurTotaleLin = std::abs(uExact - uCachedLin);
+
+            // Accumulation
+            erreurCacheL2Lin += erreurCacheLin * erreurCacheLin;
+            erreurExacteL2Lin += erreurExacteLin * erreurExacteLin;
+            erreurTotaleL2Lin += erreurTotaleLin * erreurTotaleLin;
+
+            erreurCacheMaxLin = std::max(erreurCacheMaxLin, erreurCacheLin);
+            erreurExacteMaxLin = std::max(erreurExacteMaxLin, erreurExacteLin);
+            erreurTotaleMaxLin = std::max(erreurTotaleMaxLin, erreurTotaleLin);
+
+            // -- Ecriture Fichier --
+
             file
                 << Pj.x << " "
                 << Pj.y << " "
@@ -393,6 +480,16 @@ int main()
 
                 << uCached.real() << " "
                 << uCached.imag() << " "
+
+                << uGreenLin.real() << " "
+                << uGreenLin.imag() << " "
+
+                << uCachedLin.real() << " "
+                << uCachedLin.imag() << " "
+
+                << erreurCacheLin << " "
+                << erreurExacteLin << " "
+                << erreurTotaleLin << " "
 
                 << erreurCache << " "
                 << erreurExacte << " "
@@ -409,22 +506,44 @@ int main()
         erreurExacteL2 = std::sqrt(erreurExacteL2 / static_cast<double>(nbPointsSolution));
         erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<double>(nbPointsSolution));
 
+        erreurCacheL2Lin = std::sqrt(erreurCacheL2Lin / static_cast<double>(nbPointsSolution));
+        erreurExacteL2Lin = std::sqrt(erreurExacteL2Lin / static_cast<double>(nbPointsSolution));
+        erreurTotaleL2Lin = std::sqrt(erreurTotaleL2Lin / static_cast<double>(nbPointsSolution));
+
         // -- Prints --
 
-        std::cout << "\n=== Erreurs ===" << std::endl
-                  << "    erreur L² : Green = "
+        std::cout << "\n=== Erreurs ===" << std::endl;
+
+        std::cout << "    P0 erreur L² : Green = "
                   << erreurExacteL2
                   << ", Cache = "
                   << erreurCacheL2
                   << ", Totale = "
                   << erreurTotaleL2
-                  << endl
-                  << "    erreur L∞ : Green = "
+                  << endl;
+
+        std::cout << "    P0 erreur L∞ : Green = "
                   << erreurExacteMax
                   << ", Cache = "
                   << erreurCacheMax
                   << ", Totale = "
                   << erreurTotaleMax
+                  << endl;
+
+        std::cout << "    P1 erreur L² : Green = "
+                  << erreurExacteL2Lin
+                  << ", Cache = "
+                  << erreurCacheL2Lin
+                  << ", Totale = "
+                  << erreurTotaleL2Lin
+                  << endl;
+
+        std::cout << "    P1 erreur L∞ : Green = "
+                  << erreurExacteMaxLin
+                  << ", Cache = "
+                  << erreurCacheMaxLin
+                  << ", Totale = "
+                  << erreurTotaleMaxLin
                   << endl;
 
         // -- End time --
@@ -433,11 +552,15 @@ int main()
         double seconds = static_cast<double>(end - start) / CLOCKS_PER_SEC;
 
         std::cout << "\n=== Temps ===" << std::endl;
-        std::cout << "    execution       : " << seconds << " seconds" << endl;
-        std::cout << "    green           : " << tempsGreen << "seconds" << endl;
-        std::cout << "    green cached    : " << tempsCached << "seconds" << endl;
-        std::cout << "    speedup         : " << tempsGreen / tempsCached << " x" << std::endl;
-        std::cout << "    gain de temps   : " << (1.0 - tempsCached / tempsGreen) * 100.0 << " %" << std::endl;
+        std::cout << "    execution           : " << seconds << " seconds" << endl;
+        std::cout << "    green               : " << tempsGreen << " seconds" << endl;
+        std::cout << "    green cached        : " << tempsCached << " seconds" << endl;
+        std::cout << "    speedup             : " << tempsGreen / tempsCached << " x" << std::endl;
+        std::cout << "    gain de temps       : " << (1.0 - tempsCached / tempsGreen) * 100.0 << " %" << std::endl;
+        std::cout << "    green lin           : " << tempsGreenLin << " seconds" << endl;
+        std::cout << "    green cached lin    : " << tempsCachedLin << " seconds" << endl;
+        std::cout << "    speedup lin         : " << tempsGreenLin / tempsCachedLin << " x" << std::endl;
+        std::cout << "    gain de temps lin   : " << (1.0 - tempsCachedLin / tempsGreenLin) * 100.0 << " %" << std::endl;
 
 #endif
     }
