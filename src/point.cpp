@@ -59,7 +59,7 @@ double Point::theta() const { return std::atan2(this->y, this->x); }
 
 ostream &operator<<(ostream &out, const Point &A)
 {
-    out << "(" << A.x << ";" << A.y << ")" << endl;
+    out << "(" << A.x << ";" << A.y << ")";
     return out;
 }
 

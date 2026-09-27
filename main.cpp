@@ -26,8 +26,6 @@ int main()
         std::cout << "norme C = " << C.norm() << endl;
         std::cout << "produit vectoriel composante z = " << M * C << endl;
 
-        
-
         // tests Cercle
         Cercle B(10, M);
         std::cout << "obstacle point " << B.centre.x << "," << B.centre.y << endl;
@@ -50,26 +48,26 @@ int main()
         monMaillage.export_maillage("outputs/test.txt");
         std::cout << "exported maillage" << endl;
 
-        //Tests Matrice
-        Matrice MMM(3,3);
-        cout<<MMM<<endl;
-        MMM(1,1) =1;
-        MMM(1,2) =2;
-        MMM(3,2) = 3;
-        cout<<MMM<<endl;
+        // Tests Matrice
+        Matrice MMM(3, 3);
+        cout << MMM << endl;
+        MMM(1, 1) = 1;
+        MMM(1, 2) = 2;
+        MMM(3, 2) = 3;
+        cout << MMM << endl;
 
-        Matrice BBB(3,2);
-        cout<<BBB<<endl;
-        BBB(3,2) =1;
-        BBB(1,2) =2;
-        BBB(2,1) = 0;
-        BBB(1,1) = 3;
-        cout<<BBB<<endl;
+        Matrice BBB(3, 2);
+        cout << BBB << endl;
+        BBB(3, 2) = 1;
+        BBB(1, 2) = 2;
+        BBB(2, 1) = 0;
+        BBB(1, 1) = 3;
+        cout << BBB << endl;
 
         Vecteur v(2);
-        v[0] =1;
-        v[1] =1;
-        cout<<BBB*v<<endl;
+        v[0] = 1;
+        v[1] = 1;
+        cout << BBB * v << endl;
     }
 
     if (effectuerLaSimulation)
@@ -212,29 +210,85 @@ int main()
 #ifdef TP1
         /* ----- TP1 ----- */
 
-        // -- Parametres --
-        const double rayon = 1.;
-        const double delta = 0.2;
-        const double pas = 0.0001;
-        const unsigned int nbPointSolution = 100000;
+        // -- Parametres du problème --
+        k = 10;
+
+        // -- Parametres Maillage --
+        const double rayon = 1.; // rayon cercle du maillage
+        pasMaillage = 0.1;       // pas du maillage
+
+        // -- Parametres Solution --
+        const double L = 4.;              // Domaine LxL pour le calcul de la solution
+        const double pasSolution = 0.1;   // pas de la solution
+        const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
+
+        // -- Parametre  d'approximation --
         const unsigned int idxTroncature = 25;
         const unsigned int ordre = 4;
-        const unsigned int max_distance = 20;
+        green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
+        max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
 
-        green_cache_step = pas / k;
-        max_index = max_distance / green_cache_step;
+        std::cout << "\n=== Parametres du probleme ===" << std::endl;
+        std::cout << "  Nombre d'onde k          : " << k << std::endl;
+
+        std::cout << "\n  --- Approximation ---" << std::endl;
+        std::cout << "  Indice de troncature N   : " << idxTroncature << std::endl;
+        std::cout << "  Ordre de quadrature      : " << ordre << std::endl;
+        std::cout << "  Pas du cache de Green    : " << green_cache_step << std::endl;
+        std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
 
         // -- Start time --
-
         std::clock_t start = std::clock();
 
         // -- Création maillage --
         Point O(0, 0);
-        std::cout << "Info Maillage: centre du cercle = " << O << ", rayon du cercle = " << rayon << ", pas du maillage = " << pas << endl;
         Cercle cercle(rayon, O);
         Maillage maillage;
-        maillage.ajoute_cercle(pas, cercle);
+        maillage.ajoute_cercle(pasMaillage, cercle);
         const unsigned int nbSegmentsMaillage = maillage.size();
+
+        std::cout << "\n=== Maillage du cercle ===" << std::endl;
+        std::cout << "  Centre              : " << O << std::endl;
+        std::cout << "  Rayon               : " << rayon << std::endl;
+        std::cout << "  Pas                 : " << pasMaillage << std::endl;
+        std::cout << "  Nombre de segments  : " << nbSegmentsMaillage << std::endl;
+
+        // -- Maillage pour la solution --
+        vector<Point> pointsSolution;
+
+        const double xmin = -L / 2.0;
+        const double xmax = L / 2.0;
+        const double ymin = -L / 2.0;
+        const double ymax = L / 2.0;
+
+        const double distanceMin = rayon + delta;
+
+        for (double x = xmin; x <= xmax; x += pasSolution)
+        {
+            for (double y = ymin; y <= ymax; y += pasSolution)
+            {
+                const double distance =
+                    std::sqrt(x * x + y * y);
+
+                // On conserve uniquement les points
+                // suffisamment éloignés du cercle.
+                if (distance >= distanceMin)
+                {
+                    pointsSolution.emplace_back(x, y);
+                }
+            }
+        }
+
+        const unsigned int nbPointsSolution = pointsSolution.size();
+
+        std::cout << "\n=== Maillage de solution ===" << std::endl;
+        std::cout << "  Domaine             : [" << xmin << ", " << xmax << "] x ["
+                  << ymin << ", " << ymax << "]" << std::endl;
+        std::cout << "  Taille du domaine   : " << L << " x " << L << std::endl;
+        std::cout << "  Pas                 : " << pasSolution << std::endl;
+        std::cout << "  Distance minimale   : " << delta << std::endl;
+        std::cout << "  Rayon exclu         : " << distanceMin << std::endl;
+        std::cout << "  Nombre de points    : " << nbPointsSolution << std::endl;
 
         // -- Calcul du vecteur de p sur les milieux des bords --
         vector<complex<double>> vect_p;
@@ -243,8 +297,8 @@ int main()
             vect_p.push_back(p_analytique(maillage[i].milieu, idxTroncature));
         }
 
-        // -- Créqtion du fichier de résultat --
-        const string filename = "outputs/u_sol_k=" + std::to_string(k) + "_rayon=" + std::to_string(rayon) + +"_pas=" + std::to_string(pas) + "_nbPtSol=" + std::to_string(nbPointSolution) + "_idxTroncature=" + std::to_string(idxTroncature) + "_ordre=" + std::to_string(ordre) + "_Delta=" + std::to_string(delta) + ".txt";
+        // -- Création du fichier de résultat --
+        const string filename = string("outputs/u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
         ofstream file(filename);
 
         if (!file.is_open())
@@ -256,43 +310,134 @@ int main()
         // -- Récupération des coefficients de Legendre --
         const LegendreData &legendreData = get_legendre_data(ordre);
 
-        // -- Construction solution approchée--
-        double rayon_sol = rayon + delta;
-        complex<double> uPj;
-        double theta;
+        // -- Construction solution approchée --
+        double erreurCacheL2 = 0.0;
+        double erreurExacteL2 = 0.0;
+        double erreurTotaleL2 = 0.0;
 
-        for (unsigned int j = 0; j < nbPointSolution; j++)
+        double erreurCacheMax = 0.0;
+        double erreurExacteMax = 0.0;
+        double erreurTotaleMax = 0.0;
+
+        double tempsGreen = 0.0;
+        double tempsCached = 0.0;
+
+        for (const Point &Pj : pointsSolution)
         {
-            uPj = 0.0;
-            theta = 2.0 * pi * static_cast<double>(j) / static_cast<double>(nbPointSolution);
+            complex<double> uGreen = 0.0;
+            complex<double> uCached = 0.0;
 
-            const Point Pj{rayon_sol * std::cos(theta), rayon_sol * std::sin(theta)};
+            // Solution analytique
+            const complex<double> uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
+
+            // Green exacte
+            std::clock_t startGreen = std::clock();
 
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
             {
-                uPj += integ_simple(
-                           [&Pj](const Point &Q)
-                           {
-                               return green_cached_vec(Pj, Q);
-                           },
-                           maillage[i],
-                           legendreData) *
-                       vect_p[i];
+                uGreen += vect_p[i] * integ_simple(
+                                          [&Pj](const Point &Q)
+                                          {
+                                              return green(Pj, Q);
+                                          },
+                                          maillage[i],
+                                          legendreData);
             }
 
-            file << Pj.x << " " << Pj.y << " " << uPj.real() << " " << uPj.imag() << endl;
+            std::clock_t endGreen = std::clock();
+
+            tempsGreen += static_cast<double>(endGreen - startGreen) / CLOCKS_PER_SEC;
+
+            // Green cached
+            std::clock_t startCached = std::clock();
+
+            for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+            {
+                uCached += vect_p[i] * integ_simple(
+                                           [&Pj](const Point &Q)
+                                           {
+                                               return green_cached_vec(Pj, Q);
+                                           },
+                                           maillage[i],
+                                           legendreData);
+            }
+
+            std::clock_t endCached = std::clock();
+
+            tempsCached += static_cast<double>(endCached - startCached) / CLOCKS_PER_SEC;
+
+            // Erreurs locales
+            const double erreurCache = std::abs(uGreen - uCached);
+            const double erreurExacte = std::abs(uGreen - uExact);
+            const double erreurTotale = std::abs(uExact - uCached);
+
+            // Accumulation
+            erreurCacheL2 += erreurCache * erreurCache;
+            erreurExacteL2 += erreurExacte * erreurExacte;
+            erreurTotaleL2 += erreurTotale * erreurTotale;
+
+            erreurCacheMax = std::max(erreurCacheMax, erreurCache);
+            erreurExacteMax = std::max(erreurExacteMax, erreurExacte);
+            erreurTotaleMax = std::max(erreurTotaleMax, erreurTotale);
+
+            // Fichier
+            file
+                << Pj.x << " "
+                << Pj.y << " "
+
+                << uExact.real() << " "
+                << uExact.imag() << " "
+
+                << uGreen.real() << " "
+                << uGreen.imag() << " "
+
+                << uCached.real() << " "
+                << uCached.imag() << " "
+
+                << erreurCache << " "
+                << erreurExacte << " "
+                << erreurTotale
+
+                << "\n";
         }
 
         file.close();
 
+        // -- Erreurs L2 --
+
+        erreurCacheL2 = std::sqrt(erreurCacheL2 / static_cast<double>(nbPointsSolution));
+        erreurExacteL2 = std::sqrt(erreurExacteL2 / static_cast<double>(nbPointsSolution));
+        erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<double>(nbPointsSolution));
+
+        // -- Prints --
+
+        std::cout << "\n=== Erreurs ===" << std::endl
+                  << "    erreur L² : Green = "
+                  << erreurExacteL2
+                  << ", Cache = "
+                  << erreurCacheL2
+                  << ", Totale = "
+                  << erreurTotaleL2
+                  << endl
+                  << "    erreur L∞ : Green = "
+                  << erreurExacteMax
+                  << ", Cache = "
+                  << erreurCacheMax
+                  << ", Totale = "
+                  << erreurTotaleMax
+                  << endl;
+
         // -- End time --
 
         std::clock_t end = std::clock();
+        double seconds = static_cast<double>(end - start) / CLOCKS_PER_SEC;
 
-        double seconds =
-            static_cast<double>(end - start) / CLOCKS_PER_SEC;
-
-        std::cout << "Time: " << seconds << " seconds\n";
+        std::cout << "\n=== Temps ===" << std::endl;
+        std::cout << "    execution       : " << seconds << " seconds" << endl;
+        std::cout << "    green           : " << tempsGreen << "seconds" << endl;
+        std::cout << "    green cached    : " << tempsCached << "seconds" << endl;
+        std::cout << "    speedup         : " << tempsGreen / tempsCached << " x" << std::endl;
+        std::cout << "    gain de temps   : " << (1.0 - tempsCached / tempsGreen) * 100.0 << " %" << std::endl;
 
 #endif
     }
