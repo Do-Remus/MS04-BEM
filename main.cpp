@@ -68,6 +68,439 @@ int main()
         v[0] = 1;
         v[1] = 1;
         cout << BBB * v << endl;
+
+
+        // ===================================================================
+        // Test 1 : erreur de quadrature de Gauss-Legendre (ordre n=10) sur
+        // les monomes de la base canonique x^p, p = 0..20, integres sur [-1,1]
+        // (intervalle "naturel" des racines de Legendre)
+        // ===================================================================
+        {
+            const string filename = string("outputs/convergence_quadrature_monome.txt");
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            const unsigned int ordreQuadrature = 10;
+            const LegendreData &dataMonome = get_legendre_data(ordreQuadrature);
+
+            file << "# Erreur de la quadrature de Gauss-Legendre (n=" << ordreQuadrature
+                 << ") sur les monomes x^p integres sur [-1,1]" << endl;
+            file << "# degre_p erreur_absolue" << endl;
+
+            for (int p = 0; p <= 20; p++)
+            {
+                auto monome = [p](double x) -> complex<double>
+                { return std::pow(x, p); };
+
+                const complex<double> approx = integ_simple(monome, dataMonome);
+
+                // integrale exacte de x^p sur [-1,1] : 0 si p impair, 2/(p+1) si p pair
+                const double exact = (p % 2 == 0) ? (2.0 / (p + 1)) : 0.0;
+
+                const double erreur = std::abs(approx - exact);
+
+                file << p << " " << erreur << endl;
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte (degre d'exactitude attendu = "
+                       << 2 * ordreQuadrature - 1 << ")" << endl;
+        }
+
+        // ===================================================================
+        // Test 2 : convergence de la quadrature de Gauss-Legendre vers
+        // l'integrale de la fonction de Hankel H_0^(1)(x) = J_0(x) + i*Y_0(x)
+        // sur trois segments a differentes distances de l'origine, afin
+        // d'observer si la convergence est plus rapide en champ lointain.
+        // ===================================================================
+        {
+            const string filename = string("outputs/convergence_quadrature_hankel.txt");
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            // fonction a integrer : H_0^(1)(x)
+            auto H0 = [](double x) -> complex<double>
+            { return hankel_n(x, 0); };
+
+            struct SegmentTest
+            {
+                double a;
+                double b;
+            };
+
+            const vector<SegmentTest> segments = {
+                {0.01, 0.02},   // champ proche
+                {1.01, 1.02},   // champ intermediaire
+                {10.01, 10.02}  // champ lointain
+            };
+
+            const unsigned int ordreMax = 20;       // ordres de quadrature testes : 1..ordreMax
+            const unsigned int ordreReference = 40; // ordre pris comme reference "exacte"
+
+            // valeurs de reference (quadrature d'ordre eleve)
+            const LegendreData &dataRef = get_legendre_data(ordreReference);
+            vector<complex<double>> references;
+            for (const auto &s : segments)
+                references.push_back(integ_simple(H0, s.a, s.b, dataRef));
+
+            file << "# Convergence de la quadrature de Gauss-Legendre vers l'integrale de H_0^(1)"
+                 << " sur differents segments (reference = ordre " << ordreReference << ")" << endl;
+            file << "# ordre_n";
+            for (const auto &s : segments)
+                file << " erreur_[" << s.a << "," << s.b << "]";
+            file << endl;
+
+            for (unsigned int n = 1; n <= ordreMax; n++)
+            {
+                const LegendreData &data = get_legendre_data(n);
+
+                file << n;
+
+                for (std::size_t i = 0; i < segments.size(); i++)
+                {
+                    const complex<double> approx = integ_simple(H0, segments[i].a, segments[i].b, data);
+                    const double erreur = std::abs(approx - references[i]);
+                    file << " " << erreur;
+                }
+                file << endl;
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte." << endl;
+        }
+
+        // ===================================================================
+        // Test 3 : erreur de u+ (BEM, quadrature + Green non cachee) par
+        // rapport a u_analytique, sur un cercle test de rayon superieur a
+        // la frontiere, en fonction de l'angle theta, pour differents
+        // ordres de quadrature n_q (pas de maillage FIXE).
+        // ===================================================================
+        {
+            const string filename = string("outputs/erreur_u_theta_vs_nq.txt");
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            // -- Parametres fixes --
+            const double kTest = 10.0;
+            k = kTest; // k est une variable globale utilisee par green(), p_analytique(), u_N_plus_analytique()
+
+            const double rayonTest = 1.0;       // rayon de la frontiere (cercle diffractant)
+            const double pasMaillageTest = 0.1; // pas de maillage FIXE pour ce test
+            const unsigned int idxTroncatureTest = 25;
+
+            const double R_test = 2.0 * rayonTest; // rayon du cercle test > rayon de la frontiere
+            const unsigned int nbThetaTest = 100;
+
+            const vector<unsigned int> nq_values = {1, 2, 3, 4, 5, 6, 8, 10, 15, 20};
+
+            // -- Construction du maillage frontiere (fixe pour ce test) --
+            Point O(0, 0);
+            Cercle cercleTest(rayonTest, O);
+            Maillage maillageTest;
+            maillageTest.ajoute_cercle(pasMaillageTest, cercleTest);
+            const unsigned int nbSegments = maillageTest.size();
+
+            // -- Donnee de Neumann p sur le maillage (independante de n_q) --
+            vector<complex<double>> vect_p_test;
+            for (unsigned int i = 0; i < nbSegments; i++)
+                vect_p_test.push_back(p_analytique(maillageTest[i].milieu, idxTroncatureTest));
+
+            // -- Points du cercle test et solution analytique associee --
+            vector<Point> pointsCercleTest;
+            vector<double> thetasTest;
+            vector<complex<double>> uExactTest;
+            for (unsigned int j = 0; j < nbThetaTest; j++)
+            {
+                const double theta = 2.0 * pi * j / nbThetaTest;
+                Point Pj(R_test * cos(theta), R_test * sin(theta));
+                pointsCercleTest.push_back(Pj);
+                thetasTest.push_back(theta);
+                uExactTest.push_back(u_N_plus_analytique(Pj, rayonTest, idxTroncatureTest));
+            }
+
+            // -- En-tete du fichier --
+            file << "# Erreur de u+ (BEM) vs u_analytique sur cercle test de rayon R="
+                 << R_test << ", en fonction de l'ordre de quadrature n_q" << endl;
+            file << "# k=" << kTest << " rayon=" << rayonTest << " pasMaillage=" << pasMaillageTest
+                 << " idxTroncature=" << idxTroncatureTest << " R_test=" << R_test
+                 << " nbThetaTest=" << nbThetaTest << endl;
+            file << "# n_q_values:";
+            for (unsigned int nq : nq_values)
+                file << " " << nq;
+            file << endl;
+            file << "# theta";
+            for (unsigned int nq : nq_values)
+                file << " erreur_nq" << nq;
+            file << endl;
+
+            // -- Calcul de l'erreur pour chaque n_q --
+            for (unsigned int j = 0; j < nbThetaTest; j++)
+            {
+                const Point &Pj = pointsCercleTest[j];
+
+                file << thetasTest[j];
+
+                for (unsigned int nq : nq_values)
+                {
+                    const LegendreData &data = get_legendre_data(nq);
+
+                    complex<double> uApprox = 0.0;
+                    for (unsigned int i = 0; i < nbSegments; i++)
+                    {
+                        uApprox += vect_p_test[i] * integ_simple(
+                                                        [&Pj](const Point &Q)
+                                                        { return green(Pj, Q); },
+                                                        maillageTest[i],
+                                                        data);
+                    }
+
+                    const double erreur = std::abs(uApprox - uExactTest[j]);
+                    file << " " << erreur;
+                }
+
+                file << endl;
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte." << endl;
+        }
+
+        // ===================================================================
+        // Test 4 : erreur de u+ (BEM) par rapport a u_analytique, sur le
+        // meme type de cercle test, en fonction de l'angle theta, pour
+        // differents pas de maillage de la frontiere (n_q FIXE).
+        // ===================================================================
+        {
+            const string filename = string("outputs/erreur_u_theta_vs_pasMaillage.txt");
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            // -- Parametres fixes --
+            const double kTest = 10.0;
+            k = kTest;
+
+            const double rayonTest = 1.0;
+            const unsigned int idxTroncatureTest = 25;
+            const unsigned int nqFixe = 8; // ordre de quadrature FIXE pour ce test
+
+            const double R_test = 2.0 * rayonTest;
+            const unsigned int nbThetaTest = 100;
+
+            const vector<double> pas_values = {0.2, 0.1, 0.05, 0.025, 0.01, 0.001, 0.0001};
+
+            const LegendreData &dataFixe = get_legendre_data(nqFixe);
+
+            // -- Points du cercle test et solution analytique (independants du maillage) --
+            vector<Point> pointsCercleTest;
+            vector<double> thetasTest;
+            vector<complex<double>> uExactTest;
+            for (unsigned int j = 0; j < nbThetaTest; j++)
+            {
+                const double theta = 2.0 * pi * j / nbThetaTest;
+                Point Pj(R_test * cos(theta), R_test * sin(theta));
+                pointsCercleTest.push_back(Pj);
+                thetasTest.push_back(theta);
+                uExactTest.push_back(u_N_plus_analytique(Pj, rayonTest, idxTroncatureTest));
+            }
+
+            // -- En-tete du fichier --
+            file << "# Erreur de u+ (BEM) vs u_analytique sur cercle test de rayon R="
+                 << R_test << ", en fonction du pas de maillage de la frontiere" << endl;
+            file << "# k=" << kTest << " rayon=" << rayonTest << " n_q=" << nqFixe
+                 << " idxTroncature=" << idxTroncatureTest << " R_test=" << R_test
+                 << " nbThetaTest=" << nbThetaTest << endl;
+            file << "# pasMaillage_values:";
+            for (double h : pas_values)
+                file << " " << h;
+            file << endl;
+            file << "# theta";
+            for (double h : pas_values)
+                file << " erreur_h" << h;
+            file << endl;
+
+            // -- Pour chaque pas de maillage : construction du maillage + calcul de l'erreur --
+            vector<vector<double>> erreurs(pas_values.size(), vector<double>(nbThetaTest, 0.0));
+
+            for (std::size_t ih = 0; ih < pas_values.size(); ih++)
+            {
+                Point O(0, 0);
+                Cercle cercleTest(rayonTest, O);
+                Maillage maillageTest;
+                maillageTest.ajoute_cercle(pas_values[ih], cercleTest);
+                const unsigned int nbSegments = maillageTest.size();
+
+                vector<complex<double>> vect_p_test;
+                for (unsigned int i = 0; i < nbSegments; i++)
+                    vect_p_test.push_back(p_analytique(maillageTest[i].milieu, idxTroncatureTest));
+
+                for (unsigned int j = 0; j < nbThetaTest; j++)
+                {
+                    const Point &Pj = pointsCercleTest[j];
+
+                    complex<double> uApprox = 0.0;
+                    for (unsigned int i = 0; i < nbSegments; i++)
+                    {
+                        uApprox += vect_p_test[i] * integ_simple(
+                                                        [&Pj](const Point &Q)
+                                                        { return green(Pj, Q); },
+                                                        maillageTest[i],
+                                                        dataFixe);
+                    }
+
+                    erreurs[ih][j] = std::abs(uApprox - uExactTest[j]);
+                }
+            }
+
+            // -- Ecriture --
+            for (unsigned int j = 0; j < nbThetaTest; j++)
+            {
+                file << thetasTest[j];
+                for (std::size_t ih = 0; ih < pas_values.size(); ih++)
+                    file << " " << erreurs[ih][j];
+                file << endl;
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte." << endl;
+        }
+
+        // ===================================================================
+        // Test 5 : erreur de quadrature PURE. Contrairement au Test 3, on ne
+        // compare plus a u_analytique (qui melange erreur de maillage et
+        // erreur de quadrature) mais a une reference calculee SUR LE MEME
+        // MAILLAGE avec un ordre de quadrature tres eleve. Cela isole l'effet
+        // de n_q seul, sans compensation fortuite avec l'erreur de maillage.
+        // ===================================================================
+        {
+            const string filename = string("outputs/erreur_u_theta_vs_nq_quadrature_pure.txt");
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            // -- Parametres fixes (memes que le Test 3) --
+            const double kTest = 10.0;
+            k = kTest;
+
+            const double rayonTest = 1.0;
+            const double pasMaillageTest = 0.1; // pas de maillage FIXE pour ce test
+            const unsigned int idxTroncatureTest = 25;
+
+            const double R_test = 2.0 * rayonTest;
+            const unsigned int nbThetaTest = 100;
+
+            const vector<unsigned int> nq_values = {1, 2, 3, 4, 5, 6, 8, 10, 15, 20};
+            const unsigned int nqReference = 30; // ordre "exact" pour ce meme maillage
+
+            // -- Construction du maillage frontiere (fixe, identique pour tous les n_q) --
+            Point O(0, 0);
+            Cercle cercleTest(rayonTest, O);
+            Maillage maillageTest;
+            maillageTest.ajoute_cercle(pasMaillageTest, cercleTest);
+            const unsigned int nbSegments = maillageTest.size();
+
+            // -- Donnee de Neumann p sur le maillage (independante de n_q) --
+            vector<complex<double>> vect_p_test;
+            for (unsigned int i = 0; i < nbSegments; i++)
+                vect_p_test.push_back(p_analytique(maillageTest[i].milieu, idxTroncatureTest));
+
+            // -- Points du cercle test --
+            vector<Point> pointsCercleTest;
+            vector<double> thetasTest;
+            for (unsigned int j = 0; j < nbThetaTest; j++)
+            {
+                const double theta = 2.0 * pi * j / nbThetaTest;
+                pointsCercleTest.emplace_back(R_test * cos(theta), R_test * sin(theta));
+                thetasTest.push_back(theta);
+            }
+
+            // -- Fonction utilitaire : calcule u+ (BEM) sur ce maillage pour un ordre n_q donne --
+            auto calcule_u_BEM = [&](const LegendreData &data) -> vector<complex<double>>
+            {
+                vector<complex<double>> u(nbThetaTest, 0.0);
+                for (unsigned int j = 0; j < nbThetaTest; j++)
+                {
+                    const Point &Pj = pointsCercleTest[j];
+                    complex<double> uApprox = 0.0;
+                    for (unsigned int i = 0; i < nbSegments; i++)
+                    {
+                        uApprox += vect_p_test[i] * integ_simple(
+                                                        [&Pj](const Point &Q)
+                                                        { return green(Pj, Q); },
+                                                        maillageTest[i],
+                                                        data);
+                    }
+                    u[j] = uApprox;
+                }
+                return u;
+            };
+
+            // -- Reference : meme maillage, ordre de quadrature tres eleve --
+            const LegendreData &dataReference = get_legendre_data(nqReference);
+            const vector<complex<double>> uReference = calcule_u_BEM(dataReference);
+
+            // -- En-tete du fichier --
+            file << "# Erreur de quadrature PURE : u+ (BEM, ordre n_q) vs u+ (BEM, ordre nqReference="
+                 << nqReference << ") sur le MEME maillage (pasMaillage=" << pasMaillageTest << ")" << endl;
+            file << "# k=" << kTest << " rayon=" << rayonTest << " pasMaillage=" << pasMaillageTest
+                 << " idxTroncature=" << idxTroncatureTest << " R_test=" << R_test
+                 << " nbThetaTest=" << nbThetaTest << " nqReference=" << nqReference << endl;
+            file << "# n_q_values:";
+            for (unsigned int nq : nq_values)
+                file << " " << nq;
+            file << endl;
+            file << "# theta";
+            for (unsigned int nq : nq_values)
+                file << " erreur_nq" << nq;
+            file << endl;
+
+            // -- Calcul de l'erreur pure pour chaque n_q --
+            vector<vector<double>> erreurs(nq_values.size(), vector<double>(nbThetaTest, 0.0));
+
+            for (std::size_t iq = 0; iq < nq_values.size(); iq++)
+            {
+                const LegendreData &data = get_legendre_data(nq_values[iq]);
+                const vector<complex<double>> uApprox = calcule_u_BEM(data);
+
+                for (unsigned int j = 0; j < nbThetaTest; j++)
+                    erreurs[iq][j] = std::abs(uApprox[j] - uReference[j]);
+            }
+
+            // -- Ecriture --
+            for (unsigned int j = 0; j < nbThetaTest; j++)
+            {
+                file << thetasTest[j];
+                for (std::size_t iq = 0; iq < nq_values.size(); iq++)
+                    file << " " << erreurs[iq][j];
+                file << endl;
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte." << endl;
+        }
     }
 
     if (effectuerLaSimulation)
@@ -223,8 +656,8 @@ int main()
         const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
 
         // -- Parametre  d'approximation --
-        const unsigned int idxTroncature = 25;
-        const unsigned int ordre = 4;
+        const unsigned int idxTroncature = 30;
+        const unsigned int ordre = 8;
         green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
         max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
 
@@ -391,9 +824,9 @@ int main()
             tempsCached += static_cast<double>(endCached - startCached) / CLOCKS_PER_SEC;
 
             // Erreurs locales
-            const double erreurCache = std::abs(uGreen - uCached);
-            const double erreurExacte = std::abs(uGreen - uExact);
-            const double erreurTotale = std::abs(uExact - uCached);
+            const double erreurCache = std::abs((uGreen - uCached)/uGreen);
+            const double erreurExacte = std::abs((uGreen - uExact)/uGreen);
+            const double erreurTotale = std::abs((uExact - uCached)/uExact);
 
             // Accumulation
             erreurCacheL2 += erreurCache * erreurCache;
