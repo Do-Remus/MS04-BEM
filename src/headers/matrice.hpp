@@ -108,6 +108,6 @@ ostream &operator<<(ostream &out, const MatriceSym &A);
 
 Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P);
 
-Vecteur gradientConjugue(const Matrice &A, const Vecteur &b, double tol = 1e-10, int maxIter = 1000);
+Vecteur gradientConjugue(const MatriceSym &A, const Vecteur &b, double tol = 1e-10, unsigned int maxIter = 1000);
 
 #endif

@@ -1016,6 +1016,8 @@ int main()
         const unsigned int ordre = 4;
         green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
         max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+        double tolGradConj = 1e-10;
+        unsigned int maxIterGradConj = 1000;
 
         std::cout << "\n=== Parametres du probleme ===" << std::endl;
         std::cout << "  Nombre d'onde k          : " << k << std::endl;
@@ -1098,7 +1100,7 @@ int main()
         {
             for (unsigned int j = 0; j < i; j++)
             {
-                if (i != j) // ca général
+                if (i != j) // cas général
                 {
                     A(i, j) = integ_double([](const Point &Q, const Point &P, double)
                                            { return green(Q, P); },
@@ -1113,20 +1115,24 @@ int main()
                                            { return integ_log_segment(Q, S); },
                                            S,
                                            legendreData);
+
+                    A(i, j) += S.norm * S.norm * ((I / 4.0) - (1.0 / (2.0 * pi) * (log(k / 2) + gamma_euler)));
                 }
             }
         }
 
         // -- Inversion de la matrice (méthode itérative) --
-        Vecteur vect_p;
-        // ...
+        Vecteur vect_p = gradientConjugue(A, vect_b, tolGradConj, maxIterGradConj);
 
         // -- Calcul du vecteur de p sur les milieux des bords --
         Vecteur vect_p_ana;
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
-            vect_p.push_back(p_analytique(maillage[i].milieu, idxTroncature));
+            vect_p_ana.push_back(p_analytique(maillage[i].milieu, idxTroncature));
         }
+
+        // -- Comparaison p et p_ana --
+        // ...
 
         // -- Création du fichier de résultat --
         const string filename = string("outputs/u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
