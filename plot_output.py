@@ -8,7 +8,8 @@ from scipy.interpolate import griddata
 # 1. Charger les données depuis le fichier
 #data_file = 'outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt' for TP0
 
-data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.010000_hS0.100000_d0.100000_N25_q4.txt'
+data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.010000_hS0.100000_d0.100000_N30_q8.txt'
+#data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.10000_hS0.100000_d0.100000_N30_q4.txt'
 data = np.loadtxt(data_file)
 
 # Nom de base des PNG : même nom que le fichier de données (contient k, a et N)
@@ -29,7 +30,7 @@ P_cached_real = data[:, 6]
 P_cached_imag = data[:, 7]
 error_cached = data[:, 8]
 error_green = data[:, 9]
-error_totale = data[:, 9]
+error_totale = data[:, 10]
 
 
 
@@ -135,7 +136,7 @@ plot_pressure_field(P_norm, 'Norme de la solution exterieure complexe u+ par rep
 
 ### plot error green-analytique
 
-plot_pressure_field(error_green, 'Erreur L^1 de u+ entre formule analytique et representation intégrale', 'error_green_analytique')
+plot_pressure_field(error_green, '|u_analytique - u_green | ', 'error_green_analytique')
 
 
 
@@ -143,14 +144,14 @@ plot_pressure_field(error_green, 'Erreur L^1 de u+ entre formule analytique et r
 
 ### plot error cached-gren
 
-plot_pressure_field(error_cached, 'Partie réelle de la solution exterieure u+ par representation intégrale', 'error_cached_green')
+plot_pressure_field(error_cached, '|u_cached - u_green |', 'error_cached_green')
 
 
 
 
 ### plot error cached-analytique
 
-plot_pressure_field(error_totale, 'Partie réelle de la solution exterieure u+ par representation intégrale', 'error_cached_analytique')
+plot_pressure_field(error_totale, '|u_analytique - u_cached |', 'error_cached_analytique')
 
 
 
