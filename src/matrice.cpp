@@ -226,7 +226,7 @@ Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P)
     return Q;
 }
 
-Vecteur gradientConjugue(const Matrice &A, const Vecteur &b, double tol = 1e-10, int maxIter = 1000)
+Vecteur gradientConjugue(const MatriceSym &A, const Vecteur &b, double tol, unsigned int maxIter)
 {
     Vecteur p(b.size(), 0.0);
 
