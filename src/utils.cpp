@@ -65,6 +65,15 @@ complex<double> green_cached_vec(const Point &p1, const Point &p2)
     return value;
 }
 
+complex<double> green_reguliere(const Point &P1, const Point &P2)
+{
+    double x = k * (P1 - P2).norm();
+    if (x == 0)
+    {
+        return 1. + 2. * (I / pi) * (gamma_euler - log(2));
+    }
+    return green(P1,P2) - (1 /(2* pi)) * log(x);
+}
 #ifdef TP0
 complex<double> u_N_plus_analytique(const Point &P1, double radius, int N, const string &filename)
 #else
