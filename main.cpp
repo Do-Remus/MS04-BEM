@@ -1226,37 +1226,12 @@ int main()
 
         // -- Erreur du cache --
 
-        double erreurPCache = 0.0;
-
-        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
-        {
-            erreurPCache += std::norm(vect_p[i] - vect_p_cached[i]);
-        }
-
-        erreurPCache = std::sqrt(erreurPCache) / vect_p.norm();
+        double erreurPCache = (vect_p_cached - vect_p).norm() / vect_p.norm();
 
         // -- Comparaison p et p_ana --
 
-        double erreurPExacte = 0.0;
-        double erreurPCached = 0.0;
-
-        double erreurPExacteMax = 0.0;
-        double erreurPCachedMax = 0.0;
-
-        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
-        {
-            const double erreurExacte = std::abs(vect_p[i] - vect_p_ana[i]) / std::abs(vect_p_ana[i]);
-            const double erreurCached = std::abs(vect_p_cached[i] - vect_p_ana[i]) / std::abs(vect_p_ana[i]);
-
-            erreurPExacte += erreurExacte * erreurExacte;
-            erreurPCached += erreurCached * erreurCached;
-
-            erreurPExacteMax = std::max(erreurPExacteMax, erreurExacte);
-            erreurPCachedMax = std::max(erreurPCachedMax, erreurCached);
-        }
-
-        erreurPExacte = std::sqrt(erreurPExacte / static_cast<double>(nbSegmentsMaillage));
-        erreurPCached = std::sqrt(erreurPCached / static_cast<double>(nbSegmentsMaillage));
+        double erreurPExacte = (vect_p - vect_p_ana).norm() / vect_p_ana.norm();
+        double erreurPCached = (vect_p_cached - vect_p_ana).norm() / vect_p_ana.norm();
 
         // -- Affichage erreurs p --
 
@@ -1266,16 +1241,8 @@ int main()
                   << erreurPExacte
                   << std::endl;
 
-        std::cout << "  Erreur p exacte / p analytique Linf : "
-                  << erreurPExacteMax
-                  << std::endl;
-
         std::cout << "  Erreur p cached / p analytique L2 : "
                   << erreurPCached
-                  << std::endl;
-
-        std::cout << "  Erreur p cached / p analytique Linf : "
-                  << erreurPCachedMax
                   << std::endl;
 
         std::cout << "  Difference p / p_cached L2 : "
