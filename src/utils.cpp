@@ -268,3 +268,9 @@ void export_obsctacles(const string &filename, vector<Cercle> cercles)
 
     return;
 }
+
+double erreur_relative(const std::complex<double> &u, const std::complex<double> &reference, double eps)
+{
+    const double denom = std::max(std::abs(reference), eps);
+    return std::abs(u - reference) / denom;
+}

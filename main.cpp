@@ -647,7 +647,7 @@ int main()
 
         // -- Parametres Maillage --
         const double rayon = 1.; // rayon cercle du maillage
-        pasMaillage = 0.01;      // pas du maillage
+        pasMaillage = 0.005;     // pas du maillage
 
         // -- Parametres Solution --
         const double L = 4.;              // Domaine LxL pour le calcul de la solution
@@ -655,8 +655,8 @@ int main()
         const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
 
         // -- Parametre  d'approximation --
-        const unsigned int idxTroncature = 30;
-        const unsigned int ordre = 8;
+        const unsigned int idxTroncature = 25;
+        const unsigned int ordre = 4;
         green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
         max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
 
@@ -699,8 +699,7 @@ int main()
         {
             for (double y = ymin; y <= ymax; y += pasSolution)
             {
-                const double distance =
-                    std::sqrt(x * x + y * y);
+                const double distance = std::sqrt(x * x + y * y);
 
                 // On conserve uniquement les points
                 // suffisamment éloignés du cercle.
@@ -726,14 +725,14 @@ int main()
         Vecteur vect_p(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
-            vect_p.push_back(p_analytique(maillage[i].milieu, idxTroncature));
+            vect_p[i] = p_analytique(maillage[i].milieu, idxTroncature);
         }
 
         // -- Calcul du vecteur de p aux noeuds
         Vecteur pNoeuds(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; ++i)
         {
-            pNoeuds.push_back(p_analytique(maillage[i].P1, idxTroncature));
+            pNoeuds[i] = p_analytique(maillage[i].P1, idxTroncature);
         }
 
         // -- Création du fichier de résultat --
@@ -823,9 +822,9 @@ int main()
             tempsCached += static_cast<double>(endCached - startCached) / CLOCKS_PER_SEC;
 
             // Erreurs locales
-            const double erreurCache = std::abs((uGreen - uCached) / uGreen);
-            const double erreurExacte = std::abs((uGreen - uExact) / uGreen);
-            const double erreurTotale = std::abs((uExact - uCached) / uExact);
+            const double erreurCache = erreur_relative(uCached, uGreen);
+            const double erreurExacte = erreur_relative(uGreen, uExact);
+            const double erreurTotale = erreur_relative(uCached, uExact);
 
             // Accumulation
             erreurCacheL2 += erreurCache * erreurCache;
@@ -885,9 +884,9 @@ int main()
             tempsCachedLin += static_cast<double>(endCachedLin - startCachedLin) / CLOCKS_PER_SEC;
 
             // Erreurs locales
-            const double erreurCacheLin = std::abs(uGreenLin - uCachedLin);
-            const double erreurExacteLin = std::abs(uGreenLin - uExact);
-            const double erreurTotaleLin = std::abs(uExact - uCachedLin);
+            const double erreurCacheLin = erreur_relative(uCachedLin, uGreenLin);
+            const double erreurExacteLin = erreur_relative(uGreenLin, uExact);
+            const double erreurTotaleLin = erreur_relative(uCachedLin, uExact);
 
             // Accumulation
             erreurCacheL2Lin += erreurCacheLin * erreurCacheLin;
@@ -1358,9 +1357,9 @@ int main()
             tempsCached += static_cast<double>(endCached - startCached) / CLOCKS_PER_SEC;
 
             // Erreurs locales
-            const double erreurCache = std::abs((uGreen - uCached) / uGreen);
-            const double erreurExacte = std::abs((uGreen - uExact) / uGreen);
-            const double erreurTotale = std::abs((uExact - uCached) / uExact);
+            const double erreurCache = erreur_relative(uCached, uGreen);
+            const double erreurExacte = erreur_relative(uGreen, uExact);
+            const double erreurTotale = erreur_relative(uCached, uExact);
 
             // Accumulation
             erreurCacheL2 += erreurCache * erreurCache;

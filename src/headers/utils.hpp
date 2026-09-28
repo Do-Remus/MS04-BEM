@@ -57,4 +57,7 @@ void exporte_solution_analytique(const string &filename, const double radius_obs
 // Exporte les obstacles sous forme de cercles
 void export_obsctacles(const string &filename, vector<Cercle> cercles);
 
+// Calcul plus propre de l'erreur
+double erreur_relative(const std::complex<double> &u, const std::complex<double> &reference, double eps = 1e-14);
+
 #endif
