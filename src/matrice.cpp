@@ -86,13 +86,15 @@ MatriceSym::MatriceSym(int m, complex<double> v) // constructeur dimensions et c
     coefs.resize((n * (n + 1)) / 2, v);
 }
 
-MatriceSym::MatriceSym(const Vecteur &d) // constructeur d'une MatriceSym diagonale
+MatriceSym::MatriceSym(const Vecteur &d)
 {
-    n = d.size();
-    coefs.resize(n * (n + 1) / 2, 0.);
-    for (int i = 0; i < n; i++)
+    n = static_cast<int>(d.size());
+
+    coefs.resize(n * (n + 1) / 2, 0.0);
+
+    for (int i = 0; i < n; ++i)
     {
-        coefs[(n * (n + 1)) / 2 - i * (i + 1) / 2] = d[i];
+        (*this)(i, i) = d[i];
     }
 }
 
@@ -108,6 +110,30 @@ complex<double> &MatriceSym::operator()(int i, int j)
         return coefs[i * (i + 1) / 2 + j];
     }
     return coefs[j * (j + 1) / 2 + i];
+}
+
+Vecteur MatriceSym::operator*(const Vecteur &v) const
+{
+    if (v.size() != static_cast<size_t>(n))
+    {
+        cout << "Erreur : dimensions incompatibles pour MatriceSym * Vecteur"
+             << " : matrice = " << n << "x" << n
+             << ", vecteur = " << v.size()
+             << endl;
+        exit(-1);
+    }
+
+    Vecteur b(n, 0.0);
+
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = 0; j < n; ++j)
+        {
+            b[i] += (*this)(i, j) * v[j];
+        }
+    }
+
+    return b;
 }
 
 complex<double> MatriceSym::operator()(int i, int j) const
@@ -141,7 +167,7 @@ void MatriceSym::decomposition_LDL(MatriceSym &L, Vecteur &D) const
         D[j] = (*this)(j, j);
         for (int k = 0; k < j; ++k)
         {
-            D[j] -= L(j, k) * L(j, k) * D[k];
+            D[j] -= L(j, k) * std::conj(L(j, k)) * D[k];
         }
         // Verification caractère défini positif
 
@@ -157,7 +183,7 @@ void MatriceSym::decomposition_LDL(MatriceSym &L, Vecteur &D) const
             L(i, j) = (*this)(i, j);
             for (int k = 0; k < j; ++k)
             {
-                L(i, j) -= L(j, k) * L(i, k) * D[k];
+                L(i, j) -= L(j, k) * std::conj(L(i, k)) * D[k];
             }
             L(i, j) /= D[j];
         }
@@ -239,7 +265,7 @@ Vecteur gradientConjugue(const MatriceSym &A, const Vecteur &b, double tol, unsi
     if (bnorm == 0.0)
         return p;
 
-    for (int k = 0; k < maxIter; ++k)
+    for (unsigned int k = 0; k < maxIter; ++k)
     {
         Vecteur Ad = A * d;
         double denom = std::real(d * Ad);

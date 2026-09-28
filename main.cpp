@@ -262,7 +262,7 @@ int main()
                     for (unsigned int i = 0; i < nbSegments; i++)
                     {
                         uApprox += vect_p_test[i] * integ_simple(
-                                                        [&Pj](const Point &Q)
+                                                        [&Pj](const Point &Q, double)
                                                         { return green(Pj, Q); },
                                                         maillageTest[i],
                                                         data);
@@ -360,7 +360,7 @@ int main()
                     for (unsigned int i = 0; i < nbSegments; i++)
                     {
                         uApprox += vect_p_test[i] * integ_simple(
-                                                        [&Pj](const Point &Q)
+                                                        [&Pj](const Point &Q, double)
                                                         { return green(Pj, Q); },
                                                         maillageTest[i],
                                                         dataFixe);
@@ -447,7 +447,7 @@ int main()
                     for (unsigned int i = 0; i < nbSegments; i++)
                     {
                         uApprox += vect_p_test[i] * integ_simple(
-                                                        [&Pj](const Point &Q)
+                                                        [&Pj](const Point &Q, double)
                                                         { return green(Pj, Q); },
                                                         maillageTest[i],
                                                         data);
@@ -1098,7 +1098,7 @@ int main()
         MatriceSym A(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
-            for (unsigned int j = 0; j < i; j++)
+            for (unsigned int j = 0; j <= i; j++)
             {
                 if (i != j) // cas général
                 {
@@ -1112,7 +1112,7 @@ int main()
                 {
                     const Segment S = maillage[i];
                     A(i, j) = integ_simple([&S](const Point &Q, double)
-                                           { return integ_log_segment(Q, S); },
+                                           { return integ_simple_log(Q, S); },
                                            S,
                                            legendreData);
 
@@ -1144,9 +1144,6 @@ int main()
             exit(-1);
         }
 
-        // -- Récupération des coefficients de Legendre --
-        const LegendreData &legendreData = get_legendre_data(ordre);
-
         // -- Construction solution approchée --
         double erreurCacheL2 = 0.0;
         double erreurExacteL2 = 0.0;
@@ -1163,9 +1160,6 @@ int main()
         {
             complex<double> uGreen = 0.0;
             complex<double> uCached = 0.0;
-
-            complex<double> uGreenLin = 0.0;
-            complex<double> uCachedLin = 0.0;
 
             // -- Solution analytique --
 
