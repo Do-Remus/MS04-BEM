@@ -215,7 +215,7 @@ int main()
 
         // -- Parametres Maillage --
         const double rayon = 1.; // rayon cercle du maillage
-        pasMaillage = 0.1;       // pas du maillage
+        pasMaillage = 0.01;      // pas du maillage
 
         // -- Parametres Solution --
         const double L = 4.;              // Domaine LxL pour le calcul de la solution
@@ -561,6 +561,91 @@ int main()
         std::cout << "    green cached lin    : " << tempsCachedLin << " seconds" << endl;
         std::cout << "    speedup lin         : " << tempsGreenLin / tempsCachedLin << " x" << std::endl;
         std::cout << "    gain de temps lin   : " << (1.0 - tempsCachedLin / tempsGreenLin) * 100.0 << " %" << std::endl;
+
+#endif
+
+#ifdef TP2
+        /* ----- TP1 ----- */
+
+        // -- Parametres du problème --
+        k = 10;
+
+        // -- Parametres Maillage --
+        const double rayon = 1.; // rayon cercle du maillage
+        pasMaillage = 0.01;      // pas du maillage
+
+        // -- Parametres Solution --
+        const double L = 4.;              // Domaine LxL pour le calcul de la solution
+        const double pasSolution = 0.1;   // pas de la solution
+        const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
+
+        // -- Parametre  d'approximation --
+        const unsigned int idxTroncature = 25;
+        const unsigned int ordre = 4;
+        green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
+        max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+
+        std::cout << "\n=== Parametres du probleme ===" << std::endl;
+        std::cout << "  Nombre d'onde k          : " << k << std::endl;
+
+        std::cout << "\n  --- Approximation ---" << std::endl;
+        std::cout << "  Indice de troncature N   : " << idxTroncature << std::endl;
+        std::cout << "  Ordre de quadrature      : " << ordre << std::endl;
+        std::cout << "  Pas du cache de Green    : " << green_cache_step << std::endl;
+        std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
+
+        // -- Start time --
+        std::clock_t start = std::clock();
+
+        // -- Création maillage --
+        Point O(0, 0);
+        Cercle cercle(rayon, O);
+        Maillage maillage;
+        maillage.ajoute_cercle(pasMaillage, cercle);
+        const unsigned int nbSegmentsMaillage = maillage.size();
+
+        std::cout << "\n=== Maillage du cercle ===" << std::endl;
+        std::cout << "  Centre              : " << O << std::endl;
+        std::cout << "  Rayon               : " << rayon << std::endl;
+        std::cout << "  Pas                 : " << pasMaillage << std::endl;
+        std::cout << "  Nombre de segments  : " << nbSegmentsMaillage << std::endl;
+
+        // -- Maillage pour la solution --
+        vector<Point> pointsSolution;
+
+        const double xmin = -L / 2.0;
+        const double xmax = L / 2.0;
+        const double ymin = -L / 2.0;
+        const double ymax = L / 2.0;
+
+        const double distanceMin = rayon + delta;
+
+        for (double x = xmin; x <= xmax; x += pasSolution)
+        {
+            for (double y = ymin; y <= ymax; y += pasSolution)
+            {
+                const double distance =
+                    std::sqrt(x * x + y * y);
+
+                // On conserve uniquement les points
+                // suffisamment éloignés du cercle.
+                if (distance >= distanceMin)
+                {
+                    pointsSolution.emplace_back(x, y);
+                }
+            }
+        }
+
+        const unsigned int nbPointsSolution = pointsSolution.size();
+
+        std::cout << "\n=== Maillage de solution ===" << std::endl;
+        std::cout << "  Domaine             : [" << xmin << ", " << xmax << "] x ["
+                  << ymin << ", " << ymax << "]" << std::endl;
+        std::cout << "  Taille du domaine   : " << L << " x " << L << std::endl;
+        std::cout << "  Pas                 : " << pasSolution << std::endl;
+        std::cout << "  Distance minimale   : " << delta << std::endl;
+        std::cout << "  Rayon exclu         : " << distanceMin << std::endl;
+        std::cout << "  Nombre de points    : " << nbPointsSolution << std::endl;
 
 #endif
     }
