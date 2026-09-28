@@ -107,6 +107,12 @@ complex<double> u_N_plus_analytique(const Point &P1, double radius, int N)
     return partial_sum;
 }
 
+
+complex<double> u_inc(const Point &P1){
+    double theta = P1.theta();
+    return exp(-I*k*P1.norm()*cos(theta));
+}
+
 #ifdef TP0
 complex<double> q_analytique(const Point &P1, int N, const string &filename)
 #else

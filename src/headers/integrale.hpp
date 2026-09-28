@@ -72,4 +72,33 @@ std::complex<double> integ_simple(F &&f, const Segment &AB, const LegendreData &
     return 0.5 * AB.norm * result;
 }
 
+
+
+template <typename F>
+std::complex<double> integ_double(F &&f, const Segment &AB, const Segment &CD,
+                                  const LegendreData &data)
+{
+    // Intégrale extérieure sur CD : y = point courant de CD (t = paramètre, ignoré ici)
+    return integ_simple(
+        [&f, &AB, &data](const Point &y, double /*t*/)
+        {
+            // Intégrale intérieure sur AB, y fixé : x = point courant de AB
+            return integ_simple(
+                [&f, &y](const Point &x, double /*s*/)
+                {
+                    return f(x, y);
+                },
+                AB, data);
+        },
+        CD, data);
+}
+
+std::complex<double> integ_simple_log(const Point &X, const Segment &AB){
+    const Point DAe = (AB.P1 - X);
+    const Point DBe = (AB.P2 - X);
+    Point tau = (AB.P2 - AB.P1);
+    tau = tau/tau.norm();
+}
+
+
 #endif

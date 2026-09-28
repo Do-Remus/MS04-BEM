@@ -26,6 +26,9 @@ complex<double> u_N_plus_analytique(const Point &P1, double radius, int N, const
 complex<double> u_N_plus_analytique(const Point &P1, double radius, int N);
 #endif
 
+//u incident
+complex<double> u_inc(const Point &P1);
+
 // dn(u+) sur le bord du disque Gamma (check P sur Gamma a faire en amont)
 #ifdef TP0
 complex<double> q_analytique(const Point &P1, int N, const string &filename);
