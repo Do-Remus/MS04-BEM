@@ -100,6 +100,7 @@ public:
     MatriceSym(int m = 0, complex<double> v = (complex<double>)0);
     MatriceSym(const Vecteur &d);
     complex<double> &operator()(int i, int j);
+    Vecteur operator*(const Vecteur &v) const;
     complex<double> operator()(int i, int j) const;
     void decomposition_LDL(MatriceSym &L, Vecteur &D) const;
 };
