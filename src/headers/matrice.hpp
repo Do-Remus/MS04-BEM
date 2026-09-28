@@ -9,64 +9,20 @@
 class Vecteur : public std::vector<std::complex<double>>
 {
 public:
-    using Complex = std::complex<double>;
-    using std::vector<Complex>::vector; // récupère les constructeurs de vector
+    using std::vector<std::complex<double>>::vector; // récupère les constructeurs de vector
 
-    // Produit scalaire hermitien
-    Complex operator*(const Vecteur &v) const
-    {
-        Complex resultat = 0.0;
+    std::complex<double> produitHermitien(const Vecteur &v) const;
+    std::complex<double> produitBilineaire(const Vecteur &v) const;
+    Vecteur operator+(const Vecteur &v) const;
+    Vecteur operator-(const Vecteur &v) const;
+    Vecteur operator*(const std::complex<double> &a) const;
 
-        for (std::size_t i = 0; i < size(); ++i)
-            resultat += std::conj((*this)[i]) * v[i];
-
-        return resultat;
-    }
-
-    // Addition
-    Vecteur operator+(const Vecteur &v) const
-    {
-        Vecteur resultat(size());
-
-        for (std::size_t i = 0; i < size(); ++i)
-            resultat[i] = (*this)[i] + v[i];
-
-        return resultat;
-    }
-
-    // Soustraction
-    Vecteur operator-(const Vecteur &v) const
-    {
-        Vecteur resultat(size());
-
-        for (std::size_t i = 0; i < size(); ++i)
-            resultat[i] = (*this)[i] - v[i];
-
-        return resultat;
-    }
-
-    // Scalaire * vecteur
-    Vecteur operator*(const Complex &a) const
-    {
-        Vecteur resultat(size());
-
-        for (std::size_t i = 0; i < size(); ++i)
-            resultat[i] = a * (*this)[i];
-
-        return resultat;
-    }
-
-    // Vecteur * scalaire
-    friend Vecteur operator*(const Complex &a, const Vecteur &v)
+    friend Vecteur operator*(const std::complex<double> &a, const Vecteur &v)
     {
         return v * a;
     }
 
-    // Norme euclidienne
-    double norm() const
-    {
-        return std::sqrt(std::real((*this) * (*this)));
-    }
+    double norm() const;
 };
 
 /* Fonctions associées au type Vecteur */
@@ -109,6 +65,6 @@ ostream &operator<<(ostream &out, const MatriceSym &A);
 
 Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P);
 
-Vecteur gradientConjugue(const MatriceSym &A, const Vecteur &b, double tol = 1e-10, unsigned int maxIter = 1000);
+Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol = 1e-10, unsigned int maxIter = 1000);
 
 #endif

@@ -10,9 +10,10 @@ void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
     }
 
     // Construction du cercle
-    const int nb_segments = ceil(2 * pi * Ob.rayon / pas_maillage) + 1;
+    const unsigned int nb_segments = static_cast<unsigned int>(std::round(2.0 * pi * Ob.rayon / pas_maillage));
     const double pas_cercle = 2 * pi / nb_segments;
-    for (int i = 0; i < nb_segments; i++)
+
+    for (unsigned int i = 0; i < nb_segments; i++)
     {
         Point A(Ob.centre.x + Ob.rayon * cos(pas_cercle * i), Ob.centre.y + Ob.rayon * sin(pas_cercle * i));
         Point B(Ob.centre.x + Ob.rayon * cos(pas_cercle * (i + 1)), Ob.centre.y + Ob.rayon * sin(pas_cercle * (i + 1)));

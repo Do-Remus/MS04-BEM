@@ -67,13 +67,26 @@ complex<double> green_cached_vec(const Point &p1, const Point &p2)
 
 complex<double> green_reguliere(const Point &P1, const Point &P2)
 {
-    double x = k * (P1 - P2).norm();
-    if (x == 0)
+    double x = (P2 - P1).norm();
+
+    if (x < PRECISION_ZERO_DOUBLE)
     {
-        return 1. + 2. * (I / pi) * (gamma_euler - log(2));
+        return (I / 4.0) - (1.0 / (2.0 * pi)) * (gamma_euler + log(k / 2));
     }
-    return green(P1,P2) - (1 /(2* pi)) * log(x);
+    return green(P1, P2) + (1 / (2 * pi)) * log(x);
 }
+
+complex<double> green_reguliere_cached_vec(const Point &P1, const Point &P2)
+{
+    double x = (P2 - P1).norm();
+
+    if (x < PRECISION_ZERO_DOUBLE)
+    {
+        return (I / 4.0) - (1.0 / (2.0 * pi)) * (gamma_euler + log(k / 2));
+    }
+    return green_cached_vec(P1, P2) + (1 / (2 * pi)) * log(x);
+}
+
 #ifdef TP0
 complex<double> u_N_plus_analytique(const Point &P1, double radius, int N, const string &filename)
 #else
@@ -116,10 +129,10 @@ complex<double> u_N_plus_analytique(const Point &P1, double radius, int N)
     return partial_sum;
 }
 
-
-complex<double> u_inc(const Point &P1){
+complex<double> u_inc(const Point &P1)
+{
     double theta = P1.theta();
-    return exp(-I*k*P1.norm()*cos(theta));
+    return exp(-I * k * P1.norm() * cos(theta));
 }
 
 #ifdef TP0

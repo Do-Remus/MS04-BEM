@@ -3,6 +3,8 @@
 
 #include "external.hpp"
 
+#define PRECISION_ZERO_DOUBLE 1e-10
+
 extern const double pi;
 extern complex<double> I;
 extern const double gamma_euler;

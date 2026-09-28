@@ -7,7 +7,7 @@ Segment::Segment(const Point &A, const Point &B)
     this->P1 = A;
     this->P2 = B;
     this->milieu = (A + B) * 0.5;
-    this->vecteur_norm = A - B;
+    this->vecteur_norm = B - A;
     this->norm = vecteur_norm.norm();
 }
 

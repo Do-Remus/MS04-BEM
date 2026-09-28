@@ -14,7 +14,69 @@ ostream &operator<<(ostream &out, const Vecteur &u)
     return out;
 }
 
-/*Fonctions de la classe Matrice*/
+Vecteur Vecteur::operator+(const Vecteur &v) const
+{
+    Vecteur resultat(size());
+
+    for (std::size_t i = 0; i < size(); ++i)
+        resultat[i] = (*this)[i] + v[i];
+
+    return resultat;
+}
+
+Vecteur Vecteur::operator-(const Vecteur &v) const
+{
+    Vecteur resultat(size());
+
+    for (std::size_t i = 0; i < size(); ++i)
+        resultat[i] = (*this)[i] - v[i];
+
+    return resultat;
+}
+
+Vecteur Vecteur::operator*(const std::complex<double> &a) const
+{
+    Vecteur resultat(size());
+
+    for (std::size_t i = 0; i < size(); ++i)
+        resultat[i] = a * (*this)[i];
+
+    return resultat;
+}
+
+double Vecteur::norm() const
+{
+    return std::sqrt(
+        std::real(produitHermitien(*this)));
+}
+
+std::complex<double> Vecteur::produitHermitien(const Vecteur &v) const
+{
+    if (size() != v.size())
+        throw std::invalid_argument("Tailles incompatibles");
+
+    std::complex<double> resultat = 0.0;
+
+    for (std::size_t i = 0; i < size(); ++i)
+        resultat += std::conj((*this)[i]) * v[i];
+
+    return resultat;
+}
+
+std::complex<double> Vecteur::produitBilineaire(const Vecteur &v) const
+{
+    if (size() != v.size())
+        throw std::invalid_argument("Tailles incompatibles");
+
+    std::complex<double> resultat = 0.0;
+
+    for (std::size_t i = 0; i < size(); ++i)
+        resultat += (*this)[i] * v[i];
+
+    return resultat;
+}
+
+/* Fonctions de la classe Matrice */
 
 Matrice::Matrice(int N, int M, complex<double> v)
 {
@@ -167,7 +229,7 @@ void MatriceSym::decomposition_LDL(MatriceSym &L, Vecteur &D) const
         D[j] = (*this)(j, j);
         for (int k = 0; k < j; ++k)
         {
-            D[j] -= L(j, k) * std::conj(L(j, k)) * D[k];
+            D[j] -= L(j, k) * L(j, k) * D[k];
         }
         // Verification caractère défini positif
 
@@ -183,7 +245,7 @@ void MatriceSym::decomposition_LDL(MatriceSym &L, Vecteur &D) const
             L(i, j) = (*this)(i, j);
             for (int k = 0; k < j; ++k)
             {
-                L(i, j) -= L(j, k) * std::conj(L(i, k)) * D[k];
+                L(i, j) -= L(j, k) * L(i, k) * D[k];
             }
             L(i, j) /= D[j];
         }
@@ -252,43 +314,72 @@ Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P)
     return Q;
 }
 
-Vecteur gradientConjugue(const MatriceSym &A, const Vecteur &b, double tol, unsigned int maxIter)
+Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol, unsigned int maxIter)
 {
-    Vecteur p(b.size(), 0.0);
+    const std::size_t n = b.size();
 
-    Vecteur r = b - A * p;
+    Vecteur x(n, 0.0);
+
+    Vecteur r = b - A * x;
     Vecteur d = r;
 
-    double rr = std::real(r * r);
-    double bnorm = b.norm();
+    const double bnorm = b.norm();
+    double relativeResidual = 0.0;
 
     if (bnorm == 0.0)
-        return p;
+        return x;
 
-    for (unsigned int k = 0; k < maxIter; ++k)
+    std::complex<double> rho = r.produitBilineaire(r);
+
+    for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
         Vecteur Ad = A * d;
-        double denom = std::real(d * Ad);
-        double alpha = rr / denom;
-        p = p + alpha * d;
-        r = r - alpha * Ad;
-        double rrNew = std::real(r * r);
+        const std::complex<double> denom = d.produitBilineaire(Ad);
+        const double scale = d.norm() * Ad.norm();
 
-        if (std::sqrt(rrNew) / bnorm < tol)
+        if (scale == 0 || std::abs(denom) < 1e-20 * scale)
         {
-            std::cout << "Convergence en "
-                      << k + 1
-                      << " iterations\n";
-            return p;
+            std::cerr << "GCMS : breakdown, denominateur nul"
+                      << " a l'iteration " << iter
+                      << ", avec un résidu relatif de : "
+                      << relativeResidual << std::endl;
+            return x;
         }
 
-        double beta = rrNew / rr;
+        const std::complex<double> alpha = rho / denom;
+        x = x + alpha * d;
+        r = r - alpha * Ad;
+        relativeResidual = r.norm() / bnorm;
+
+        if (relativeResidual < tol)
+        {
+            std::cout << "GCMS converge en "
+                      << iter + 1
+                      << " iterations avec un résidu relatif de : "
+                      << relativeResidual << std::endl;
+
+            return x;
+        }
+
+        const std::complex<double> rhoNew = r.produitBilineaire(r);
+
+        if (std::abs(rho) < 1e-30)
+        {
+
+            std::cerr << "COCG : breakdown de rho, avec résidu relatif de : "
+                      << relativeResidual
+                      << std::endl;
+            return x;
+        }
+
+        const std::complex<double> beta = rhoNew / rho;
+
         d = r + beta * d;
-        rr = rrNew;
+        rho = rhoNew;
     }
 
-    std::cout << "Sortie après "
-              << maxIter
-              << " iterations\n";
-    return p;
+    std::cout << "GCMS : nombre maximal d'iterations atteint."
+              << std::endl;
+
+    return x;
 }

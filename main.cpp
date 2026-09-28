@@ -718,19 +718,19 @@ int main()
                   << ymin << ", " << ymax << "]" << std::endl;
         std::cout << "  Taille du domaine   : " << L << " x " << L << std::endl;
         std::cout << "  Pas                 : " << pasSolution << std::endl;
-        std::cout << "  Distance minimale   : " << delta << std::endl;
-        std::cout << "  Rayon exclu         : " << distanceMin << std::endl;
+        std::cout << "  Distance à la frontière : " << delta << std::endl;
+        std::cout << "  Rayon minimal autorisé   : " << distanceMin << std::endl;
         std::cout << "  Nombre de points    : " << nbPointsSolution << std::endl;
 
         // -- Calcul du vecteur de p sur les milieux des bords --
-        vector<complex<double>> vect_p;
+        Vecteur vect_p(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
             vect_p.push_back(p_analytique(maillage[i].milieu, idxTroncature));
         }
 
         // -- Calcul du vecteur de p aux noeuds
-        std::vector<std::complex<double>> pNoeuds;
+        Vecteur pNoeuds(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; ++i)
         {
             pNoeuds.push_back(p_analytique(maillage[i].P1, idxTroncature));
@@ -1000,24 +1000,30 @@ int main()
         /* ----- TP2 ----- */
 
         // -- Parametres du problème --
+
         k = k;
 
         // -- Parametres Maillage --
+
         const double rayon = 1.; // rayon cercle du maillage
-        pasMaillage = 0.01;      // pas du maillage
+        pasMaillage = 0.02;      // pas du maillage
 
         // -- Parametres Solution --
+
         const double L = 4.;              // Domaine LxL pour le calcul de la solution
         const double pasSolution = 0.1;   // pas de la solution
         const double delta = pasSolution; // distance minimale entre les points de solution et le cercle
 
         // -- Parametre  d'approximation --
+
         const unsigned int idxTroncature = 25;
         const unsigned int ordre = 4;
         green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
         max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
-        double tolGradConj = 1e-10;
+        double tolGradConj = 1e-8;
         unsigned int maxIterGradConj = 1000;
+
+        // -- Affichage Parametres --
 
         std::cout << "\n=== Parametres du probleme ===" << std::endl;
         std::cout << "  Nombre d'onde k          : " << k << std::endl;
@@ -1029,9 +1035,11 @@ int main()
         std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
 
         // -- Start time --
+
         std::clock_t start = std::clock();
 
         // -- Création maillage --
+
         Point O(0, 0);
         Cercle cercle(rayon, O);
         Maillage maillage;
@@ -1045,6 +1053,7 @@ int main()
         std::cout << "  Nombre de segments  : " << nbSegmentsMaillage << std::endl;
 
         // -- Maillage pour la solution --
+
         vector<Point> pointsSolution;
 
         const double xmin = -L / 2.0;
@@ -1077,25 +1086,37 @@ int main()
                   << ymin << ", " << ymax << "]" << std::endl;
         std::cout << "  Taille du domaine   : " << L << " x " << L << std::endl;
         std::cout << "  Pas                 : " << pasSolution << std::endl;
-        std::cout << "  Distance minimale   : " << delta << std::endl;
-        std::cout << "  Rayon exclu         : " << distanceMin << std::endl;
+        std::cout << "  Distance à la frontière : " << delta << std::endl;
+        std::cout << "  Rayon minimal autorisé   : " << distanceMin << std::endl;
         std::cout << "  Nombre de points    : " << nbPointsSolution << std::endl;
 
         // -- Récupération des coefficients de Legendre --
+
         const LegendreData &legendreData = get_legendre_data(ordre);
 
         // -- Calcul du vecteur de b de la FV de l'équation intégrale --
-        Vecteur vect_b;
+
+        Vecteur vect_b(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
-            vect_b.push_back(integ_simple([](const Point &Q, double)
-                                          { return -u_inc(Q); },
-                                          maillage[i],
-                                          legendreData));
+            vect_b[i] = integ_simple([](const Point &Q, double)
+                                     { return -u_inc(Q); },
+                                     maillage[i],
+                                     legendreData);
         }
 
+        // ================================================================
+        //   Version exacte A
+        // ================================================================
+
         // -- Calcul de la matrice A de la FV de l'équation intégrale --
+
+        std::cout << "\n=== Construction matrice exacte ===" << std::endl;
+
+        std::clock_t startConstructionGreen = std::clock();
+
         MatriceSym A(nbSegmentsMaillage);
+
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
             for (unsigned int j = 0; j <= i; j++)
@@ -1116,23 +1137,189 @@ int main()
                                            S,
                                            legendreData);
 
-                    A(i, j) += S.norm * S.norm * ((I / 4.0) - (1.0 / (2.0 * pi) * (log(k / 2) + gamma_euler)));
+                    A(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                            { return green_reguliere(Q, P); },
+                                            maillage[i],
+                                            maillage[j],
+                                            legendreData);
                 }
             }
         }
 
-        // -- Inversion de la matrice (méthode itérative) --
-        Vecteur vect_p = gradientConjugue(A, vect_b, tolGradConj, maxIterGradConj);
+        std::clock_t endConstructionGreen = std::clock();
 
-        // -- Calcul du vecteur de p sur les milieux des bords --
-        Vecteur vect_p_ana;
+        const double tempsConstructionGreen = static_cast<double>(endConstructionGreen - startConstructionGreen) / CLOCKS_PER_SEC;
+
+        // ================================================================
+        //   Version cached A
+        // ================================================================
+
+        // -- Calcul de la matrice A de la FV de l'équation intégrale --
+
+        std::cout << "\n=== Construction matrice cached ===" << std::endl;
+
+        std::clock_t startConstructionCached = std::clock();
+
+        MatriceSym A_cached(nbSegmentsMaillage);
+
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
         {
-            vect_p_ana.push_back(p_analytique(maillage[i].milieu, idxTroncature));
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (i != j) // cas général
+                {
+                    A_cached(i, j) = integ_double([](const Point &Q, const Point &P, double)
+                                                  { return green_cached_vec(Q, P); },
+                                                  maillage[i],
+                                                  maillage[j],
+                                                  legendreData);
+                }
+                else
+                {
+                    const Segment S = maillage[i];
+                    A_cached(i, j) = integ_simple([&S](const Point &Q, double)
+                                                  { return integ_simple_log(Q, S); },
+                                                  S,
+                                                  legendreData);
+
+                    A_cached(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                                   { return green_reguliere_cached_vec(Q, P); },
+                                                   maillage[i],
+                                                   maillage[j],
+                                                   legendreData);
+                }
+            }
         }
 
+        std::clock_t endConstructionCached = std::clock();
+
+        const double tempsConstructionCached = static_cast<double>(endConstructionCached - startConstructionCached) / CLOCKS_PER_SEC;
+
+        // -- Inversion de la matrice (méthode itérative) --
+
+        std::cout << "\n=== Resolution systeme exact ===" << std::endl;
+
+        std::clock_t startResolutionGreen = std::clock();
+
+        Vecteur vect_p = gradConjMatSym(A, vect_b, tolGradConj, maxIterGradConj);
+
+        std::clock_t endResolutionGreen = std::clock();
+
+        const double tempsResolutionGreen = static_cast<double>(endResolutionGreen - startResolutionGreen) / CLOCKS_PER_SEC;
+
+        std::cout << "\n=== Resolution systeme cached ===" << std::endl;
+
+        std::clock_t startResolutionCached = std::clock();
+
+        Vecteur vect_p_cached = gradConjMatSym(A_cached, vect_b, tolGradConj, maxIterGradConj);
+
+        std::clock_t endResolutionCached = std::clock();
+
+        const double tempsResolutionCached = static_cast<double>(endResolutionCached - startResolutionCached) / CLOCKS_PER_SEC;
+
+        // -- Calcul du vecteur de p sur les milieux des bords --
+        Vecteur vect_p_ana(nbSegmentsMaillage);
+        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        {
+            vect_p_ana[i] = p_analytique(maillage[i].milieu, idxTroncature);
+        }
+
+        // -- Erreur du cache --
+
+        double erreurPCache = 0.0;
+
+        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        {
+            erreurPCache += std::norm(vect_p[i] - vect_p_cached[i]);
+        }
+
+        erreurPCache = std::sqrt(erreurPCache) / vect_p.norm();
+
         // -- Comparaison p et p_ana --
-        // ...
+
+        double erreurPExacte = 0.0;
+        double erreurPCached = 0.0;
+
+        double erreurPExacteMax = 0.0;
+        double erreurPCachedMax = 0.0;
+
+        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        {
+            const double erreurExacte = std::abs(vect_p[i] - vect_p_ana[i]) / std::abs(vect_p_ana[i]);
+            const double erreurCached = std::abs(vect_p_cached[i] - vect_p_ana[i]) / std::abs(vect_p_ana[i]);
+
+            erreurPExacte += erreurExacte * erreurExacte;
+            erreurPCached += erreurCached * erreurCached;
+
+            erreurPExacteMax = std::max(erreurPExacteMax, erreurExacte);
+            erreurPCachedMax = std::max(erreurPCachedMax, erreurCached);
+        }
+
+        erreurPExacte = std::sqrt(erreurPExacte / static_cast<double>(nbSegmentsMaillage));
+        erreurPCached = std::sqrt(erreurPCached / static_cast<double>(nbSegmentsMaillage));
+
+        // -- Affichage erreurs p --
+
+        std::cout << "\n=== Analyse de p ===" << std::endl;
+
+        std::cout << "  Erreur p exacte / p analytique L2 : "
+                  << erreurPExacte
+                  << std::endl;
+
+        std::cout << "  Erreur p exacte / p analytique Linf : "
+                  << erreurPExacteMax
+                  << std::endl;
+
+        std::cout << "  Erreur p cached / p analytique L2 : "
+                  << erreurPCached
+                  << std::endl;
+
+        std::cout << "  Erreur p cached / p analytique Linf : "
+                  << erreurPCachedMax
+                  << std::endl;
+
+        std::cout << "  Difference p / p_cached L2 : "
+                  << erreurPCache
+                  << std::endl;
+
+        // -- Affichage temps systeme Ap = b --
+
+        std::cout << "\n=== Temps de construction ===" << std::endl;
+
+        std::cout << "  Matrice Green exacte : "
+                  << tempsConstructionGreen
+                  << " s"
+                  << std::endl;
+
+        std::cout << "  Matrice Green cached : "
+                  << tempsConstructionCached
+                  << " s"
+                  << std::endl;
+
+        std::cout << "  Speedup construction : "
+                  << tempsConstructionGreen / tempsConstructionCached
+                  << " x"
+                  << std::endl;
+
+        std::cout << "  Gain construction : "
+                  << (1.0 -
+                      tempsConstructionCached /
+                          tempsConstructionGreen) *
+                         100.0
+                  << " %"
+                  << std::endl;
+
+        std::cout << "\n=== Temps de resolution ===" << std::endl;
+
+        std::cout << "  Resolution exacte : "
+                  << tempsResolutionGreen
+                  << " s"
+                  << std::endl;
+
+        std::cout << "  Resolution cached : "
+                  << tempsResolutionCached
+                  << " s"
+                  << std::endl;
 
         // -- Création du fichier de résultat --
         const string filename = string("outputs/u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
@@ -1190,13 +1377,13 @@ int main()
 
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
             {
-                uCached += vect_p[i] * integ_simple(
-                                           [&Pj](const Point &Q, double)
-                                           {
-                                               return green_cached_vec(Pj, Q);
-                                           },
-                                           maillage[i],
-                                           legendreData);
+                uCached += vect_p_cached[i] * integ_simple(
+                                                  [&Pj](const Point &Q, double)
+                                                  {
+                                                      return green_cached_vec(Pj, Q);
+                                                  },
+                                                  maillage[i],
+                                                  legendreData);
             }
 
             std::clock_t endCached = std::clock();
