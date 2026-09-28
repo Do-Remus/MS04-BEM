@@ -14,42 +14,46 @@ ostream &operator<<(ostream &out, const Vecteur &u)
     return out;
 }
 
-
 /*Fonctions de la classe Matrice*/
 
-Matrice::Matrice(int N, int M, complex<double> v){
-    m=M;
-    n=N;
-    coefs.resize(n*m, v);
-    //constructeur matrice a valeurs constantes
+Matrice::Matrice(int N, int M, complex<double> v)
+{
+    m = M;
+    n = N;
+    coefs.resize(n * m, v);
+    // constructeur matrice a valeurs constantes
 }
 
-
-complex<double> &Matrice::operator()(int i, int j){
-    if(i>n || j>m || i<1 || j<1){
-        cout<<"overflow in matrix coordinates ; i= "<<i<<", j= "<<j<<" matrix size (n,m) = ("<<n<<","<<m<<")"<<endl;
+complex<double> &Matrice::operator()(int i, int j)
+{
+    if (i > n || j > m || i < 1 || j < 1)
+    {
+        cout << "overflow in matrix coordinates ; i= " << i << ", j= " << j << " matrix size (n,m) = (" << n << "," << m << ")" << endl;
         exit(1);
     }
-    return coefs[(i-1)*m+j-1];
+    return coefs[(i - 1) * m + j - 1];
 }
 
-complex<double> Matrice::operator()(int i, int j) const {
-    if(i>n || j>m || i<1 || j<1){
-        cout<<"overflow in matrix coordinates ; i= "<<i<<", j= "<<j<<" matrix size (n,m) = ("<<n<<","<<m<<")"<<endl;
+complex<double> Matrice::operator()(int i, int j) const
+{
+    if (i > n || j > m || i < 1 || j < 1)
+    {
+        cout << "overflow in matrix coordinates ; i= " << i << ", j= " << j << " matrix size (n,m) = (" << n << "," << m << ")" << endl;
         exit(1);
     }
-    return coefs[(i-1)*m+j-1];
+    return coefs[(i - 1) * m + j - 1];
 }
 
-
-Vecteur Matrice::operator* (const Vecteur v) const{
+Vecteur Matrice::operator*(const Vecteur v) const
+{
     Vecteur b(n);
-    for(int i=0; i<n; i++){
+    for (int i = 0; i < n; i++)
+    {
         b[i] = 0;
-        for(int j=0; j<m; j++){
-            b[i] += (*this)(i+1,j+1) * v[j];
-            //cout<<" (*this)(i+1,j+1) * v[j] = "<<(*this)(i+1,j+1) <<"* "<<v[j]<<" = "<< b[i]<<endl;
-
+        for (int j = 0; j < m; j++)
+        {
+            b[i] += (*this)(i + 1, j + 1) * v[j];
+            // cout<<" (*this)(i+1,j+1) * v[j] = "<<(*this)(i+1,j+1) <<"* "<<v[j]<<" = "<< b[i]<<endl;
         }
     }
     return b;
@@ -57,8 +61,8 @@ Vecteur Matrice::operator* (const Vecteur v) const{
 
 /*Fonctions associées à la classe Matrice*/
 
-
-ostream &operator<<(ostream &out, const Matrice &A){
+ostream &operator<<(ostream &out, const Matrice &A)
+{
     for (int i = 1; i <= A.n; i++)
     {
         for (int j = 1; j <= A.m; j++)
@@ -68,7 +72,6 @@ ostream &operator<<(ostream &out, const Matrice &A){
         out << endl;
     }
     return out;
-
 }
 
 /* Fonctions de la classe MatriceSym */
@@ -221,4 +224,45 @@ Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P)
     }
     // solution
     return Q;
+}
+
+Vecteur gradientConjugue(const Matrice &A, const Vecteur &b, double tol = 1e-10, int maxIter = 1000)
+{
+    Vecteur p(b.size(), 0.0);
+
+    Vecteur r = b - A * p;
+    Vecteur d = r;
+
+    double rr = std::real(r * r);
+    double bnorm = b.norm();
+
+    if (bnorm == 0.0)
+        return p;
+
+    for (int k = 0; k < maxIter; ++k)
+    {
+        Vecteur Ad = A * d;
+        double denom = std::real(d * Ad);
+        double alpha = rr / denom;
+        p = p + alpha * d;
+        r = r - alpha * Ad;
+        double rrNew = std::real(r * r);
+
+        if (std::sqrt(rrNew) / bnorm < tol)
+        {
+            std::cout << "Convergence en "
+                      << k + 1
+                      << " iterations\n";
+            return p;
+        }
+
+        double beta = rrNew / rr;
+        d = r + beta * d;
+        rr = rrNew;
+    }
+
+    std::cout << "Sortie après "
+              << maxIter
+              << " iterations\n";
+    return p;
 }
