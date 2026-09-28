@@ -63,10 +63,10 @@ std::complex<double> integ_simple(F &&f, const Segment &AB, const LegendreData &
         const double w = data.weights[i];
         const Point correction = (0.5 * r) * AB.vecteur_norm;
 
-        result += w * f(AB.milieu + correction);
+        result += w * f(AB.milieu + correction, r);
 
         if (r > 0.0)
-            result += w * f(AB.milieu - correction);
+            result += w * f(AB.milieu - correction, -r);
     }
 
     return 0.5 * AB.norm * result;

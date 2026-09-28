@@ -2,7 +2,10 @@
 
 complex<double> hankel_n(const double x, const int n)
 {
-    return boost::math::cyl_bessel_j(n, x) + I * boost::math::cyl_neumann(n, x);
+    const double J = boost::math::cyl_bessel_j(n, x);
+    const double Y = boost::math::cyl_neumann(n, x);
+
+    return {J, Y};
 }
 
 complex<double> green(const Point &p1, const Point &p2)
