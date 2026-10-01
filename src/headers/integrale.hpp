@@ -24,7 +24,7 @@ inline Complex integ_simple(F &&f, const QuadratureSegment &quadrature)
 }
 
 template <typename F>
-inline Complex integ_Real(F &&f, const QuadratureSegment &AB, const QuadratureSegment &CD)
+inline Complex integ_double(F &&f, const QuadratureSegment &AB, const QuadratureSegment &CD)
 {
     Complex result = 0.0;
 

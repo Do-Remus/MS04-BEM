@@ -87,9 +87,9 @@ complex<Real> green_cached_vec(const Point &p1, const Point &p2)
 
     const Real d2 = dx * dx + dy * dy;
 
-    const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv * green_cache_step_inv + 0.5);
+    const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv + 0.5);
 
-    return index;
+    return green_cache[index];
 }
 
 complex<Real> green_reguliere(const Point &P1, const Point &P2)

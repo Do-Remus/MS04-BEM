@@ -19,8 +19,8 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
     constexpr std::size_t BLOCK = 8; // Modifiable pour optimiser
 
     // Buffers réutilisés
-    std::vector<std::complex<double>> yi(BLOCK);
-    std::vector<std::complex<double>> yj(BLOCK);
+    std::vector<Complex> yi(BLOCK);
+    std::vector<Complex> yj(BLOCK);
 
     for (std::size_t ib = rank * BLOCK; ib < N; ib += size * BLOCK)
     {
@@ -28,7 +28,28 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
         const std::size_t ni = i_end - ib;
 
         // Remise à zéro du bloc i
-        std::fill(yi.begin(), yi.begin() + ni, std::complex<double>(0.0));
+        std::fill(yi.begin(), yi.begin() + ni, Complex(0.0));
+
+        // -- DIAGONALE --
+
+        for (std::size_t i = ib; i < i_end; ++i)
+        {
+            const Segment &S = maillage[i];
+            const QuadratureSegment &qS = quadrature_maillage[i];
+
+            Complex aii = integ_simple([&S](const Point &Q)
+                                       { return integ_simple_log(Q, S); },
+                                       qS);
+
+            aii += integ_double([](const Point &Q, const Point &P)
+                                { return green_reguliere_cached_vec(Q, P); },
+                                qS,
+                                qS);
+
+            yi[i - ib] += aii * x[i];
+        }
+
+        // -- HORS-DIAGONALE : i < j --
 
         for (std::size_t jb = ib; jb < N; jb += BLOCK)
         {
@@ -36,7 +57,7 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
             const std::size_t nj = j_end - jb;
 
             // Remise à zéro du bloc j
-            std::fill(yj.begin(), yj.begin() + nj, std::complex<double>(0.0));
+            std::fill(yj.begin(), yj.begin() + nj, Complex(0.0));
 
             for (std::size_t i = ib; i < i_end; ++i)
             {
@@ -46,11 +67,11 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
 
                 for (std::size_t j = j_start; j < j_end; ++j)
                 {
-                    const std::complex<double> aij = integ_double([](const Point &Q,
-                                                                     const Point &P)
-                                                                  { return green_cached_vec(Q, P); },
-                                                                  qS,
-                                                                  quadrature_maillage[j]);
+                    const Complex aij = integ_double([](const Point &Q,
+                                                        const Point &P)
+                                                     { return green_cached_vec(Q, P); },
+                                                     qS,
+                                                     quadrature_maillage[j]);
 
                     yi[i - ib] += aij * x[j];
                     yj[j - jb] += aij * x[i];
@@ -106,7 +127,7 @@ Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::
         const Segment &S = maillage[i];
         const QuadratureSegment &qS = quadrature_maillage[i];
 
-        std::complex<double> aii =
+        Complex aii =
             integ_simple([&S](const Point &Q)
                          { return integ_simple_log(Q, S); },
                          qS);
@@ -120,10 +141,10 @@ Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::
 
         for (unsigned int j = i + 1; j < N; ++j)
         {
-            const std::complex<double> aij = integ_double([](const Point &Q, const Point &P)
-                                                          { return green_cached_vec(Q, P); },
-                                                          qS,
-                                                          quadrature_maillage[j]);
+            const Complex aij = integ_double([](const Point &Q, const Point &P)
+                                             { return green_cached_vec(Q, P); },
+                                             qS,
+                                             quadrature_maillage[j]);
 
             y_local[i] += aij * x[j];
             y_local[j] += aij * x[i];
@@ -142,7 +163,7 @@ Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::
     return y;
 }
 
-Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, double tol, unsigned int maxIter)
+Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter)
 {
     const std::size_t n = b.size();
     Vecteur x(n, 0.0);
@@ -150,20 +171,20 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
     Vecteur r = b; // car x0 = 0
     Vecteur d = r;
 
-    const double bnorm = b.norm();
+    const Real bnorm = b.norm();
 
     if (bnorm == 0.0)
         return x;
 
-    double relativeResidual = 1.0;
+    Real relativeResidual = 1.0;
 
-    std::complex<double> rho = r.produitBilineaire(r);
+    Complex rho = r.produitBilineaire(r);
 
     for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
         Vecteur Ad = produit_A_cached_blocked(maillage, d, quadrature_maillage);
-        const std::complex<double> denom = d.produitBilineaire(Ad);
-        const double scale = d.norm() * Ad.norm();
+        const Complex denom = d.produitBilineaire(Ad);
+        const Real scale = d.norm() * Ad.norm();
 
         if (scale == 0.0 || std::abs(denom) < 1e-20 * scale)
         {
@@ -185,7 +206,7 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
             return x;
         }
 
-        const std::complex<double> alpha = rho / denom;
+        const Complex alpha = rho / denom;
 
         for (std::size_t i = 0; i < n; ++i)
         {
@@ -214,7 +235,7 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
             return x;
         }
 
-        const std::complex<double> rhoNew = r.produitBilineaire(r);
+        const Complex rhoNew = r.produitBilineaire(r);
 
         if (std::abs(rho) < 1e-30)
         {
@@ -233,7 +254,7 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
             return x;
         }
 
-        const std::complex<double> beta = rhoNew / rho;
+        const Complex beta = rhoNew / rho;
 
         for (std::size_t i = 0; i < n; ++i)
         {
@@ -266,39 +287,44 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // initialisation des paramètres
+    // -- Initialisation des paramètres --
+
     const string config = "config.txt";
     get_config(config);
 
     // -- Affichage Parametres --
+
     if (rank == 0)
     {
         std::cout << "\n=== Parametres du probleme ===" << std::endl;
         std::cout << "  Nombre d'onde k          : " << k << std::endl;
+    }
 
+    // -- Start time --
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    const Real start = MPI_Wtime();
+
+    // -- Initialisation cache de Green --
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    const Real startGreenCache = MPI_Wtime();
+
+    initialiser_green_cache();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    const Real endGreenCache = MPI_Wtime();
+
+    const Real tempsGreenCached = endGreenCache - startGreenCache;
+
+    if (rank == 0)
+    {
         std::cout << "\n=== Approximations ===" << std::endl;
         std::cout << "  Indice de troncature N   : " << idxTroncature << std::endl;
         std::cout << "  Ordre de quadrature      : " << ordre << std::endl;
         std::cout << "  Pas du cache de Green    : " << green_cache_step << std::endl;
         std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
     }
-
-    // -- Start time --
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    const double start = MPI_Wtime();
-
-    // -- Initialisation cache de Green --
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    const double startGreenCache = MPI_Wtime();
-
-    initialiser_green_cache();
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    const double endGreenCache = MPI_Wtime();
-
-    const double tempsGreenCached = endGreenCache - startGreenCache;
 
     // -- Création maillage --
 
@@ -320,7 +346,7 @@ int main(int argc, char **argv)
     // -- Récupération des coefficients de Legendre --
 
     MPI_Barrier(MPI_COMM_WORLD);
-    const double startQuad = MPI_Wtime();
+    const Real startQuad = MPI_Wtime();
 
     if (rank == 0)
     {
@@ -331,14 +357,14 @@ int main(int argc, char **argv)
     const std::vector<QuadratureSegment> quadrature_maillage = get_quadrature_maillage(maillage, legendreData);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    const double endQuad = MPI_Wtime();
+    const Real endQuad = MPI_Wtime();
 
-    const double tempsQuad = endQuad - startQuad;
+    const Real tempsQuad = endQuad - startQuad;
 
     // -- Calcul du vecteur de b de la FV de l'équation intégrale --
 
     MPI_Barrier(MPI_COMM_WORLD);
-    const double startCalcB = MPI_Wtime();
+    const Real startCalcB = MPI_Wtime();
 
     if (rank == 0)
     {
@@ -358,9 +384,9 @@ int main(int argc, char **argv)
     MPI_Allreduce(b_local.data(), vect_b.data(), static_cast<int>(nbSegmentsMaillage), MPI_C_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    const double endCalcB = MPI_Wtime();
+    const Real endCalcB = MPI_Wtime();
 
-    const double tempsCalcB = endCalcB - startCalcB;
+    const Real tempsCalcB = endCalcB - startCalcB;
 
     // -- Inversion de la matrice (méthode itérative) --
 
@@ -371,14 +397,14 @@ int main(int argc, char **argv)
         std::cout << "\n=== Resolution systeme ===" << std::endl;
     }
 
-    const double startResolutionCached = MPI_Wtime();
+    const Real startResolutionCached = MPI_Wtime();
 
     Vecteur vect_p_cached = gradConjMatrixFree(maillage, vect_b, quadrature_maillage, tolGradConj, maxIterGradConj);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    const double endResolutionCached = MPI_Wtime();
+    const Real endResolutionCached = MPI_Wtime();
 
-    const double tempsResolutionCached = endResolutionCached - startResolutionCached;
+    const Real tempsResolutionCached = endResolutionCached - startResolutionCached;
 
     // -- Erreur avec le vecteur de p sur les milieux des bords --
 
@@ -390,7 +416,7 @@ int main(int argc, char **argv)
             vect_p_ana[i] = p_analytique(maillage[i].milieu, idxTroncature);
         }
 
-        double erreurPCached = (vect_p_cached - vect_p_ana).norm() / vect_p_ana.norm();
+        Real erreurPCached = (vect_p_cached - vect_p_ana).norm() / vect_p_ana.norm();
 
         std::cout << "\n=== Analyse de p ===" << std::endl;
 
@@ -401,7 +427,7 @@ int main(int argc, char **argv)
 
     // -- Reconstruction de la solution --
 
-    double tempsCached = 0.0;
+    Real tempsCached = 0.0;
 
     if (rank == 0)
     {
@@ -412,18 +438,18 @@ int main(int argc, char **argv)
 
         vector<Point> pointsSolution;
 
-        const double xmin = -L / 2.0;
-        const double xmax = L / 2.0;
-        const double ymin = -L / 2.0;
-        const double ymax = L / 2.0;
+        const Real xmin = -L / 2.0;
+        const Real xmax = L / 2.0;
+        const Real ymin = -L / 2.0;
+        const Real ymax = L / 2.0;
 
-        const double distanceMin = rayon + delta;
+        const Real distanceMin = rayon + delta;
 
-        for (double x = xmin; x <= xmax; x += pasSolution)
+        for (Real x = xmin; x <= xmax; x += pasSolution)
         {
-            for (double y = ymin; y <= ymax; y += pasSolution)
+            for (Real y = ymin; y <= ymax; y += pasSolution)
             {
-                const double distance =
+                const Real distance =
                     std::sqrt(x * x + y * y);
 
                 // On conserve uniquement les points
@@ -461,21 +487,21 @@ int main(int argc, char **argv)
 
         // -- Construction solution approchée et des erreurs --
 
-        double erreurTotaleL2 = 0.0;
-        double erreurTotaleMax = 0.0;
+        Real erreurTotaleL2 = 0.0;
+        Real erreurTotaleMax = 0.0;
 
         for (const Point &Pj : pointsSolution)
         {
-            complex<double> uCached = 0.0;
+            Complex uCached = 0.0;
 
             // -- Solution analytique --
 
-            const complex<double> uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
+            const Complex uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
 
             // -- Interpolation cte --
 
             // Green cached
-            const double startCached = MPI_Wtime();
+            const Real startCached = MPI_Wtime();
             ;
 
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
@@ -485,12 +511,12 @@ int main(int argc, char **argv)
                                                            quadrature_maillage[i]);
             }
 
-            const double endCached = MPI_Wtime();
+            const Real endCached = MPI_Wtime();
 
             tempsCached += endCached - startCached;
 
             // Erreurs locales
-            const double erreurTotale = erreur_relative(uCached, uExact);
+            const Real erreurTotale = erreur_relative(uCached, uExact);
 
             // Accumulation
             erreurTotaleL2 += erreurTotale * erreurTotale;
@@ -517,7 +543,7 @@ int main(int argc, char **argv)
 
         // -- Erreurs L2 --
 
-        erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<double>(nbPointsSolution));
+        erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<Real>(nbPointsSolution));
 
         // -- Prints --
 
@@ -535,9 +561,9 @@ int main(int argc, char **argv)
     // -- End time --
 
     MPI_Barrier(MPI_COMM_WORLD);
-    const double end = MPI_Wtime();
+    const Real end = MPI_Wtime();
 
-    double seconds = end - start;
+    Real seconds = end - start;
 
     if (rank == 0)
     {
