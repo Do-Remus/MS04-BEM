@@ -50,7 +50,7 @@ void initialiser_green_cache()
         {
             const Real distance = index * green_cache_step;
 
-            green_cache[index] = (I / 4.0) * hankel_n(k * distance, 0);
+            green_cache[index] = (I / Real(4.0)) * hankel_n(k * distance, 0);
         }
     }
 
@@ -77,7 +77,7 @@ complex<Real> green(const Point &p1, const Point &p2)
 {
     Real r = (p1 - p2).norm();
 
-    return (I / 4.0) * hankel_n(k * r, 0);
+    return (I / Real(4.0)) * hankel_n(k * r, 0);
 }
 
 complex<Real> green_cached_vec(const Point &p1, const Point &p2)
@@ -98,9 +98,9 @@ complex<Real> green_reguliere(const Point &P1, const Point &P2)
 
     if (x < PRECISION_ZERO_DOUBLE)
     {
-        return (I / 4.0) - (1.0 / (2.0 * pi)) * (gamma_euler + log(k / 2));
+        return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
     }
-    return green(P1, P2) + (1 / (2 * pi)) * log(x);
+    return green(P1, P2) + (Real(1.0) / (Real(2.0) * pi)) * log(x);
 }
 
 complex<Real> green_reguliere_cached_vec(const Point &P1, const Point &P2)
@@ -109,9 +109,9 @@ complex<Real> green_reguliere_cached_vec(const Point &P1, const Point &P2)
 
     if (x < green_cache_step)
     {
-        return (I / 4.0) - (1.0 / (2.0 * pi)) * (gamma_euler + log(k / 2));
+        return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
     }
-    return green_cached_vec(P1, P2) + (1 / (2 * pi)) * log(x);
+    return green_cached_vec(P1, P2) + (Real(1.0) / (Real(2.0) * pi)) * log(x);
 }
 
 complex<Real> u_N_plus_analytique(const Point &P1, Real radius, int N)
@@ -125,7 +125,7 @@ complex<Real> u_N_plus_analytique(const Point &P1, Real radius, int N)
     for (int n = 1; n <= N; n++)
     {
         iterative_i *= -I;
-        partial_sum -= 2. * iterative_i * (boost::math::cyl_bessel_j(n, ka) / hankel_n(ka, n)) * hankel_n(x, n) * cos(n * theta); // positive part of the sum
+        partial_sum -= Real(2.0) * iterative_i * (boost::math::cyl_bessel_j(n, ka) / hankel_n(ka, n)) * hankel_n(x, n) * cos(n * theta); // positive part of the sum
     }
 
     return partial_sum;

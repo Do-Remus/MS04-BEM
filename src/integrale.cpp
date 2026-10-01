@@ -20,8 +20,8 @@ Complex integ_simple_log(const Point &X, const Segment &AB)
 
     auto x_log_x = [](Real x)
     {
-        if (x == 0.0)
-            return 0.0;
+        if (x == Real(0.0))
+            return Real(0.0);
 
         return x * std::log(x);
     };
@@ -29,5 +29,5 @@ Complex integ_simple_log(const Point &X, const Segment &AB)
     const Real a = DAe | tau;
     const Real b = DBe | tau;
 
-    return -(1.0 / (2.0 * pi)) * (x_log_x(std::abs(b)) + x_log_x(std::abs(a)) - AB.norm);
+    return -(Real(1.0) / (Real(2.0) * pi)) * (x_log_x(std::abs(b)) + x_log_x(std::abs(a)) - AB.norm);
 }

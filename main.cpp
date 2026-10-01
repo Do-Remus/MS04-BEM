@@ -94,7 +94,7 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
 
     Vecteur y(N, 0.0);
 
-    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), MPI_C_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 
     return y;
 }
@@ -158,7 +158,7 @@ Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::
      */
     Vecteur y(N, 0.0);
 
-    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), MPI_C_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 
     return y;
 }
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
 
     Vecteur vect_b(nbSegmentsMaillage, 0.0);
 
-    MPI_Allreduce(b_local.data(), vect_b.data(), static_cast<int>(nbSegmentsMaillage), MPI_C_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(b_local.data(), vect_b.data(), static_cast<int>(nbSegmentsMaillage), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
     const Real endCalcB = MPI_Wtime();
