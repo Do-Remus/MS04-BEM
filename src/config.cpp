@@ -2,30 +2,30 @@
 
 /* Définition des varibles globales par default */
 
-double theta = 0;
-bool effectuerTests = false;
-bool effectuerLaSimulation = false;
-double k = 2; // frequence des ondes : il y a un nombre au plus denombrable de frequences pour lesquelles le pb n'est pas bien pose
-double h = 10;
-double e = 2;
-int N = 100;
-double pasMaillage = 0.1;
-unsigned int nbObstacles = 1;
-double pasIntegrale = 0.01;
-unsigned int nbPasExport = 100;
-string cheminFichierSolution = "outputs/output.txt";
-string cheminFichierObstacles = "outputs/obstacles.txt";
-string cheminFichierMaillage = "outputs/maillage.txt";
+Real k = 10; // frequence des ondes : il y a un nombre au plus denombrable de frequences pour lesquelles le pb n'est pas bien pose
+Real rayon = 1.0;
+Real L = 4.0;
+Real pasMaillage = 0.001;
+Real pasSolution = 0.1;
+unsigned int idxTroncature = 25;
+unsigned int ordre = 4;
+unsigned int maxIterGradConj = 1000;
+Real tolGradConj = 1e-8;
 
 /* Déclaration des fonctions globales */
 
 void get_config(const string &filename)
 {
-    cout << "inside get config" << endl;
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     ifstream f(filename);
     if (!f.is_open())
     {
-        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+        if (rank == 0)
+        {
+            cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+        }
         exit(-1);
     }
 
@@ -36,12 +36,12 @@ void get_config(const string &filename)
         string nom{""};
         string valeur{""};
 
-        if (!getline(streamLigne, nom, '=')) // Cas d'erreur de lecture (passage à la ligne suivante)
+        if (!getline(streamLigne, nom, '='))
         {
             continue;
         }
 
-        if (!getline(streamLigne, valeur)) // Cas d'erreur de lecture (passage à la ligne suivante)
+        if (!getline(streamLigne, valeur))
         {
             continue;
         }
@@ -49,182 +49,125 @@ void get_config(const string &filename)
         nom = trim(nom);
         valeur = trim(valeur);
 
-        if (nom == "theta")
-        {
-            cout << "Récupération de theta:" << endl;
-            theta = atof(valeur.c_str());
-            cout << "     theta = " << theta << endl;
-        }
-
         if (nom == "k")
         {
-            cout << "Récupération de k:" << endl;
             k = atof(valeur.c_str());
             if (!(k > 0.000000001))
             {
-                cout << "La valeur de k doit-être strictement supérieur à 10-9.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de k doit-être strictement supérieur à 10-9.";
+                }
                 exit(-1);
             }
-            cout << "     k = " << k << endl;
         }
 
-        if (nom == "h")
+        if (nom == "rayon")
         {
-            cout << "Récupération de h:" << endl;
-            h = atof(valeur.c_str());
-            if (!(h > 0))
+            rayon = atof(valeur.c_str());
+            if (!(rayon > 0))
             {
-                cout << "La valeur de h doit-être strictement positive.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de rayon doit-être strictement positive.";
+                }
                 exit(-1);
             }
-            cout << "     h = " << h << endl;
         }
 
-        if (nom == "e")
+        if (nom == "L")
         {
-            cout << "Récupération de e:" << endl;
-            e = atof(valeur.c_str());
-            if (!(e > 0))
+            L = atof(valeur.c_str());
+            if (!(L > 0))
             {
-                cout << "La valeur de e doit-être strictement positive.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de L doit-être strictement positive.";
+                }
                 exit(-1);
             }
-            cout << "     e = " << e << endl;
         }
-        if (nom == "N")
-        {
-            cout << "Récupération de N:" << endl;
-            N = atof(valeur.c_str());
-            if (!(N > 0))
-            {
-                cout << "La valeur de e doit-être strictement positive.";
-                exit(-1);
-            }
-            cout << "     N = " << N << endl;
-        }
+
         if (nom == "pasMaillage")
         {
-            cout << "Récupération de pasMaillage:" << endl;
             pasMaillage = atof(valeur.c_str());
             if (!(pasMaillage > 0))
             {
-                cout << "La valeur de pasMaillage doit-être strictement positive.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de pasMaillage doit-être strictement positive.";
+                }
                 exit(-1);
             }
-            cout << "     pasMaillage = " << pasMaillage << endl;
         }
 
-        if (nom == "pasIntegrale")
+        if (nom == "pasSolution")
         {
-            cout << "Récupération de pasIntegrale:" << endl;
-            pasIntegrale = atof(valeur.c_str());
-            if (!(pasIntegrale > 0))
+            pasSolution = atof(valeur.c_str());
+            if (!(pasSolution > 0))
             {
-                cout << "La valeur de pasIntegrale doit-être strictement positive.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de pasSolution doit-être strictement positive.";
+                }
                 exit(-1);
             }
-            cout << "     pasIntegrale = " << pasIntegrale << endl;
         }
 
-        if (nom == "nbObstacles")
+        if (nom == "idxTroncature")
         {
-            cout << "Récupération de nbObstacles:" << endl;
-            nbObstacles = atoi(valeur.c_str());
-            if (!(nbObstacles > 0))
+            idxTroncature = atoi(valeur.c_str());
+            if (!(idxTroncature > 0))
             {
-                cout << "La valeur de nbObstacles doit-être strictement positive.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de nbObstacles doit-être strictement positive.";
+                }
                 exit(-1);
             }
-            cout << "     nbObstacles = " << nbObstacles << endl;
         }
 
-        if (nom == "nbPasExport")
+        if (nom == "ordre")
         {
-            cout << "Récupération de nbPasExport:" << endl;
-            nbPasExport = atoi(valeur.c_str());
-            if (!(nbPasExport > 0))
+            ordre = atoi(valeur.c_str());
+            if (!(ordre > 0))
             {
-                cout << "La valeur de nbPasExport doit-être strictement positive.";
+                if (rank == 0)
+                {
+                    cout << "La valeur de ordre doit-être strictement positive.";
+                }
                 exit(-1);
             }
-            cout << "     nbPasExport = " << nbPasExport << endl;
         }
 
-        if (nom == "effectuerTests")
+        if (nom == "maxIterGradConj")
         {
-            cout << "Récupération de effectuerTests:" << endl;
-            if (valeur == "true")
+            maxIterGradConj = atoi(valeur.c_str());
+            if (!(maxIterGradConj > 0))
             {
-                effectuerTests = true;
+                if (rank == 0)
+                {
+                    cout << "La valeur de maxIterGradConj doit-être strictement positive.";
+                }
+                exit(-1);
             }
-            else if (valeur == "false")
-            {
-                effectuerTests = false;
-            }
-            else
-            {
-                cout << "La valeur de effectuerTests doit-être 'true' ou 'false'." << endl;
-            }
-            cout << "     effectuerTests = " << effectuerTests << endl;
         }
 
-        if (nom == "effectuerLaSimulation")
+        if (nom == "tolGradConj")
         {
-            cout << "Récupération de effectuerLaSimulation:" << endl;
-            if (valeur == "true")
+            tolGradConj = atof(valeur.c_str());
+            if (!(tolGradConj > 0))
             {
-                effectuerLaSimulation = true;
+                if (rank == 0)
+                {
+                    cout << "La valeur de tolGradConj doit-être strictement positive.";
+                }
+                exit(-1);
             }
-            else if (valeur == "false")
-            {
-                effectuerLaSimulation = false;
-            }
-            else
-            {
-                cout << "La valeur de effectuerLaSimulation doit-être 'true' ou 'false'." << endl;
-            }
-            cout << "     effectuerLaSimulation = " << effectuerLaSimulation << endl;
         }
-
-        if (nom == "cheminFichierMaillage")
-        {
-            cout << "Récupération de cheminFichierMaillage:" << endl;
-            cheminFichierMaillage = valeur;
-            cout << "     cheminFichierMaillage = " << cheminFichierMaillage << endl;
-        }
-
-        if (nom == "cheminFichierObstacles")
-        {
-            cout << "Récupération de cheminFichierObstacles:" << endl;
-            cheminFichierObstacles = valeur;
-            cout << "     cheminFichierObstacles = " << cheminFichierObstacles << endl;
-        }
-
-        if (nom == "cheminFichierSolution")
-        {
-            cout << "Récupération de cheminFichierSolution:" << endl;
-            cheminFichierSolution = valeur;
-            cout << "     cheminFichierSolution = " << cheminFichierSolution << endl;
-        }
-    }
-
-    if (pasMaillage <= pasIntegrale)
-    {
-        cout << "Le pas du maillage doit-être inférieur au pas pour les intégrales." << endl;
-        exit(-1);
-    }
-
-    if (nbPasExport * pi / (max(h, e)) < k)
-    {
-        cout << "ATTENTION : Sous-échantillonage détecté, nous vous recommendons d'augmenté nbPasExport ou de diminuer h, e ou k" << endl;
     }
 
     return;
-}
-
-complex<double> p_theta_config(double x, double y)
-{
-    return (exp(I * k * (x * cos(theta) + y * sin(theta))));
 }
 
 string trim(const string &str)

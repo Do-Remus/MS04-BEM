@@ -4,24 +4,18 @@
 #include "external.hpp"
 #include "constantes.hpp"
 
-#define TP2_bis
+// -- Config --
+extern Real k; // frequence des ondes : il y a un nombre au plus denombrable de frequences pour lesquelles le pb n'est pas bien pose
+extern Real rayon;
+extern Real L;
+extern Real pasMaillage;
+extern Real pasSolution;
+extern unsigned int idxTroncature;
+extern unsigned int ordre;
+extern unsigned int maxIterGradConj;
+extern Real tolGradConj;
 
-// extern double theta;
-extern bool effectuerTests;
-extern bool effectuerLaSimulation;
-extern double k; // frequence des ondes : il y a un nombre au plus denombrable de frequences pour lesquelles le pb n'est pas bien pose
-// extern double h;
-// extern double e;
-extern double pasMaillage;
-extern int N; // partial sum order
-// extern unsigned int nbObstacles;
-extern double pasIntegrale;
-extern unsigned int nbPasExport;
-extern string cheminFichierSolution;
-extern string cheminFichierObstacles;
-extern string cheminFichierMaillage;
-
-complex<double> p_theta_config(double x, double y);
+// -- Fonctions --
 string trim(const string &str);
 void get_config(const string &filename);
 

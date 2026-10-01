@@ -34,7 +34,7 @@ Vecteur Vecteur::operator-(const Vecteur &v) const
     return resultat;
 }
 
-Vecteur Vecteur::operator*(const std::complex<double> &a) const
+Vecteur Vecteur::operator*(const Complex &a) const
 {
     Vecteur resultat(size());
 
@@ -44,18 +44,18 @@ Vecteur Vecteur::operator*(const std::complex<double> &a) const
     return resultat;
 }
 
-double Vecteur::norm() const
+Real Vecteur::norm() const
 {
     return std::sqrt(
         std::real(produitHermitien(*this)));
 }
 
-std::complex<double> Vecteur::produitHermitien(const Vecteur &v) const
+Complex Vecteur::produitHermitien(const Vecteur &v) const
 {
     if (size() != v.size())
         throw std::invalid_argument("Tailles incompatibles");
 
-    std::complex<double> resultat = 0.0;
+    Complex resultat = 0.0;
 
     for (std::size_t i = 0; i < size(); ++i)
         resultat += std::conj((*this)[i]) * v[i];
@@ -63,12 +63,12 @@ std::complex<double> Vecteur::produitHermitien(const Vecteur &v) const
     return resultat;
 }
 
-std::complex<double> Vecteur::produitBilineaire(const Vecteur &v) const
+Complex Vecteur::produitBilineaire(const Vecteur &v) const
 {
     if (size() != v.size())
         throw std::invalid_argument("Tailles incompatibles");
 
-    std::complex<double> resultat = 0.0;
+    Complex resultat = 0.0;
 
     for (std::size_t i = 0; i < size(); ++i)
         resultat += (*this)[i] * v[i];
@@ -78,7 +78,7 @@ std::complex<double> Vecteur::produitBilineaire(const Vecteur &v) const
 
 /* Fonctions de la classe Matrice */
 
-Matrice::Matrice(int N, int M, complex<double> v)
+Matrice::Matrice(int N, int M, complex<Real> v)
 {
     m = M;
     n = N;
@@ -86,7 +86,7 @@ Matrice::Matrice(int N, int M, complex<double> v)
     // constructeur matrice a valeurs constantes
 }
 
-complex<double> &Matrice::operator()(int i, int j)
+complex<Real> &Matrice::operator()(int i, int j)
 {
     if (i > n || j > m || i < 1 || j < 1)
     {
@@ -96,7 +96,7 @@ complex<double> &Matrice::operator()(int i, int j)
     return coefs[(i - 1) * m + j - 1];
 }
 
-complex<double> Matrice::operator()(int i, int j) const
+complex<Real> Matrice::operator()(int i, int j) const
 {
     if (i > n || j > m || i < 1 || j < 1)
     {
@@ -138,7 +138,7 @@ ostream &operator<<(ostream &out, const Matrice &A)
 
 /* Fonctions de la classe MatriceSym */
 
-MatriceSym::MatriceSym(int m, complex<double> v) // constructeur dimensions et coefs constants
+MatriceSym::MatriceSym(int m, complex<Real> v) // constructeur dimensions et coefs constants
 {
     n = max(m, 0);
     if (m == 0)
@@ -160,7 +160,7 @@ MatriceSym::MatriceSym(const Vecteur &d)
     }
 }
 
-complex<double> &MatriceSym::operator()(int i, int j)
+complex<Real> &MatriceSym::operator()(int i, int j)
 {
     if (i < 0 || j < 0 || j >= n || i >= n)
     {
@@ -198,7 +198,7 @@ Vecteur MatriceSym::operator*(const Vecteur &v) const
     return b;
 }
 
-complex<double> MatriceSym::operator()(int i, int j) const
+complex<Real> MatriceSym::operator()(int i, int j) const
 {
     if (i < 0 || j < 0 || j >= n || i >= n)
     {
@@ -233,7 +233,7 @@ void MatriceSym::decomposition_LDL(MatriceSym &L, Vecteur &D) const
         }
         // Verification caractère défini positif
 
-        if (D[j] == (complex<double>)0)
+        if (D[j] == (complex<Real>)0)
         {
             cout << "Element diagonal nul pour j=" << j << endl;
             exit(-1);
@@ -314,7 +314,7 @@ Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P)
     return Q;
 }
 
-Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol, unsigned int maxIter)
+Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, Real tol, unsigned int maxIter)
 {
     const std::size_t n = b.size();
 
@@ -323,19 +323,19 @@ Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol, unsign
     Vecteur r = b - A * x;
     Vecteur d = r;
 
-    const double bnorm = b.norm();
-    double relativeResidual = 0.0;
+    const Real bnorm = b.norm();
+    Real relativeResidual = 0.0;
 
     if (bnorm == 0.0)
         return x;
 
-    std::complex<double> rho = r.produitBilineaire(r);
+    Complex rho = r.produitBilineaire(r);
 
     for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
         Vecteur Ad = A * d;
-        const std::complex<double> denom = d.produitBilineaire(Ad);
-        const double scale = d.norm() * Ad.norm();
+        const Complex denom = d.produitBilineaire(Ad);
+        const Real scale = d.norm() * Ad.norm();
 
         if (scale == 0 || std::abs(denom) < 1e-20 * scale)
         {
@@ -346,7 +346,7 @@ Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol, unsign
             return x;
         }
 
-        const std::complex<double> alpha = rho / denom;
+        const Complex alpha = rho / denom;
         x = x + alpha * d;
         r = r - alpha * Ad;
         relativeResidual = r.norm() / bnorm;
@@ -361,7 +361,7 @@ Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol, unsign
             return x;
         }
 
-        const std::complex<double> rhoNew = r.produitBilineaire(r);
+        const Complex rhoNew = r.produitBilineaire(r);
 
         if (std::abs(rho) < 1e-30)
         {
@@ -372,7 +372,7 @@ Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, double tol, unsign
             return x;
         }
 
-        const std::complex<double> beta = rhoNew / rho;
+        const Complex beta = rhoNew / rho;
 
         d = r + beta * d;
         rho = rhoNew;

@@ -9,17 +9,17 @@
 class Point
 {
 public:
-    double x;
-    double y;
+    Real x;
+    Real y;
     Point();
-    Point(double x, double y);
+    Point(Real x, Real y);
     Point &operator+=(const Point &B);
     Point &operator-=(const Point &B);
-    Point &operator*=(const double a);
-    Point &operator/=(const double a);
+    Point &operator*=(const Real a);
+    Point &operator/=(const Real a);
 
-    double theta() const;
-    double norm() const;
+    Real theta() const;
+    Real norm() const;
 };
 
 /* Fontions associées */
@@ -30,16 +30,16 @@ Point operator+(const Point &A, const Point &B);
 
 Point operator-(const Point &A, const Point &B);
 
-Point operator*(const Point &A, const double a);
+Point operator*(const Point &A, const Real a);
 
-Point operator*(const double a, const Point &A);
+Point operator*(const Real a, const Point &A);
 
-Point operator/(const Point &A, const double a);
+Point operator/(const Point &A, const Real a);
 
-double operator*(const Point &A, const Point &B);
+Real operator*(const Point &A, const Point &B);
 
 bool operator==(const Point &A, const Point &B);
 
-double operator|(const Point &A, const Point &B);
+Real operator|(const Point &A, const Point &B);
 
 #endif

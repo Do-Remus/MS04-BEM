@@ -11,22 +11,11 @@ Segment::Segment(const Point &A, const Point &B)
     this->norm = vecteur_norm.norm();
 }
 
-// double Segment::norm() const
-// {
-//     return (this->P1 - this->P2).norm();
-// }
-
 Point Segment::normale() const
 {
     Point normale(this->P2.y - this->P1.y, this->P1.x - this->P2.x);
     return normale;
 }
-
-// Point Segment::milieu() const
-// {
-//     Point milieu((this->P2.x + this->P1.x) / 2, (this->P2.y + this->P1.y) / 2);
-//     return milieu;
-// }
 
 bool operator==(const Segment &AB, const Segment &CD)
 {

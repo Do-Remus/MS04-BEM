@@ -1,73 +1,100 @@
 #include "headers/utils.hpp"
 
-complex<double> hankel_n(const double x, const int n)
+Complex *green_cache = nullptr;
+MPI_Win green_cache_win = MPI_WIN_NULL;
+Real green_cache_step = 0.0001;
+Real green_cache_step_inv = 1 / green_cache_step;
+std::size_t max_index = 200000;
+Real delta = green_cache_step;
+
+void initialiser_green_cache()
 {
-    const double J = boost::math::cyl_bessel_j(n, x);
-    const double Y = boost::math::cyl_neumann(n, x);
+    green_cache_step = 0.1 * min(pasSolution, pasMaillage) / k;
+    max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+
+    const MPI_Aint n = static_cast<MPI_Aint>(max_index + 1);
+
+    const MPI_Aint taille = n * static_cast<MPI_Aint>(sizeof(Complex));
+
+    // Communicateur contenant les processus du même nœud.
+    MPI_Comm shm_comm;
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shm_comm);
+
+    int shm_rank;
+    MPI_Comm_rank(shm_comm, &shm_rank);
+
+    // Un seul processus réserve physiquement la mémoire.
+    // Les autres demandent 0 octet.
+    MPI_Aint taille_locale = (shm_rank == 0) ? taille : 0;
+
+    MPI_Win_allocate_shared(taille_locale, sizeof(Complex), MPI_INFO_NULL, shm_comm, &green_cache, &green_cache_win);
+
+    // Récupération du pointeur vers la mémoire du processus 0.
+    if (shm_rank != 0)
+    {
+        MPI_Aint taille_partagee;
+        int disp_unit;
+        void *ptr = nullptr;
+
+        MPI_Win_shared_query(green_cache_win, 0, &taille_partagee, &disp_unit, &ptr);
+
+        green_cache = static_cast<Complex *>(ptr);
+    }
+
+    // Le processus 0 initialise le cache.
+    if (shm_rank == 0)
+    {
+        green_cache[0] = 0.0;
+
+        for (std::size_t index = 1; index <= max_index; ++index)
+        {
+            const Real distance = index * green_cache_step;
+
+            green_cache[index] = (I / 4.0) * hankel_n(k * distance, 0);
+        }
+    }
+
+    // Garantit que tous les processus voient
+    // un cache complètement initialisé.
+    MPI_Barrier(shm_comm);
+
+    MPI_Comm_free(&shm_comm);
+
+    // Inverse du pas pour green_cached_vec().
+    green_cache_step_inv = 1.0 / green_cache_step;
+    delta = green_cache_step;
+}
+
+complex<Real> hankel_n(const Real x, const int n)
+{
+    const Real J = boost::math::cyl_bessel_j(n, x);
+    const Real Y = boost::math::cyl_neumann(n, x);
 
     return {J, Y};
 }
 
-complex<double> green(const Point &p1, const Point &p2)
+complex<Real> green(const Point &p1, const Point &p2)
 {
-    double r = (p1 - p2).norm();
+    Real r = (p1 - p2).norm();
 
     return (I / 4.0) * hankel_n(k * r, 0);
 }
 
-complex<double> green_cached_map(const Point &p1, const Point &p2)
+complex<Real> green_cached_vec(const Point &p1, const Point &p2)
 {
-    static std::unordered_map<std::size_t, complex<double>> green_cache;
+    const Real dx = p1.x - p2.x;
+    const Real dy = p1.y - p2.y;
 
-    const double distance = (p1 - p2).norm();
+    const Real d2 = dx * dx + dy * dy;
 
-    const std::size_t index = static_cast<std::size_t>(distance / green_cache_step + 0.5);
+    const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv * green_cache_step_inv + 0.5);
 
-    auto it = green_cache.find(index);
-
-    if (it != green_cache.end())
-    {
-        return it->second;
-    }
-
-    const double quantized_distance = index * green_cache_step;
-
-    const complex<double> value =
-        (I / 4.0) * hankel_n(k * quantized_distance, 0);
-
-    green_cache[index] = value;
-
-    return value;
+    return index;
 }
 
-complex<double> green_cached_vec(const Point &p1, const Point &p2)
+complex<Real> green_reguliere(const Point &P1, const Point &P2)
 {
-    static std::vector<std::complex<double>> green_cache(max_index + 1);
-    static std::vector<bool> computed(max_index + 1, false);
-
-    const double distance = (p1 - p2).norm();
-
-    const std::size_t index = static_cast<std::size_t>(distance / green_cache_step + 0.5);
-
-    assert(index < max_index + 1);
-
-    if (computed[index])
-        return green_cache[index];
-
-    const double quantized_distance = index * green_cache_step;
-
-    const complex<double> value =
-        (I / 4.0) * hankel_n(k * quantized_distance, 0);
-
-    green_cache[index] = value;
-    computed[index] = true;
-
-    return value;
-}
-
-complex<double> green_reguliere(const Point &P1, const Point &P2)
-{
-    double x = (P2 - P1).norm();
+    Real x = (P2 - P1).norm();
 
     if (x < PRECISION_ZERO_DOUBLE)
     {
@@ -76,177 +103,70 @@ complex<double> green_reguliere(const Point &P1, const Point &P2)
     return green(P1, P2) + (1 / (2 * pi)) * log(x);
 }
 
-complex<double> green_reguliere_cached_vec(const Point &P1, const Point &P2)
+complex<Real> green_reguliere_cached_vec(const Point &P1, const Point &P2)
 {
-    double x = (P2 - P1).norm();
+    Real x = (P2 - P1).norm();
 
-    if (x < PRECISION_ZERO_DOUBLE)
+    if (x < green_cache_step)
     {
         return (I / 4.0) - (1.0 / (2.0 * pi)) * (gamma_euler + log(k / 2));
     }
     return green_cached_vec(P1, P2) + (1 / (2 * pi)) * log(x);
 }
 
-#ifdef TP0
-complex<double> u_N_plus_analytique(const Point &P1, double radius, int N, const string &filename)
-#else
-complex<double> u_N_plus_analytique(const Point &P1, double radius, int N)
-#endif
+complex<Real> u_N_plus_analytique(const Point &P1, Real radius, int N)
 {
-#ifdef TP0
-    ofstream f(filename);
-
-    if (!f.is_open())
-    {
-        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
-        exit(-1);
-    }
-#endif
-
-    double theta = P1.theta();
-    double x = k * P1.norm();
-    double ka = k * radius;
-    complex<double> iterative_i = 1;
-    complex<double> partial_sum = -(boost::math::cyl_bessel_j(0, ka) / hankel_n(ka, 0)) * hankel_n(x, 0);
-
-#ifdef TP0
-    f << 0 << " " << partial_sum.real() << " " << partial_sum.imag() << endl;
-#endif
+    Real theta = P1.theta();
+    Real x = k * P1.norm();
+    Real ka = k * radius;
+    complex<Real> iterative_i = 1;
+    complex<Real> partial_sum = -(boost::math::cyl_bessel_j(0, ka) / hankel_n(ka, 0)) * hankel_n(x, 0);
 
     for (int n = 1; n <= N; n++)
     {
         iterative_i *= -I;
         partial_sum -= 2. * iterative_i * (boost::math::cyl_bessel_j(n, ka) / hankel_n(ka, n)) * hankel_n(x, n) * cos(n * theta); // positive part of the sum
-#ifdef TP0
-        f << n << " " << partial_sum.real() << " " << partial_sum.imag() << endl;
-#endif
     }
-
-#ifdef TP0
-    f.close();
-#endif
 
     return partial_sum;
 }
 
-complex<double> u_inc(const Point &P1)
+complex<Real> u_inc(const Point &P1)
 {
-    double theta = P1.theta();
+    Real theta = P1.theta();
     return exp(-I * k * P1.norm() * cos(theta));
 }
 
-#ifdef TP0
-complex<double> q_analytique(const Point &P1, int N, const string &filename)
-#else
-complex<double> q_analytique(const Point &P1, int N)
-#endif
+complex<Real> q_analytique(const Point &P1, int N)
 {
-#ifdef TP0
-    ofstream f(filename);
-
-    if (!f.is_open())
-    {
-        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
-        exit(-1);
-    }
-#endif
-
-    double theta = P1.theta();
-    double ka = k * P1.norm();
-    complex<double> iterative_i = 1;
-    complex<double> partial_sum = k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
-
-#ifdef TP0
-    f << 0 << " " << partial_sum.real() << " " << partial_sum.imag() << endl;
-#endif
+    Real theta = P1.theta();
+    Real ka = k * P1.norm();
+    complex<Real> iterative_i = 1;
+    complex<Real> partial_sum = k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
 
     for (int n = 1; n <= N; n++)
     {
         iterative_i *= -I;
         partial_sum -= k * iterative_i * (boost::math::cyl_bessel_j(n, ka) * ((hankel_n(ka, n - 1) - hankel_n(ka, n + 1))) / hankel_n(ka, n)) * cos(n * theta); // positive and negative part of the sum
-#ifdef TP0
-        f << n << " " << partial_sum.real() << " " << partial_sum.imag() << endl;
-#endif
     }
-
-#ifdef TP0
-    f.close();
-#endif
 
     return partial_sum;
 }
-
-#ifdef TP0
-complex<double> p_analytique(const Point &P1, int N, const string &filename)
-#else
-complex<double> p_analytique(const Point &P1, int N)
-#endif
+complex<Real> p_analytique(const Point &P1, int N)
 {
-#ifdef TP0
-    ofstream f(filename);
-
-    if (!f.is_open())
-    {
-        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
-        exit(-1);
-    }
-#endif
-
-    double theta = P1.theta();
-    double ka = k * P1.norm();
-    complex<double> iterative_i = 1;
-    complex<double> partial_sum = k * boost::math::cyl_bessel_j(1, ka) - k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
-
-#ifdef TP0
-    f << 0 << " " << partial_sum.real() << " " << partial_sum.imag() << endl;
-#endif
+    Real theta = P1.theta();
+    Real ka = k * P1.norm();
+    complex<Real> iterative_i = 1;
+    complex<Real> partial_sum = k * boost::math::cyl_bessel_j(1, ka) - k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
 
     for (int n = 1; n <= N; n++)
     {
         iterative_i *= -I;
         partial_sum += k * iterative_i * cos(n * theta) * (boost::math::cyl_bessel_j(n, ka) * (hankel_n(ka, n - 1) - hankel_n(ka, n + 1)) / hankel_n(ka, n) - (boost::math::cyl_bessel_j(n - 1, ka) - boost::math::cyl_bessel_j(n + 1, ka)));
-#ifdef TP0
-        f << n << " " << partial_sum.real() << " " << partial_sum.imag() << endl;
-#endif
     }
-
-#ifdef TP0
-    f.close();
-#endif
 
     return partial_sum;
 }
-
-#ifdef TP0
-void exporte_solution_analytique(const string &filename, const double radius_obstacle, const unsigned int nbPasVisualisation, const double longueur, const int N)
-{
-    ofstream f(filename);
-
-    if (!f.is_open())
-    {
-        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
-        exit(-1);
-    }
-    string bin = "outputs/bin.txt";
-
-    for (unsigned int i = 0; i < nbPasVisualisation; i++)
-    {
-        for (unsigned int j = 0; j < nbPasVisualisation; j++)
-        {
-            Point IJ(-1 * longueur + (i / (double)nbPasVisualisation) * 2 * longueur, -1 * longueur + (j / (double)nbPasVisualisation) * 2 * longueur);
-            if (IJ.norm() >= radius_obstacle)
-            {
-                complex<double> valeur = u_N_plus_analytique(IJ, radius_obstacle, N, bin);
-                f << IJ.x << " " << IJ.y << " " << valeur.real() << " " << valeur.imag() << endl;
-                // cout<<IJ.x << " " << IJ.y << " " << valeur.real() << " " << valeur.imag() << endl;
-            }
-        }
-    }
-    f.close();
-
-    return;
-}
-#endif
 
 void export_obsctacles(const string &filename, vector<Cercle> cercles)
 {
@@ -269,8 +189,8 @@ void export_obsctacles(const string &filename, vector<Cercle> cercles)
     return;
 }
 
-double erreur_relative(const std::complex<double> &u, const std::complex<double> &reference, double eps)
+Real erreur_relative(const Complex &u, const Complex &reference, Real eps)
 {
-    const double denom = std::max(std::abs(reference), eps);
+    const Real denom = std::max(std::abs(reference), eps);
     return std::abs(u - reference) / denom;
 }

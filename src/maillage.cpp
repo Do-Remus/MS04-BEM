@@ -1,6 +1,6 @@
 #include "headers/maillage.hpp"
 
-void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
+void Maillage::ajoute_cercle(const Real pas_maillage, const Cercle &Ob)
 {
     // Verification pas_maillage > 0
     if (pas_maillage <= 0)
@@ -11,7 +11,7 @@ void Maillage::ajoute_cercle(const double pas_maillage, const Cercle &Ob)
 
     // Construction du cercle
     const unsigned int nb_segments = static_cast<unsigned int>(std::round(2.0 * pi * Ob.rayon / pas_maillage));
-    const double pas_cercle = 2 * pi / nb_segments;
+    const Real pas_cercle = 2 * pi / nb_segments;
 
     for (unsigned int i = 0; i < nb_segments; i++)
     {
@@ -54,7 +54,7 @@ vector<Point> Maillage::PointsMaillage()
     return points;
 }
 
-Maillage::Maillage(const vector<Cercle> &cercles, const double pas_maillage)
+Maillage::Maillage(const vector<Cercle> &cercles, const Real pas_maillage)
 {
     // Verification du strict positivité du pas du maillage fait dans ajoute cercle
     for (unsigned int i = 0; i < cercles.size(); i++)

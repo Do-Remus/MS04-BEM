@@ -1,6 +1,6 @@
 #include "headers/cercle.hpp"
 
-Cercle::Cercle(const double r, const Point &A)
+Cercle::Cercle(const Real r, const Point &A)
 {
     if (r <= 0)
     {

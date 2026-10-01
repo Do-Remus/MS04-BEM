@@ -11,9 +11,9 @@ class Cercle
 {
 public:
     Point centre;
-    double rayon = 1.;
+    Real rayon = 1.;
     Cercle() {};
-    Cercle(const double rayon, const Point &A);
+    Cercle(const Real rayon, const Point &A);
 };
 
 /* Fonctions associées à la classe Cercle */

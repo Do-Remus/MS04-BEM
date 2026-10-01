@@ -16,7 +16,7 @@
 #include <boost/math/special_functions/legendre.hpp>
 
 // Parallel work
-// #include <mpi.h>
+#include <mpi.h>
 
 // Reading files
 #include <algorithm>
@@ -25,5 +25,8 @@
 #include <fstream>
 
 using namespace std;
+
+using Real = double;
+using Complex = std::complex<Real>;
 
 #endif

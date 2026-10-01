@@ -1,5 +1,5 @@
 # Compiler
-CXX = g++
+CXX = mpic++
 
 # Compiler flags
 CXXFLAGS = -O2 -g -Wall -Wextra -std=c++17 -fno-omit-frame-pointer

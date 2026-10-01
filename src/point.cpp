@@ -9,7 +9,7 @@ Point::Point()
     this->y = 0;
 }
 
-Point::Point(double a, double b)
+Point::Point(Real a, Real b)
 {
     this->x = a;
     this->y = b;
@@ -29,14 +29,14 @@ Point &Point::operator-=(const Point &B)
     return *this;
 }
 
-Point &Point::operator*=(const double a)
+Point &Point::operator*=(const Real a)
 {
     this->x *= a;
     this->y *= a;
     return *this;
 }
 
-Point &Point::operator/=(const double a)
+Point &Point::operator/=(const Real a)
 {
     if (a == 0)
     {
@@ -48,12 +48,12 @@ Point &Point::operator/=(const double a)
     return *this;
 }
 
-double Point::norm() const
+Real Point::norm() const
 {
     return sqrt(this->x * this->x + this->y * this->y);
 }
 
-double Point::theta() const { return std::atan2(this->y, this->x); }
+Real Point::theta() const { return std::atan2(this->y, this->x); }
 
 /* Fonctions associées à la classe Points */
 
@@ -77,21 +77,21 @@ Point operator-(const Point &A, const Point &B)
     return R;
 }
 
-Point operator*(const Point &A, const double a)
+Point operator*(const Point &A, const Real a)
 {
     Point R = A;
     R *= a;
     return R;
 }
 
-Point operator*(const double a, const Point &A)
+Point operator*(const Real a, const Point &A)
 {
     Point R = A;
     R *= a;
     return R;
 }
 
-Point operator/(const Point &A, const double a)
+Point operator/(const Point &A, const Real a)
 {
     if (a == 0)
     {
@@ -103,7 +103,7 @@ Point operator/(const Point &A, const double a)
     return R;
 }
 
-double operator*(const Point &A, const Point &B)
+Real operator*(const Point &A, const Point &B)
 {
     return A.x * B.y - A.y * B.x;
 }
@@ -117,7 +117,7 @@ bool operator==(const Point &A, const Point &B)
     return false;
 }
 
-double operator|(const Point &A, const Point &B)
+Real operator|(const Point &A, const Point &B)
 {
     return A.x * B.x + A.y * B.y;
 }
