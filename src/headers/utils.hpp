@@ -12,6 +12,7 @@ extern Complex *green_cache;
 extern MPI_Win green_cache_win;
 extern Real green_cache_step;
 extern Real green_cache_step_inv;
+extern Real green_cache_step_inv2;
 extern std::size_t max_index;
 extern Real delta;
 
@@ -19,19 +20,58 @@ extern Real delta;
 void initialiser_green_cache();
 
 // Hankel premiere espece ordre n
-complex<Real> hankel_n(const Real x, const int n);
+inline complex<Real> hankel_n(const Real x, const int n)
+{
+    const Real J = boost::math::cyl_bessel_j(n, x);
+    const Real Y = boost::math::cyl_neumann(n, x);
+
+    return {J, Y};
+}
 
 // Green
-complex<Real> green(const Point &p1, const Point &p2);
+inline complex<Real> green(const Point &p1, const Point &p2)
+{
+    Real r = (p1 - p2).norm();
+
+    return (I / Real(4.0)) * hankel_n(k * r, 0);
+}
 
 // Green cached with a vector (faster but fixed size at compile time)
-complex<Real> green_cached_vec(const Point &p1, const Point &p2);
+inline complex<Real> green_cached_vec(const Point &p1, const Point &p2)
+{
+    const Real dx = p1.x - p2.x;
+    const Real dy = p1.y - p2.y;
+
+    const Real d2 = dx * dx + dy * dy;
+
+    const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv + 0.5);
+
+    return green_cache[index];
+}
 
 // Partie reguliere de Green
-complex<Real> green_reguliere(const Point &P1, const Point &P2);
+inline complex<Real> green_reguliere(const Point &P1, const Point &P2)
+{
+    Real x = (P2 - P1).norm();
+
+    if (x < PRECISION_ZERO_DOUBLE)
+    {
+        return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
+    }
+    return green(P1, P2) + (Real(1.0) / (Real(2.0) * pi)) * log(x);
+}
 
 // Partie reguliere de Green cached
-complex<Real> green_reguliere_cached_vec(const Point &P1, const Point &P2);
+inline complex<Real> green_reguliere_cached_vec(const Point &P1, const Point &P2)
+{
+    Real x = (P2 - P1).norm();
+
+    if (x < green_cache_step)
+    {
+        return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
+    }
+    return green_cached_vec(P1, P2) + (Real(1.0) / (Real(2.0) * pi)) * log(x);
+}
 
 // solution approche (jusqu'au terme N de la somme) exterieure pour cas 1 disque de rayon radius evalué au point P = (r, theta)
 complex<Real> u_N_plus_analytique(const Point &P1, Real radius, int N);

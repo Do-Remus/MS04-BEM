@@ -4,12 +4,16 @@ Complex *green_cache = nullptr;
 MPI_Win green_cache_win = MPI_WIN_NULL;
 Real green_cache_step = 0.0001;
 Real green_cache_step_inv = 1 / green_cache_step;
+Real green_cache_step_inv2 = green_cache_step * green_cache_step;
 std::size_t max_index = 200000;
 Real delta = green_cache_step;
 
 void initialiser_green_cache()
 {
     green_cache_step = 0.1 * min(pasSolution, pasMaillage) / k;
+    green_cache_step_inv = 1.0 / green_cache_step;
+    green_cache_step_inv2 = green_cache_step_inv * green_cache_step_inv;
+    delta = green_cache_step;
     max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
 
     const MPI_Aint n = static_cast<MPI_Aint>(max_index + 1);
@@ -59,68 +63,15 @@ void initialiser_green_cache()
     MPI_Barrier(shm_comm);
 
     MPI_Comm_free(&shm_comm);
-
-    // Inverse du pas pour green_cached_vec().
-    green_cache_step_inv = 1.0 / green_cache_step;
-    delta = green_cache_step;
 }
 
-complex<Real> hankel_n(const Real x, const int n)
-{
-    const Real J = boost::math::cyl_bessel_j(n, x);
-    const Real Y = boost::math::cyl_neumann(n, x);
-
-    return {J, Y};
-}
-
-complex<Real> green(const Point &p1, const Point &p2)
-{
-    Real r = (p1 - p2).norm();
-
-    return (I / Real(4.0)) * hankel_n(k * r, 0);
-}
-
-complex<Real> green_cached_vec(const Point &p1, const Point &p2)
-{
-    const Real dx = p1.x - p2.x;
-    const Real dy = p1.y - p2.y;
-
-    const Real d2 = dx * dx + dy * dy;
-
-    const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv + 0.5);
-
-    return green_cache[index];
-}
-
-complex<Real> green_reguliere(const Point &P1, const Point &P2)
-{
-    Real x = (P2 - P1).norm();
-
-    if (x < PRECISION_ZERO_DOUBLE)
-    {
-        return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
-    }
-    return green(P1, P2) + (Real(1.0) / (Real(2.0) * pi)) * log(x);
-}
-
-complex<Real> green_reguliere_cached_vec(const Point &P1, const Point &P2)
-{
-    Real x = (P2 - P1).norm();
-
-    if (x < green_cache_step)
-    {
-        return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
-    }
-    return green_cached_vec(P1, P2) + (Real(1.0) / (Real(2.0) * pi)) * log(x);
-}
-
-complex<Real> u_N_plus_analytique(const Point &P1, Real radius, int N)
+Complex u_N_plus_analytique(const Point &P1, Real radius, int N)
 {
     Real theta = P1.theta();
     Real x = k * P1.norm();
     Real ka = k * radius;
-    complex<Real> iterative_i = 1;
-    complex<Real> partial_sum = -(boost::math::cyl_bessel_j(0, ka) / hankel_n(ka, 0)) * hankel_n(x, 0);
+    Complex iterative_i = 1;
+    Complex partial_sum = -(boost::math::cyl_bessel_j(0, ka) / hankel_n(ka, 0)) * hankel_n(x, 0);
 
     for (int n = 1; n <= N; n++)
     {
@@ -131,18 +82,18 @@ complex<Real> u_N_plus_analytique(const Point &P1, Real radius, int N)
     return partial_sum;
 }
 
-complex<Real> u_inc(const Point &P1)
+Complex u_inc(const Point &P1)
 {
     Real theta = P1.theta();
     return exp(-I * k * P1.norm() * cos(theta));
 }
 
-complex<Real> q_analytique(const Point &P1, int N)
+Complex q_analytique(const Point &P1, int N)
 {
     Real theta = P1.theta();
     Real ka = k * P1.norm();
-    complex<Real> iterative_i = 1;
-    complex<Real> partial_sum = k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
+    Complex iterative_i = 1;
+    Complex partial_sum = k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
 
     for (int n = 1; n <= N; n++)
     {
@@ -152,12 +103,12 @@ complex<Real> q_analytique(const Point &P1, int N)
 
     return partial_sum;
 }
-complex<Real> p_analytique(const Point &P1, int N)
+Complex p_analytique(const Point &P1, int N)
 {
     Real theta = P1.theta();
     Real ka = k * P1.norm();
-    complex<Real> iterative_i = 1;
-    complex<Real> partial_sum = k * boost::math::cyl_bessel_j(1, ka) - k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
+    Complex iterative_i = 1;
+    Complex partial_sum = k * boost::math::cyl_bessel_j(1, ka) - k * boost::math::cyl_bessel_j(0, ka) * hankel_n(ka, 1) / hankel_n(ka, 0);
 
     for (int n = 1; n <= N; n++)
     {

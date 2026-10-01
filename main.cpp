@@ -5,6 +5,29 @@
 #include "src/config/external.hpp"
 #include "src/headers/utils.hpp"
 
+inline Complex integ_double_green_vec(const QuadratureSegment &AB, const QuadratureSegment &CD)
+{
+    Complex result = 0.0;
+
+    for (const auto &qy : CD)
+    {
+        for (const auto &qx : AB)
+        {
+
+            const Real dx = qx.point.x - qy.point.x;
+            const Real dy = qx.point.y - qy.point.y;
+
+            const Real d2 = dx * dx + dy * dy;
+
+            const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv + 0.5);
+
+            result += qy.weight * qx.weight * green_cache[index];
+        }
+    }
+
+    return result;
+}
+
 Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
     const std::size_t N = maillage.size();
@@ -67,11 +90,13 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
 
                 for (std::size_t j = j_start; j < j_end; ++j)
                 {
-                    const Complex aij = integ_double([](const Point &Q,
-                                                        const Point &P)
-                                                     { return green_cached_vec(Q, P); },
-                                                     qS,
-                                                     quadrature_maillage[j]);
+                    // const Complex aij = integ_double([](const Point &Q,
+                    //                                     const Point &P)
+                    //                                  { return green_cached_vec(Q, P); },
+                    //                                  qS,
+                    //                                  quadrature_maillage[j]);
+
+                    const Complex aij = integ_double_green_vec(qS, quadrature_maillage[j]);
 
                     yi[i - ib] += aij * x[j];
                     yj[j - jb] += aij * x[i];
@@ -324,6 +349,7 @@ int main(int argc, char **argv)
         std::cout << "  Ordre de quadrature      : " << ordre << std::endl;
         std::cout << "  Pas du cache de Green    : " << green_cache_step << std::endl;
         std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
+        std::cout << "  Mémoire Cache Green      : " << (max_index + 1) * sizeof(Complex) / (1024.0 * 1024.0) << " MiB" << std::endl;
     }
 
     // -- Création maillage --
@@ -588,6 +614,7 @@ int main(int argc, char **argv)
                   << tempsCached << " s" << std::endl;
     }
 
+    // -- Fin --
     MPI_Win_free(&green_cache_win);
     MPI_Finalize();
 

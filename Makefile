@@ -2,7 +2,8 @@
 CXX = mpic++
 
 # Compiler flags
-CXXFLAGS = -O2 -g -Wall -Wextra -std=c++17 -fno-omit-frame-pointer
+# CXXFLAGS = -O3 -march=native -g -Wall -Wextra -std=c++17 -fno-omit-frame-pointer
+CXXFLAGS = -O3 -march=native -std=c++17 -DNDEBUG
 
 # Output directory
 OUT_DIR = out

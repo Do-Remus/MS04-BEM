@@ -5,6 +5,7 @@
 #include "../config/constantes.hpp"
 #include "segment.hpp"
 #include "legendre.hpp"
+#include "utils.hpp"
 
 /* Fonctions d'integration */
 
