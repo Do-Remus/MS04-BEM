@@ -51,9 +51,20 @@ inline Complex integ_double_green_vec(const QuadratureSegment &AB, const Quadrat
             const Real dx = qx.point.x - qy.point.x;
             const Real dy = qx.point.y - qy.point.y;
 
-            const Real d2 = dx * dx + dy * dy;
+            const Real distance = std::sqrt(dx * dx + dy * dy);
 
-            const std::size_t index = static_cast<std::size_t>(std::sqrt(d2) * green_cache_step_inv + 0.5);
+            std::size_t index;
+
+            const std::size_t n_fine = static_cast<std::size_t>(green_cache_cutoff / green_cache_step_fine + 0.5);
+
+            if (distance < green_cache_cutoff)
+            {
+                index = static_cast<std::size_t>(distance / green_cache_step_fine + 0.5);
+            }
+            else
+            {
+                index = n_fine + static_cast<std::size_t>((distance - green_cache_cutoff) / green_cache_step_large + 0.5);
+            }
 
             result += qy.weight * qx.weight * green_cache[index];
         }

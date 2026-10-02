@@ -2,15 +2,36 @@
 
 void initialiser_green_cache()
 {
-    green_cache_step = 0.1 * min(pasSolution, pasMaillage) / k;
-    green_cache_step_inv = 1.0 / green_cache_step;
-    green_cache_step_inv2 = green_cache_step_inv * green_cache_step_inv;
-    delta = green_cache_step;
-    max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+    // -- Paramètres du cache --
 
-    const MPI_Aint n = static_cast<MPI_Aint>(max_index + 1);
+    const double lambda = 2.0 * pi / k;
+    const double distance_max = L * std::sqrt(2.0);
+    double step_old = 0.1 * pasMaillage / k;
+    std::size_t N_old = static_cast<std::size_t>(distance_max / step_old);
 
-    const MPI_Aint taille = n * static_cast<MPI_Aint>(sizeof(Complex));
+    double beta = 0.05; // multiplicateur old précision près de 0
+    double alpha = 0.1; // multiplicateur de lambda (zone cache fin)
+
+    green_cache_step_fine = beta * step_old;
+    green_cache_step_fine_inv = 1 / green_cache_step_fine;
+
+    green_cache_cutoff = alpha * lambda;
+
+    green_cache_step_large = (distance_max - green_cache_cutoff) / (N_old - green_cache_cutoff / green_cache_step_fine);
+    green_cache_step_large_inv = 1 / green_cache_step_large;
+
+    delta = green_cache_step_fine;
+
+    // -- Nombre de cases dans chaque zone --
+
+    std::size_t n_fine = static_cast<std::size_t>(green_cache_cutoff / green_cache_step_fine + 0.5);
+    std::size_t n_large = static_cast<std::size_t>((distance_max - green_cache_cutoff) / green_cache_step_large + 0.5);
+
+    green_cache_size = n_fine + n_large + 1;
+
+    // -- Mémoire partagée MPI --
+
+    const MPI_Aint taille = static_cast<MPI_Aint>(green_cache_size) * static_cast<MPI_Aint>(sizeof(Complex));
 
     // Communicateur contenant les processus du même nœud.
     MPI_Comm shm_comm;
@@ -25,7 +46,8 @@ void initialiser_green_cache()
 
     MPI_Win_allocate_shared(taille_locale, sizeof(Complex), MPI_INFO_NULL, shm_comm, &green_cache, &green_cache_win);
 
-    // Récupération du pointeur vers la mémoire du processus 0.
+    // -- Les autres processus récupèrent le pointeur partagé --
+
     if (shm_rank != 0)
     {
         MPI_Aint taille_partagee;
@@ -37,23 +59,40 @@ void initialiser_green_cache()
         green_cache = static_cast<Complex *>(ptr);
     }
 
-    // Le processus 0 initialise le cache.
+    // -- Initialisation du cache pour le processus 0 --
+
     if (shm_rank == 0)
     {
-        green_cache[0] = 0.0;
 
-        for (std::size_t index = 1; index <= max_index; ++index)
+        for (std::size_t index = 0; index < green_cache_size; ++index)
         {
-            const Real distance = index * green_cache_step;
+            double distance;
 
-            green_cache[index] = (I / Real(4.0)) * hankel_n(k * distance, 0);
+            if (index <= n_fine)
+            {
+                // Zone fine
+                distance = index * green_cache_step_fine;
+            }
+            else
+            {
+                // Zone grossière
+                distance = green_cache_cutoff + (index - n_fine) * green_cache_step_large;
+            }
+
+            if (distance == 0.0)
+            {
+                green_cache[index] = 0.0;
+            }
+            else
+            {
+                green_cache[index] = (I / Real(4.0)) * hankel_n(k * distance, 0);
+            }
         }
     }
 
-    // Garantit que tous les processus voient
-    // un cache complètement initialisé.
-    MPI_Barrier(shm_comm);
+    // -- Tous les processus attendent que le cache soit initialisé --
 
+    MPI_Barrier(shm_comm);
     MPI_Comm_free(&shm_comm);
 }
 

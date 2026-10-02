@@ -49,9 +49,11 @@ int main(int argc, char **argv)
         std::cout << "\n=== Approximations ===" << std::endl;
         std::cout << "  Indice de troncature N   : " << idxTroncature << std::endl;
         std::cout << "  Ordre de quadrature      : " << ordre << std::endl;
-        std::cout << "  Pas du cache de Green    : " << green_cache_step << std::endl;
-        std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
-        std::cout << "  Mémoire Cache Green      : " << (max_index + 1) * sizeof(Complex) / (1024.0 * 1024.0) << " MiB" << std::endl;
+        std::cout << "  Pas large du cache       : " << green_cache_step_large << std::endl;
+        std::cout << "  Pas fin du cache         : " << green_cache_step_fine << std::endl;
+        std::cout << "  Cutoff du cache          : " << green_cache_cutoff << std::endl;
+        std::cout << "  Taille du cache          : " << green_cache_size << std::endl;
+        std::cout << "  Mémoire cache Green      : " << green_cache_size * sizeof(Complex) / (1024.0 * 1024.0) << " MiB" << std::endl;
     }
 
     // -- Création maillage --
