@@ -1,13 +1,5 @@
 #include "headers/utils.hpp"
 
-Complex *green_cache = nullptr;
-MPI_Win green_cache_win = MPI_WIN_NULL;
-Real green_cache_step = 0.0001;
-Real green_cache_step_inv = 1 / green_cache_step;
-Real green_cache_step_inv2 = green_cache_step * green_cache_step;
-std::size_t max_index = 200000;
-Real delta = green_cache_step;
-
 void initialiser_green_cache()
 {
     green_cache_step = 0.1 * min(pasSolution, pasMaillage) / k;
@@ -103,6 +95,7 @@ Complex q_analytique(const Point &P1, int N)
 
     return partial_sum;
 }
+
 Complex p_analytique(const Point &P1, int N)
 {
     Real theta = P1.theta();
@@ -144,4 +137,279 @@ Real erreur_relative(const Complex &u, const Complex &reference, Real eps)
 {
     const Real denom = std::max(std::abs(reference), eps);
     return std::abs(u - reference) / denom;
+}
+
+Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    const unsigned int N = maillage.size();
+
+    int rank;
+    int size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    /*
+     * Chaque processus possède son propre vecteur local.
+     *
+     * Il contient les contributions calculées par ce processus
+     * pour toutes les composantes.
+     */
+    Vecteur y_local(N, 0.0);
+
+    /*
+     * Répartition cyclique des lignes.
+     *
+     * rank 0 : 0, size, 2*size, ...
+     * rank 1 : 1, size+1, 2*size+1, ...
+     */
+    for (unsigned int i = rank; i < N; i += size)
+    {
+        const Segment &S = maillage[i];
+        const QuadratureSegment &qS = quadrature_maillage[i];
+
+        Complex aii =
+            integ_simple([&S](const Point &Q)
+                         { return integ_simple_log(Q, S); },
+                         qS);
+
+        aii += integ_double([](const Point &Q, const Point &P)
+                            { return green_reguliere_cached_vec(Q, P); },
+                            qS,
+                            qS);
+
+        y_local[i] += aii * x[i];
+
+        for (unsigned int j = i + 1; j < N; ++j)
+        {
+            const Complex aij = integ_double([](const Point &Q, const Point &P)
+                                             { return green_cached_vec(Q, P); },
+                                             qS,
+                                             quadrature_maillage[j]);
+
+            y_local[i] += aij * x[j];
+            y_local[j] += aij * x[i];
+        }
+    }
+
+    /*
+     * Chaque rang possède maintenant une partie des contributions.
+     *
+     * On somme les contributions de tous les rangs.
+     */
+    Vecteur y(N, 0.0);
+
+    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
+
+    return y;
+}
+
+Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    const std::size_t N = maillage.size();
+
+    int rank;
+    int size;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    Vecteur y_local(N, 0.0);
+    constexpr std::size_t BLOCK = 8; // Modifiable pour optimiser
+
+    // Buffers réutilisés
+    std::vector<Complex> yi(BLOCK);
+    std::vector<Complex> yj(BLOCK);
+
+    for (std::size_t ib = rank * BLOCK; ib < N; ib += size * BLOCK)
+    {
+        const std::size_t i_end = std::min(ib + BLOCK, N);
+        const std::size_t ni = i_end - ib;
+
+        // Remise à zéro du bloc i
+        std::fill(yi.begin(), yi.begin() + ni, Complex(0.0));
+
+        // -- DIAGONALE --
+
+        for (std::size_t i = ib; i < i_end; ++i)
+        {
+            const Segment &S = maillage[i];
+            const QuadratureSegment &qS = quadrature_maillage[i];
+
+            Complex aii = integ_simple([&S](const Point &Q)
+                                       { return integ_simple_log(Q, S); },
+                                       qS);
+
+            aii += integ_double([](const Point &Q, const Point &P)
+                                { return green_reguliere_cached_vec(Q, P); },
+                                qS,
+                                qS);
+
+            yi[i - ib] += aii * x[i];
+        }
+
+        // -- HORS-DIAGONALE : i < j --
+
+        for (std::size_t jb = ib; jb < N; jb += BLOCK)
+        {
+            const std::size_t j_end = std::min(jb + BLOCK, N);
+            const std::size_t nj = j_end - jb;
+
+            // Remise à zéro du bloc j
+            std::fill(yj.begin(), yj.begin() + nj, Complex(0.0));
+
+            for (std::size_t i = ib; i < i_end; ++i)
+            {
+                const QuadratureSegment &qS = quadrature_maillage[i];
+
+                const std::size_t j_start = std::max(jb, i + 1);
+
+                for (std::size_t j = j_start; j < j_end; ++j)
+                {
+                    // const Complex aij = integ_double([](const Point &Q,
+                    //                                     const Point &P)
+                    //                                  { return green_cached_vec(Q, P); },
+                    //                                  qS,
+                    //                                  quadrature_maillage[j]);
+
+                    const Complex aij = integ_double_green_vec(qS, quadrature_maillage[j]);
+
+                    yi[i - ib] += aij * x[j];
+                    yj[j - jb] += aij * x[i];
+                }
+            }
+
+            // Une seule écriture contiguë du bloc j
+            for (std::size_t j = jb; j < j_end; ++j)
+            {
+                y_local[j] += yj[j - jb];
+            }
+        }
+
+        // Écriture contiguë du bloc i
+        for (std::size_t i = ib; i < i_end; ++i)
+        {
+            y_local[i] += yi[i - ib];
+        }
+    }
+
+    Vecteur y(N, 0.0);
+
+    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
+
+    return y;
+}
+
+Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter)
+{
+    const std::size_t n = b.size();
+    Vecteur x(n, 0.0);
+
+    Vecteur r = b; // car x0 = 0
+    Vecteur d = r;
+
+    const Real bnorm = b.norm();
+
+    if (bnorm == 0.0)
+        return x;
+
+    Real relativeResidual = 1.0;
+
+    Complex rho = r.produitBilineaire(r);
+
+    for (unsigned int iter = 0; iter < maxIter; ++iter)
+    {
+        Vecteur Ad = produit_A_cached_blocked(maillage, d, quadrature_maillage);
+        const Complex denom = d.produitBilineaire(Ad);
+        const Real scale = d.norm() * Ad.norm();
+
+        if (scale == 0.0 || std::abs(denom) < 1e-20 * scale)
+        {
+            int rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+            if (rank == 0)
+            {
+                std::cerr
+                    << "COCG : breakdown, "
+                    << "denominateur nul "
+                    << "a l'iteration "
+                    << iter
+                    << ", résidu relatif = "
+                    << relativeResidual
+                    << std::endl;
+            }
+
+            return x;
+        }
+
+        const Complex alpha = rho / denom;
+
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            x[i] += alpha * d[i];
+            r[i] -= alpha * Ad[i];
+        }
+
+        relativeResidual = r.norm() / bnorm;
+
+        if (relativeResidual < tol)
+        {
+            int rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+            if (rank == 0)
+            {
+                std::cout
+                    << "COCG converge en "
+                    << iter + 1
+                    << " iterations, "
+                    << "résidu relatif = "
+                    << relativeResidual
+                    << std::endl;
+            }
+
+            return x;
+        }
+
+        const Complex rhoNew = r.produitBilineaire(r);
+
+        if (std::abs(rho) < 1e-30)
+        {
+            int rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+            if (rank == 0)
+            {
+                std::cerr
+                    << "COCG : breakdown de rho "
+                    << "a l'iteration "
+                    << iter
+                    << std::endl;
+            }
+
+            return x;
+        }
+
+        const Complex beta = rhoNew / rho;
+
+        for (std::size_t i = 0; i < n; ++i)
+        {
+            d[i] = r[i] + beta * d[i];
+        }
+
+        rho = rhoNew;
+    }
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (rank == 0)
+    {
+        std::cout
+            << "COCG : nombre maximal "
+            << "d'iterations atteint."
+            << std::endl;
+    }
+
+    return x;
 }

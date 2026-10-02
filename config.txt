@@ -1,7 +1,7 @@
 k=10
 rayon=1
 L=4
-pasMaillage=0.00006
+pasMaillage=0.01
 pasSolution=0.1
 idxTroncature=25
 ordre=4

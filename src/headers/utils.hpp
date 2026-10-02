@@ -7,15 +7,6 @@
 #include "matrice.hpp"
 #include "integrale.hpp"
 
-// Cache pour green
-extern Complex *green_cache;
-extern MPI_Win green_cache_win;
-extern Real green_cache_step;
-extern Real green_cache_step_inv;
-extern Real green_cache_step_inv2;
-extern std::size_t max_index;
-extern Real delta;
-
 // Initialisateur du cache
 void initialiser_green_cache();
 
@@ -90,5 +81,14 @@ void export_obsctacles(const string &filename, vector<Cercle> cercles);
 
 // Calcul plus propre de l'erreur
 Real erreur_relative(const Complex &u, const Complex &reference, Real eps = 1e-14);
+
+// Calcul de Ax parallelisé
+Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage);
+
+// Calcul de Ax par blocks et parallelisé
+Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage);
+
+// Algorithme COCG pour resoudre un system pour A sym complexe de manière itérative sans caculer stocker A
+Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter);
 
 #endif
