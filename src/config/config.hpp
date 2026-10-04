@@ -4,7 +4,7 @@
 #include "external.hpp"
 #include "constantes.hpp"
 
-#define TP2_bis
+#define TP2_etude_CG
 
 // extern double theta;
 extern bool effectuerTests;

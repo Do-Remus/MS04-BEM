@@ -1555,6 +1555,213 @@ int main()
 
 #endif
 
+#ifdef TP2_etude_CG
+        /* ----- TP2 (étude CG) : temps du gradient conjugué en fonction de N et nq -----
+         *
+         * Pour chaque couple (nombre de segments N, nombre de points de quadrature nq) :
+         *   - construction de A (version "cached"), chronométrée pour information,
+         *   - résolution A p = b par gradConjMatSym, chronométrée (minimum sur
+         *     plusieurs répétitions pour limiter le bruit de mesure),
+         *   - erreur relative sur p (pour vérifier que la résolution a convergé).
+         *
+         * Résultats dans outputs/etude_temps_CG.txt
+         *
+         * Remarque : gradConjMatSym ne renvoie pas son nombre d'itérations. Le temps
+         * mesuré combine donc "coût d'une itération" (~N^2) et "nombre d'itérations"
+         * (qui dépend du conditionnement de A, donc de N et nq).
+         */
+        {
+            // -- Parametres du probleme (k vient de la config, comme dans TP2) --
+
+            const double rayon = 1.;
+            const double L = 4.; // sert uniquement a dimensionner le cache de Green
+            const unsigned int idxTroncature = 25;
+            const double tolGradConj = 1e-8;
+            const unsigned int maxIterGradConj = 1000;
+
+            // -- Parametres de l'etude --
+
+            const vector<unsigned int> nbSegmentsValues = {10, 20, 50, 100, 200, 500,
+                                                           1000, 2000, 5000, 10000};
+
+            const unsigned int nqMin = 4;
+            const unsigned int nqMax = 20;
+            const unsigned int nqPas = 2; // 1 pour tous les entiers (2x plus long)
+
+            // Le gradient conjugue est rejoue plusieurs fois et on garde le minimum.
+            const unsigned int nbRepetitions = 3;
+
+            // -- Cache de Green (regle une fois, sur le maillage le plus fin) --
+
+            const unsigned int nbSegmentsMax =
+                *std::max_element(nbSegmentsValues.begin(), nbSegmentsValues.end());
+            const double pasMin = 2.0 * pi * rayon / nbSegmentsMax;
+            green_cache_step = 0.1 * pasMin / k;
+            max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+
+            std::cout << "\n=== Etude temps du gradient conjugue ===" << std::endl;
+            std::cout << "  Nombre d'onde k   : " << k << std::endl;
+            std::cout << "  Segments          : " << nbSegmentsValues.front()
+                      << " -> " << nbSegmentsMax << " (" << nbSegmentsValues.size() << " valeurs)" << std::endl;
+            std::cout << "  Quadrature        : " << nqMin << " -> " << nqMax
+                      << " (pas " << nqPas << ")" << std::endl;
+            std::cout << "  Repetitions du CG : " << nbRepetitions << " (minimum retenu)" << std::endl;
+            std::cout << "  Tolerance / iter. : " << tolGradConj << " / " << maxIterGradConj << std::endl;
+
+            // -- Fichier de sortie --
+
+            const string filename = "outputs/etude_temps_CG.txt";
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            file << "# Temps du gradient conjugue (gradConjMatSym) en fonction de N et nq" << endl;
+            file << "# k=" << k << " rayon=" << rayon << " idxTroncature=" << idxTroncature
+                 << " tolGradConj=" << tolGradConj << " maxIterGradConj=" << maxIterGradConj
+                 << " nbRepetitions=" << nbRepetitions << endl;
+            file << "# Temps en secondes (horloge murale). temps_CG = minimum sur les repetitions." << endl;
+            file << "# nbSegments_demande nbSegments_reel pasMaillage nq "
+                 << "temps_assemblage temps_CG erreur_p" << endl;
+
+            const Point O(0, 0);
+            const Cercle cercle(rayon, O);
+
+            // -- Construction d'un maillage du cercle avec n segments (cf. TP2_etude) --
+
+            auto construireMaillage = [&](unsigned int n, double &pasUtilise)
+            {
+                const double pasIdeal = 2.0 * pi * rayon / n;
+                const double facteurs[] = {1.0, 1.0 - 1e-9, 1.0 + 1e-9, 1.0 - 1e-6, 1.0 + 1e-6};
+
+                Maillage meilleur;
+                int meilleurEcart = -1;
+
+                for (double f : facteurs)
+                {
+                    Maillage m;
+                    m.ajoute_cercle(pasIdeal * f, cercle);
+                    const int ecart = std::abs(static_cast<int>(m.size()) - static_cast<int>(n));
+
+                    if (meilleurEcart < 0 || ecart < meilleurEcart)
+                    {
+                        meilleur = m;
+                        meilleurEcart = ecart;
+                        pasUtilise = pasIdeal * f;
+                    }
+                    if (ecart == 0)
+                        break;
+                }
+                return meilleur;
+            };
+
+            using Horloge = std::chrono::steady_clock;
+            double puits = 0.0; // empeche le compilateur d'eliminer les resolutions repetees
+
+            // -- Boucle principale --
+
+            for (unsigned int nDemande : nbSegmentsValues)
+            {
+                double pas = 0.0;
+                const Maillage maillage = construireMaillage(nDemande, pas);
+                const unsigned int n = maillage.size();
+
+                if (n != nDemande)
+                    std::cout << "  [Attention] " << nDemande << " segments demandes, "
+                              << n << " obtenus (pas = " << pas << ")" << std::endl;
+
+                Vecteur vect_p_ana(n);
+                for (unsigned int i = 0; i < n; i++)
+                    vect_p_ana[i] = p_analytique(maillage[i].milieu, idxTroncature);
+
+                for (unsigned int nq = nqMin; nq <= nqMax; nq += nqPas)
+                {
+                    const LegendreData &legendreData = get_legendre_data(nq);
+
+                    // Second membre
+                    Vecteur vect_b(n);
+                    for (unsigned int i = 0; i < n; i++)
+                    {
+                        vect_b[i] = integ_simple([](const Point &Q, double)
+                                                 { return -u_inc(Q); },
+                                                 maillage[i],
+                                                 legendreData);
+                    }
+
+                    // Assemblage de A (cached), chronometre pour information
+                    const auto ta0 = Horloge::now();
+
+                    MatriceSym A_cached(n);
+                    for (unsigned int i = 0; i < n; i++)
+                    {
+                        for (unsigned int j = 0; j <= i; j++)
+                        {
+                            if (i != j)
+                            {
+                                A_cached(i, j) = integ_double([](const Point &Q, const Point &P, double)
+                                                              { return green_cached_vec(Q, P); },
+                                                              maillage[i],
+                                                              maillage[j],
+                                                              legendreData);
+                            }
+                            else
+                            {
+                                const Segment S = maillage[i];
+                                A_cached(i, j) = integ_simple([&S](const Point &Q, double)
+                                                              { return integ_simple_log(Q, S); },
+                                                              S,
+                                                              legendreData);
+
+                                A_cached(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                                               { return green_reguliere_cached_vec(Q, P); },
+                                                               maillage[i],
+                                                               maillage[j],
+                                                               legendreData);
+                            }
+                        }
+                    }
+
+                    const auto ta1 = Horloge::now();
+                    const double tempsAssemblage = std::chrono::duration<double>(ta1 - ta0).count();
+
+                    // Gradient conjugue : 1ere resolution gardee pour l'erreur,
+                    // les suivantes ne servent qu'a affiner la mesure du temps.
+                    const auto tc0 = Horloge::now();
+                    const Vecteur vect_p = gradConjMatSym(A_cached, vect_b, tolGradConj, maxIterGradConj);
+                    const auto tc1 = Horloge::now();
+                    double tempsCG = std::chrono::duration<double>(tc1 - tc0).count();
+
+                    for (unsigned int r = 1; r < nbRepetitions; r++)
+                    {
+                        const auto t0 = Horloge::now();
+                        const Vecteur vect_rep = gradConjMatSym(A_cached, vect_b, tolGradConj, maxIterGradConj);
+                        const auto t1 = Horloge::now();
+
+                        tempsCG = std::min(tempsCG, std::chrono::duration<double>(t1 - t0).count());
+                        puits += vect_rep.norm();
+                    }
+
+                    const double erreur = (vect_p - vect_p_ana).norm() / vect_p_ana.norm();
+
+                    // Ecriture (flush a chaque ligne : run long)
+                    file << nDemande << " " << n << " " << pas << " " << nq << " "
+                         << tempsAssemblage << " " << tempsCG << " " << erreur << endl;
+
+                    std::cout << "  N=" << n << " nq=" << nq
+                              << " | t_assemblage=" << tempsAssemblage << " s"
+                              << " | t_CG=" << tempsCG << " s"
+                              << " | err_p=" << erreur << std::endl;
+                }
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte. (controle: " << puits << ")" << std::endl;
+        }
+#endif
+
 #ifdef TP2_bis
         /* ----- TP2 : matrice free ----- */
 

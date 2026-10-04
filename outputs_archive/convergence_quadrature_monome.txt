@@ -1,0 +1,23 @@
+# Erreur de la quadrature de Gauss-Legendre (n=10) sur les monomes x^p integres sur [-1,1]
+# degre_p erreur_absolue
+0 0
+1 0
+2 1.11022e-16
+3 0
+4 2.22045e-16
+5 0
+6 1.11022e-16
+7 0
+8 5.55112e-17
+9 0
+10 5.55112e-17
+11 0
+12 5.55112e-17
+13 0
+14 2.77556e-17
+15 0
+16 2.77556e-17
+17 0
+18 2.77556e-17
+19 0
+20 2.92559e-06
