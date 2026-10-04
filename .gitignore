@@ -1,4 +1,5 @@
 outputs/*
+outputs_archive/*
 out/*
 .vscode
 profiling/*

@@ -1,9 +1,14 @@
 #include <iostream>
 #include <time.h>
+#include <limits>
+#include <algorithm>
 #include "src/config/config.hpp"
 #include "src/config/constantes.hpp"
 #include "src/config/external.hpp"
 #include "src/headers/utils.hpp"
+#include "src/headers/balle_golf.hpp"
+#include "src/headers/narval.hpp"
+#include "src/headers/mur_anechoique.hpp"
 
 int main(int argc, char **argv)
 {
@@ -60,17 +65,32 @@ int main(int argc, char **argv)
 
     Point O(0, 0);
     Cercle cercle(rayon, O);
-    Maillage maillage;
-    maillage.ajoute_cercle(pasMaillage, cercle);
+    //Maillage maillage;
+    //maillage.ajoute_cercle(pasMaillage, cercle);
+    /* //balle de golf
+    vector<Point> pts = pointsBalleGolf(1.0,    // rayon R
+                                    10,     // nombre d'alvéoles
+                                    0.12,   // profondeur = 12 % de R (amplifié)
+                                    0.8,    // remplissage angulaire d'une alvéole
+                                    0.005); // pas du maillage
+    
+    */
+   const double pasMaillage = 0.0005;
+    const vector<Point> pts = pointsNarval(1.0, pasMaillage);
+    Maillage maillage(pts);
     const unsigned int nbSegmentsMaillage = maillage.size();
 
     if (rank == 0)
     {
-        std::cout << "\n=== Maillage du cercle ===" << std::endl;
+        std::cout << "\n=== Maillage de la frontière ===" << std::endl;
         std::cout << "  Centre              : " << O << std::endl;
         std::cout << "  Rayon               : " << rayon << std::endl;
         std::cout << "  Pas                 : " << pasMaillage << std::endl;
         std::cout << "  Nombre de segments  : " << nbSegmentsMaillage << std::endl;
+
+        // -- Export du maillage (un seul processus ecrit) --
+        maillage.export_maillage("outputs/narval_maillage.txt");
+        std::cout << "  Maillage exporte    : outputs/narval_maillage.txt" << std::endl;
     }
 
     // -- Récupération des coefficients de Legendre --
@@ -173,23 +193,107 @@ int main(int argc, char **argv)
         const Real ymin = -L / 2.0;
         const Real ymax = L / 2.0;
 
+        // Cercle de reference (sert uniquement a la solution analytique du cercle)
         const Real distanceMin = rayon + delta;
+
+        // -- Boite englobante de la frontiere (pour accelerer les tests) --
+
+        Real bxmin = std::numeric_limits<Real>::max(), bxmax = -bxmin;
+        Real bymin = bxmin, bymax = -bxmin;
+        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        {
+            bxmin = std::min<Real>(bxmin, maillage[i].P1.x);
+            bxmax = std::max<Real>(bxmax, maillage[i].P1.x);
+            bymin = std::min<Real>(bymin, maillage[i].P1.y);
+            bymax = std::max<Real>(bymax, maillage[i].P1.y);
+        }
+
+        // -- Point exterieur a l'obstacle (lancer de rayon) ET a au moins delta de la frontiere --
+
+        auto exterieurValide = [&](const Point &M) -> bool
+        {
+            // Loin de la boite englobante : exterieur et eloigne de la frontiere
+            if (M.x < bxmin - delta || M.x > bxmax + delta ||
+                M.y < bymin - delta || M.y > bymax + delta)
+                return true;
+
+            bool dedans = false;
+            Real d2min = std::numeric_limits<Real>::max();
+
+            for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+            {
+                const Point &A = maillage[i].P1;
+                const Point &B = maillage[i].P2;
+
+                if ((A.y > M.y) != (B.y > M.y) &&
+                    M.x < (B.x - A.x) * (M.y - A.y) / (B.y - A.y) + A.x)
+                    dedans = !dedans;
+
+                const Real ex = B.x - A.x;
+                const Real ey = B.y - A.y;
+                const Real len2 = ex * ex + ey * ey;
+                Real t = (len2 > 0.0) ? ((M.x - A.x) * ex + (M.y - A.y) * ey) / len2 : 0.0;
+                t = std::max<Real>(0.0, std::min<Real>(1.0, t));
+                const Real dx = M.x - (A.x + t * ex);
+                const Real dy = M.y - (A.y + t * ey);
+                d2min = std::min(d2min, dx * dx + dy * dy);
+            }
+
+            return !dedans && d2min >= delta * delta;
+        };
+
+        // -- 1) Grille reguliere, filtree par la vraie forme de l'obstacle --
 
         for (Real x = xmin; x <= xmax; x += pasSolution)
         {
             for (Real y = ymin; y <= ymax; y += pasSolution)
             {
-                const Real distance =
-                    std::sqrt(x * x + y * y);
-
-                // On conserve uniquement les points
-                // suffisamment éloignés du cercle.
-                if (distance >= distanceMin)
-                {
-                    pointsSolution.emplace_back(x, y);
-                }
+                const Point M(x, y);
+                if (exterieurValide(M))
+                    pointsSolution.emplace_back(M);
             }
         }
+
+        // -- 2) Couches de points le long de la frontiere (pres de l'obstacle) --
+        // Tous les pasProche (abscisse curviligne), on place des points sur la
+        // normale sortante a des distances multiples * pasMaillage (>= delta).
+
+        const Real pasProche = 0.02;
+        const std::vector<Real> multiplesProches = {2.0, 4.0, 8.0, 16.0, 32.0};
+        const unsigned int nbPointsGrille = pointsSolution.size();
+
+        Real arc = pasProche; // force un point sur le premier segment
+        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        {
+            const Real ex = maillage[i].P2.x - maillage[i].P1.x;
+            const Real ey = maillage[i].P2.y - maillage[i].P1.y;
+            const Real len = std::sqrt(ex * ex + ey * ey);
+            arc += len;
+
+            if (arc < pasProche || len <= 0.0)
+                continue;
+            arc = 0.0;
+
+            // Normale sortante (contour anti-horaire)
+            const Real nx = ey / len;
+            const Real ny = -ex / len;
+            const Point &C = maillage[i].milieu;
+
+            for (const Real m : multiplesProches)
+            {
+                const Real d = std::max<Real>(delta, m * pasMaillage);
+                const Point M(C.x + d * nx, C.y + d * ny);
+
+                if (M.x < xmin || M.x > xmax || M.y < ymin || M.y > ymax)
+                    continue;
+
+                if (exterieurValide(M))
+                    pointsSolution.emplace_back(M);
+            }
+        }
+
+        std::cout << "  Points de grille    : " << nbPointsGrille << std::endl;
+        std::cout << "  Points pres du bord : " << pointsSolution.size() - nbPointsGrille << std::endl;
 
         const unsigned int nbPointsSolution = pointsSolution.size();
 
@@ -206,7 +310,7 @@ int main(int argc, char **argv)
 
         // -- Creation du fichier de resultats --
 
-        const string filename = string("outputs/u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
+        const string filename = string("outputs/narval_u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
         ofstream file(filename);
 
         if (!file.is_open())
@@ -219,6 +323,7 @@ int main(int argc, char **argv)
 
         Real erreurTotaleL2 = 0.0;
         Real erreurTotaleMax = 0.0;
+        unsigned int nbPointsErreur = 0; // points ou la solution analytique du cercle est definie
 
         for (const Point &Pj : pointsSolution)
         {
@@ -226,7 +331,9 @@ int main(int argc, char **argv)
 
             // -- Solution analytique --
 
-            const Complex uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
+            // (solution analytique du cercle : evitee la ou elle n'a pas de sens)
+            const bool horsCercle = std::hypot(Pj.x, Pj.y) >= distanceMin;
+            const Complex uExact = horsCercle ? u_N_plus_analytique(Pj, rayon, idxTroncature) : Complex(0.0);
 
             // -- Interpolation cte --
 
@@ -246,11 +353,15 @@ int main(int argc, char **argv)
             tempsCached += endCached - startCached;
 
             // Erreurs locales
-            const Real erreurTotale = erreur_relative(uCached, uExact);
+            const Real erreurTotale = horsCercle ? erreur_relative(uCached, uExact) : 0.0;
 
             // Accumulation
-            erreurTotaleL2 += erreurTotale * erreurTotale;
-            erreurTotaleMax = std::max(erreurTotaleMax, erreurTotale);
+            if (horsCercle)
+            {
+                erreurTotaleL2 += erreurTotale * erreurTotale;
+                erreurTotaleMax = std::max(erreurTotaleMax, erreurTotale);
+                nbPointsErreur++;
+            }
 
             // -- Ecriture Fichier --
 
@@ -273,7 +384,7 @@ int main(int argc, char **argv)
 
         // -- Erreurs L2 --
 
-        erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<Real>(nbPointsSolution));
+        erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<Real>(std::max(1u, nbPointsErreur)));
 
         // -- Prints --
 
