@@ -14,7 +14,8 @@ NORMAL_STEP = 100       # une normale toutes les NORMAL_STEP segments
 NORMAL_LENGTH = 1.0    # longueur des flèches (unités du graphe)
 
 # 1. Charger les données depuis le fichier
-data_file = 'outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt'
+#data_file = 'outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt'
+data_file = 'outputs/balle_golf_solution.txt'
 data = np.loadtxt(data_file)
 
 # Nom de base des PNG : même nom que le fichier de données (contient k, a et N)

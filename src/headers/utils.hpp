@@ -61,3 +61,9 @@ void export_obsctacles(const string &filename, vector<Cercle> cercles);
 double erreur_relative(const std::complex<double> &u, const std::complex<double> &reference, double eps = 1e-14);
 
 #endif
+
+
+#ifdef TP0
+void etudie_convergence_airy(const vector<double> &kValues, double a, int Nmax,
+                             const vector<double> &tolValues, const string &outPrefix);
+#endif

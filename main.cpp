@@ -1,9 +1,16 @@
 #include <iostream>
 #include <time.h>
+#include <chrono>
+#include <limits>
+#include <algorithm>
+#include <fstream>
+#include <vector>
 #include "src/config/config.hpp"
 #include "src/config/constantes.hpp"
 #include "src/config/external.hpp"
 #include "src/headers/utils.hpp"
+#include "src/headers/balle_golf.hpp" // pointsBalleGolf (a placer a cote de maillage.hpp)
+#include "src/headers/narval.hpp" // pointsBalleGolf (a placer a cote de maillage.hpp)
 
 Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const LegendreData &legendreData)
 {
@@ -189,6 +196,9 @@ int main()
         v[0] = 1;
         v[1] = 1;
         cout << BBB * v << endl;
+
+
+        #ifdef TP1
 
         // ===================================================================
         // Test 1 : erreur de quadrature de Gauss-Legendre (ordre n=10) sur
@@ -621,13 +631,18 @@ int main()
             file.close();
             std::cout << "Fichier " << filename << " exporte." << endl;
         }
+        #endif
     }
+    
 
     if (effectuerLaSimulation)
     {
 #ifdef TP0
         /* ----- TP0 ----- */
 
+        //test formule Airy 
+        etudie_convergence_airy({1,2,5,10,20,40,80,160, 300, 1000, 2500, 5000, 10000}, 1.0, 100000, {1e-4, 1e-7, 1e-10, 1e-14}, "test");
+        /*
         // -- Creation Maillage --
         vector<Cercle> obstaclesTest;
         Point O(0, 0);
@@ -758,6 +773,8 @@ int main()
             std::cout << "FD check (h=" << Hdiff << "): max |q_fd - q| = " << maxErrQ
                       << ", max |p_fd - p| = " << maxErrP << endl;
         }
+
+        */
 #endif
 
 #ifdef TP1
@@ -1554,6 +1571,501 @@ int main()
         std::cout << "    gain de temps       : " << (1.0 - tempsCached / tempsGreen) * 100.0 << " %" << std::endl;
 
 #endif
+
+#ifdef TP2_etude
+        /* ----- TP2 (étude) : temps de construction de A et erreur sur p -----
+         *
+         * Pour chaque couple (nombre de segments du maillage, nombre de points
+         * de quadrature) :
+         *   - construction de A (versions "cached" et "exacte"), chronométrée,
+         *   - résolution de A p = b par gradient conjugué,
+         *   - erreur relative L2 entre p (BEM) et p analytique.
+         *
+         * Résultats dans outputs/etude_temps_erreur_A.txt (une ligne par couple,
+         * directement exploitable avec gnuplot / numpy / matlab).
+         */
+        {
+            // -- Parametres du probleme (k vient de la config, comme dans TP2) --
+
+            const double rayon = 1.;
+            const double L = 4.; // sert uniquement a dimensionner le cache de Green
+            const unsigned int idxTroncature = 25;
+            const double tolGradConj = 1e-8;
+            const unsigned int maxIterGradConj = 1000;
+
+            // -- Parametres de l'etude --
+
+            // Nombre de segments du maillage (10 -> 10000, echelle ~logarithmique)
+            const vector<unsigned int> nbSegmentsValues = {10, 20, 50, 100, 200, 500,
+                                                           1000, 2000, 5000};
+
+            // Nombre de points de quadrature (4 -> 20)
+            const unsigned int nqMin = 4;
+            const unsigned int nqMax = 20;
+            const unsigned int nqPas = 1;
+
+            // La construction "exacte" (Hankel a chaque appel) est beaucoup plus
+            // lente que la version cached : on la limite aux maillages <= ce seuil
+            // (mettre 0 pour la desactiver, 10000 pour la faire partout).
+            const unsigned int nbSegmentsMaxExact = 5000;
+
+            // -- Cache de Green --
+            // Regle une seule fois, pour le maillage le PLUS FIN : le meme cache
+            // sert alors a tous les maillages (et on isole l'erreur de maillage).
+            // Doit etre fait avant le premier appel a green_cached_vec.
+
+            const unsigned int nbSegmentsMax =
+                *std::max_element(nbSegmentsValues.begin(), nbSegmentsValues.end());
+            const double pasMin = 2.0 * pi * rayon / nbSegmentsMax;
+            green_cache_step = 0.01 * pasMin / k;
+            max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+
+            std::cout << "\n=== Etude temps de construction / erreur sur p ===" << std::endl;
+            std::cout << "  Nombre d'onde k          : " << k << std::endl;
+            std::cout << "  Segments                 : " << nbSegmentsValues.front()
+                      << " -> " << nbSegmentsMax << " (" << nbSegmentsValues.size() << " valeurs)" << std::endl;
+            std::cout << "  Quadrature               : " << nqMin << " -> " << nqMax
+                      << " (pas " << nqPas << ")" << std::endl;
+            std::cout << "  Pas du cache de Green    : " << green_cache_step << std::endl;
+            std::cout << "  Nombre max d'indices     : " << max_index << std::endl;
+            std::cout << "  Construction exacte pour : N <= " << nbSegmentsMaxExact << std::endl;
+
+            // -- Fichier de sortie --
+
+            const string filename = "outputs/etude_temps_erreur_A.txt";
+            ofstream file(filename);
+
+            if (!file.is_open())
+            {
+                std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+                exit(-1);
+            }
+
+            file << "# Temps de construction de A et erreur relative L2 de p (BEM) vs p analytique" << endl;
+            file << "# k=" << k << " rayon=" << rayon << " idxTroncature=" << idxTroncature
+                 << " tolGradConj=" << tolGradConj << " green_cache_step=" << green_cache_step << endl;
+            file << "# Temps en secondes (horloge murale). nan = non calcule." << endl;
+            file << "# nbSegments_demande nbSegments_reel pasMaillage nq "
+                 << "temps_cached temps_exact erreur_p_cached erreur_p_exact" << endl;
+
+            const double nonCalcule = std::numeric_limits<double>::quiet_NaN();
+            const Point O(0, 0);
+            const Cercle cercle(rayon, O);
+
+            // -- Construction d'un maillage du cercle avec n segments --
+            // On donne pas = perimetre / n. Selon la facon dont ajoute_cercle
+            // arrondit, on peut obtenir n-1 ou n+1 segments : on teste alors
+            // quelques perturbations du pas et on garde le meilleur resultat.
+
+            auto construireMaillage = [&](unsigned int n, double &pasUtilise)
+            {
+                const double pasIdeal = 2.0 * pi * rayon / n;
+                const double facteurs[] = {1.0, 1.0 - 1e-9, 1.0 + 1e-9, 1.0 - 1e-6, 1.0 + 1e-6};
+
+                Maillage meilleur;
+                int meilleurEcart = -1;
+
+                for (double f : facteurs)
+                {
+                    Maillage m;
+                    m.ajoute_cercle(pasIdeal * f, cercle);
+                    const int ecart = std::abs(static_cast<int>(m.size()) - static_cast<int>(n));
+
+                    if (meilleurEcart < 0 || ecart < meilleurEcart)
+                    {
+                        meilleur = m;
+                        meilleurEcart = ecart;
+                        pasUtilise = pasIdeal * f;
+                    }
+                    if (ecart == 0)
+                        break;
+                }
+                return meilleur;
+            };
+
+            using Horloge = std::chrono::steady_clock;
+
+            // -- Boucle principale --
+
+            for (unsigned int nDemande : nbSegmentsValues)
+            {
+                double pas = 0.0;
+                const Maillage maillage = construireMaillage(nDemande, pas);
+                const unsigned int n = maillage.size();
+
+                if (n != nDemande)
+                    std::cout << "  [Attention] " << nDemande << " segments demandes, "
+                              << n << " obtenus (pas = " << pas << ")" << std::endl;
+
+                // p analytique aux milieux des segments (ne depend pas de nq)
+                Vecteur vect_p_ana(n);
+                for (unsigned int i = 0; i < n; i++)
+                    vect_p_ana[i] = p_analytique(maillage[i].milieu, idxTroncature);
+
+                for (unsigned int nq = nqMin; nq <= nqMax; nq += nqPas)
+                {
+                    const LegendreData &legendreData = get_legendre_data(nq);
+
+                    // Second membre
+                    Vecteur vect_b(n);
+                    for (unsigned int i = 0; i < n; i++)
+                    {
+                        vect_b[i] = integ_simple([](const Point &Q, double)
+                                                 { return -u_inc(Q); },
+                                                 maillage[i],
+                                                 legendreData);
+                    }
+
+                    // ---------- Version cached ----------
+
+                    double tempsCached = nonCalcule;
+                    double erreurCached = nonCalcule;
+                    {
+                        const auto t0 = Horloge::now();
+
+                        MatriceSym A_cached(n);
+                        for (unsigned int i = 0; i < n; i++)
+                        {
+                            for (unsigned int j = 0; j <= i; j++)
+                            {
+                                if (i != j)
+                                {
+                                    A_cached(i, j) = integ_double([](const Point &Q, const Point &P, double)
+                                                                  { return green_cached_vec(Q, P); },
+                                                                  maillage[i],
+                                                                  maillage[j],
+                                                                  legendreData);
+                                }
+                                else
+                                {
+                                    const Segment S = maillage[i];
+                                    A_cached(i, j) = integ_simple([&S](const Point &Q, double)
+                                                                  { return integ_simple_log(Q, S); },
+                                                                  S,
+                                                                  legendreData);
+
+                                    A_cached(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                                                   { return green_reguliere_cached_vec(Q, P); },
+                                                                   maillage[i],
+                                                                   maillage[j],
+                                                                   legendreData);
+                                }
+                            }
+                        }
+
+                        const auto t1 = Horloge::now();
+                        tempsCached = std::chrono::duration<double>(t1 - t0).count();
+
+                        // Resolution (non chronometree) pour l'erreur sur p
+                        const Vecteur vect_p = gradConjMatSym(A_cached, vect_b, tolGradConj, maxIterGradConj);
+                        erreurCached = (vect_p - vect_p_ana).norm() / vect_p_ana.norm();
+                    }
+
+                    // ---------- Version exacte ----------
+
+                    double tempsExact = nonCalcule;
+                    double erreurExact = nonCalcule;
+                    if (n <= nbSegmentsMaxExact)
+                    {
+                        const auto t0 = Horloge::now();
+
+                        MatriceSym A(n);
+                        for (unsigned int i = 0; i < n; i++)
+                        {
+                            for (unsigned int j = 0; j <= i; j++)
+                            {
+                                if (i != j)
+                                {
+                                    A(i, j) = integ_double([](const Point &Q, const Point &P, double)
+                                                           { return green(Q, P); },
+                                                           maillage[i],
+                                                           maillage[j],
+                                                           legendreData);
+                                }
+                                else
+                                {
+                                    const Segment S = maillage[i];
+                                    A(i, j) = integ_simple([&S](const Point &Q, double)
+                                                           { return integ_simple_log(Q, S); },
+                                                           S,
+                                                           legendreData);
+
+                                    A(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                                            { return green_reguliere(Q, P); },
+                                                            maillage[i],
+                                                            maillage[j],
+                                                            legendreData);
+                                }
+                            }
+                        }
+
+                        const auto t1 = Horloge::now();
+                        tempsExact = std::chrono::duration<double>(t1 - t0).count();
+
+                        const Vecteur vect_p = gradConjMatSym(A, vect_b, tolGradConj, maxIterGradConj);
+                        erreurExact = (vect_p - vect_p_ana).norm() / vect_p_ana.norm();
+                    }
+
+                    // ---------- Ecriture (flush a chaque ligne : run long) ----------
+
+                    file << nDemande << " " << n << " " << pas << " " << nq << " "
+                         << tempsCached << " " << tempsExact << " "
+                         << erreurCached << " " << erreurExact << endl;
+
+                    std::cout << "  N=" << n << " nq=" << nq
+                              << " | t_cached=" << tempsCached << " s"
+                              << " | err_p_cached=" << erreurCached;
+                    if (n <= nbSegmentsMaxExact)
+                        std::cout << " | t_exact=" << tempsExact << " s"
+                                  << " | err_p_exact=" << erreurExact;
+                    std::cout << std::endl;
+                }
+            }
+
+            file.close();
+            std::cout << "Fichier " << filename << " exporte." << std::endl;
+        }
+#endif
+
+#ifdef TP_balle_golf
+        /* ----- TP balle de golf : BEM sur frontiere alveolee ----- */
+
+        // -- Parametres physiques / numeriques --
+        k = 10;
+        const double rayon = 1.;
+        pasMaillage = 0.02;
+        const double L = 12;              // domaine de calcul L x L
+        const double pasSolution = 0.05;
+        const double delta = 2. * pasSolution; // distance min point-frontiere
+        const unsigned int ordre = 4;
+        const double tolGradConj = 1e-8;
+        const unsigned int maxIterGradConj = 2000;
+
+        // -- Maillage de la balle (12 alveoles, profondeur 12 % de R) --
+        const vector<Point> pointsBalle = pointsBalleGolf(rayon, 12, 0.12, 0.8, pasMaillage);
+        Maillage maillage(pointsBalle);
+        const unsigned int n = maillage.size();
+        maillage.export_maillage("outputs/balle_golf_maillage.txt");
+        std::cout << "Balle de golf : " << n << " segments" << std::endl;
+
+        // -- Cache de Green --
+        green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
+        max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+
+        const LegendreData &legendreData = get_legendre_data(ordre);
+
+        // -- Second membre : b_i = -int u_inc --
+        Vecteur vect_b(n);
+        for (unsigned int i = 0; i < n; i++)
+            vect_b[i] = integ_simple([](const Point &Q, double)
+                                     { return -u_inc(Q); },
+                                     maillage[i], legendreData);
+
+        // -- Matrice A (Green cachee) --
+        MatriceSym A(n);
+        for (unsigned int i = 0; i < n; i++)
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (i != j)
+                {
+                    A(i, j) = integ_double([](const Point &Q, const Point &P, double)
+                                           { return green_cached_vec(Q, P); },
+                                           maillage[i], maillage[j], legendreData);
+                }
+                else
+                {
+                    const Segment S = maillage[i];
+                    A(i, j) = integ_simple([&S](const Point &Q, double)
+                                           { return integ_simple_log(Q, S); },
+                                           S, legendreData);
+                    A(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                            { return green_reguliere_cached_vec(Q, P); },
+                                            maillage[i], maillage[j], legendreData);
+                }
+            }
+
+        // -- Resolution A p = b --
+        const Vecteur vect_p = gradConjMatSym(A, vect_b, tolGradConj, maxIterGradConj);
+
+        // -- Test "point exterieur a la balle" (lancer de rayon) + distance a la frontiere --
+        auto estExterieur = [&](const Point &M) -> bool
+        {
+            bool dedans = false;
+            for (unsigned int i = 0; i < n; i++)
+            {
+                const Point &a = maillage[i].P1;
+                const Point &b = maillage[i].P2;
+                if ((a.y > M.y) != (b.y > M.y) &&
+                    M.x < (b.x - a.x) * (M.y - a.y) / (b.y - a.y) + a.x)
+                    dedans = !dedans;
+            }
+            if (dedans)
+                return false;
+            for (unsigned int i = 0; i < n; i++)
+            {
+                const Point &m = maillage[i].milieu;
+                const Point &a = maillage[i].P1;
+                if (std::hypot(M.x - m.x, M.y - m.y) < delta ||
+                    std::hypot(M.x - a.x, M.y - a.y) < delta)
+                    return false;
+            }
+            return true;
+        };
+
+        // -- Calcul et export : x y Re(u_diff) Im(u_diff) Re(u_tot) Im(u_tot) --
+        const string filename = "outputs/balle_golf_solution.txt";
+        ofstream file(filename);
+        if (!file.is_open())
+        {
+            std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+            exit(-1);
+        }
+        file << "# k=" << k << " n=" << n << " hM=" << pasMaillage << " q=" << ordre << "\n";
+        file << "# x y Re(u) Im(u) Re(u+uinc) Im(u+uinc)\n";
+
+        for (double x = -L / 2.0; x <= L / 2.0 + 1e-12; x += pasSolution)
+            for (double y = -L / 2.0; y <= L / 2.0 + 1e-12; y += pasSolution)
+            {
+                const Point Pj(x, y);
+                if (!estExterieur(Pj))
+                    continue;
+
+                complex<double> u = 0.0;
+                for (unsigned int i = 0; i < n; i++)
+                    u += vect_p[i] * integ_simple([&Pj](const Point &Q, double)
+                                                  { return green_cached_vec(Pj, Q); },
+                                                  maillage[i], legendreData);
+                const complex<double> uTot = u + u_inc(Pj);
+
+                file << x << " " << y << " "
+                     << u.real() << " " << u.imag() << " "
+                     << uTot.real() << " " << uTot.imag() << "\n";
+            }
+
+        file.close();
+        std::cout << "Fichier " << filename << " exporte." << std::endl;
+#endif
+
+#ifdef TP_narval
+        /* ----- TP narval : BEM sur frontiere alveolee ----- */
+
+        // -- Parametres physiques / numeriques --
+        k = 10;
+        const double rayon = 1.;
+        pasMaillage = 0.02;
+        const double L = 12;              // domaine de calcul L x L
+        const double pasSolution = 0.05;
+        const double delta = 2. * pasSolution; // distance min point-frontiere
+        const unsigned int ordre = 4;
+        const double tolGradConj = 1e-8;
+        const unsigned int maxIterGradConj = 2000;
+
+        // -- Maillage de la balle (12 alveoles, profondeur 12 % de R) --
+        const vector<Point> pointsBalle =  pointsNarval(rayon, pasMaillage);
+        Maillage maillage(pointsBalle);
+        const unsigned int n = maillage.size();
+        maillage.export_maillage("outputs/narval_maillage.txt");
+        std::cout << " narval : " << n << " segments" << std::endl;
+
+        // -- Cache de Green --
+        green_cache_step = 0.1 * min(pasMaillage, pasSolution) / k;
+        max_index = static_cast<unsigned int>(std::ceil(L * std::sqrt(2.0) / green_cache_step));
+
+        const LegendreData &legendreData = get_legendre_data(ordre);
+
+        // -- Second membre : b_i = -int u_inc --
+        Vecteur vect_b(n);
+        for (unsigned int i = 0; i < n; i++)
+            vect_b[i] = integ_simple([](const Point &Q, double)
+                                     { return -u_inc(Q); },
+                                     maillage[i], legendreData);
+
+        // -- Matrice A (Green cachee) --
+        MatriceSym A(n);
+        for (unsigned int i = 0; i < n; i++)
+            for (unsigned int j = 0; j <= i; j++)
+            {
+                if (i != j)
+                {
+                    A(i, j) = integ_double([](const Point &Q, const Point &P, double)
+                                           { return green_cached_vec(Q, P); },
+                                           maillage[i], maillage[j], legendreData);
+                }
+                else
+                {
+                    const Segment S = maillage[i];
+                    A(i, j) = integ_simple([&S](const Point &Q, double)
+                                           { return integ_simple_log(Q, S); },
+                                           S, legendreData);
+                    A(i, j) += integ_double([](const Point &Q, const Point &P, double)
+                                            { return green_reguliere_cached_vec(Q, P); },
+                                            maillage[i], maillage[j], legendreData);
+                }
+            }
+
+        // -- Resolution A p = b --
+        const Vecteur vect_p = gradConjMatSym(A, vect_b, tolGradConj, maxIterGradConj);
+
+        // -- Test "point exterieur a la balle" (lancer de rayon) + distance a la frontiere --
+        auto estExterieur = [&](const Point &M) -> bool
+        {
+            bool dedans = false;
+            for (unsigned int i = 0; i < n; i++)
+            {
+                const Point &a = maillage[i].P1;
+                const Point &b = maillage[i].P2;
+                if ((a.y > M.y) != (b.y > M.y) &&
+                    M.x < (b.x - a.x) * (M.y - a.y) / (b.y - a.y) + a.x)
+                    dedans = !dedans;
+            }
+            if (dedans)
+                return false;
+            for (unsigned int i = 0; i < n; i++)
+            {
+                const Point &m = maillage[i].milieu;
+                const Point &a = maillage[i].P1;
+                if (std::hypot(M.x - m.x, M.y - m.y) < delta ||
+                    std::hypot(M.x - a.x, M.y - a.y) < delta)
+                    return false;
+            }
+            return true;
+        };
+
+        // -- Calcul et export : x y Re(u_diff) Im(u_diff) Re(u_tot) Im(u_tot) --
+        const string filename = "outputs/narval_solution.txt";
+        ofstream file(filename);
+        if (!file.is_open())
+        {
+            std::cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+            exit(-1);
+        }
+        file << "# k=" << k << " n=" << n << " hM=" << pasMaillage << " q=" << ordre << "\n";
+        file << "# x y Re(u) Im(u) Re(u+uinc) Im(u+uinc)\n";
+
+        for (double x = -L / 2.0; x <= L / 2.0 + 1e-12; x += pasSolution)
+            for (double y = -L / 2.0; y <= L / 2.0 + 1e-12; y += pasSolution)
+            {
+                const Point Pj(x, y);
+                if (!estExterieur(Pj))
+                    continue;
+
+                complex<double> u = 0.0;
+                for (unsigned int i = 0; i < n; i++)
+                    u += vect_p[i] * integ_simple([&Pj](const Point &Q, double)
+                                                  { return green_cached_vec(Pj, Q); },
+                                                  maillage[i], legendreData);
+                const complex<double> uTot = u + u_inc(Pj);
+
+                file << x << " " << y << " "
+                     << u.real() << " " << u.imag() << " "
+                     << uTot.real() << " " << uTot.imag() << "\n";
+            }
+
+        file.close();
+        std::cout << "Fichier " << filename << " exporte." << std::endl;
+#endif
+
+
 
 #ifdef TP2_bis
         /* ----- TP2 : matrice free ----- */

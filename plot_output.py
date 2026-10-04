@@ -7,8 +7,8 @@ from scipy.interpolate import griddata
 
 # 1. Charger les données depuis le fichier
 #data_file = 'outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt' for TP0
-
-data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.010000_hS0.100000_d0.100000_N30_q8.txt'
+data_file = 'outputs/balle_golf_solution.txt'
+#data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.010000_hS0.100000_d0.100000_N30_q8.txt'
 #data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.10000_hS0.100000_d0.100000_N30_q4.txt'
 data = np.loadtxt(data_file)
 
