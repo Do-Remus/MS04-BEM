@@ -65,8 +65,8 @@ int main(int argc, char **argv)
 
     Point O(0, 0);
     Cercle cercle(rayon, O);
-    //Maillage maillage;
-    //maillage.ajoute_cercle(pasMaillage, cercle);
+    Maillage maillage;
+    maillage.ajoute_cercle(pasMaillage, cercle);
     /* //balle de golf
     vector<Point> pts = pointsBalleGolf(1.0,    // rayon R
                                     10,     // nombre d'alvéoles
@@ -74,10 +74,11 @@ int main(int argc, char **argv)
                                     0.8,    // remplissage angulaire d'une alvéole
                                     0.005); // pas du maillage
     
-    */
+    
    const double pasMaillage = 0.0005;
     const vector<Point> pts = pointsNarval(1.0, pasMaillage);
     Maillage maillage(pts);
+    */
     const unsigned int nbSegmentsMaillage = maillage.size();
 
     if (rank == 0)
@@ -89,8 +90,8 @@ int main(int argc, char **argv)
         std::cout << "  Nombre de segments  : " << nbSegmentsMaillage << std::endl;
 
         // -- Export du maillage (un seul processus ecrit) --
-        maillage.export_maillage("outputs/narval_maillage.txt");
-        std::cout << "  Maillage exporte    : outputs/narval_maillage.txt" << std::endl;
+        maillage.export_maillage("outputs/cercle_maillage.txt");
+        std::cout << "  Maillage exporte    : outputs/cercle_maillage.txt" << std::endl;
     }
 
     // -- Récupération des coefficients de Legendre --
@@ -310,7 +311,7 @@ int main(int argc, char **argv)
 
         // -- Creation du fichier de resultats --
 
-        const string filename = string("outputs/narval_u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
+        const string filename = string("outputs/cercle_u") + "_k" + std::to_string(k) + "_R" + std::to_string(rayon) + "_L" + std::to_string(L) + "_hM" + std::to_string(pasMaillage) + "_hS" + std::to_string(pasSolution) + "_d" + std::to_string(delta) + "_N" + std::to_string(idxTroncature) + "_q" + std::to_string(ordre) + ".txt";
         ofstream file(filename);
 
         if (!file.is_open())
