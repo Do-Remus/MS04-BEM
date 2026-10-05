@@ -67,4 +67,10 @@ Vecteur resolution_systeme_lineaire(const MatriceSym &A, const Vecteur &P);
 
 Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, Real tol = 1e-10, unsigned int maxIter = 1000);
 
+Matrice generateur_matrice(const int rang, const int taille);
+
+
+Vecteur generateur_aléatoire_vecteur(const int taille);
+
+
 #endif

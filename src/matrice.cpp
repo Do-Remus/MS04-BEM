@@ -136,6 +136,35 @@ ostream &operator<<(ostream &out, const Matrice &A)
     return out;
 }
 
+
+Vecteur generateur_aléatoire_vecteur(const int taille){
+    Vecteur v(taille);
+    for(unsigned int i=0; i<taille; i++){
+        v[i] = 100*rand()/RAND_MAX;
+    }
+    return v;
+}
+
+Matrice generateur_matrice(const int rang, const int taille){
+    if(rang>taille){
+        cout<<"rang est plus grand que la taille"<<endl;
+        exit(1);
+    }
+    Matrice(taille, taille, 0);
+    unsigned int i=0;
+    while(i<rang){
+        //generateur d'une ligne
+        Vecteur v = generateur_aléatoire_vecteur(taille);
+        
+        //verification de liberté des vecteurs v1,..,v_r
+
+    }
+    //generateur aléatoire de combinaisons linéaires pour completer la matrice
+
+    //generateur aléatoire de permutation des colonnes (ou lignes)
+
+}
+
 /* Fonctions de la classe MatriceSym */
 
 MatriceSym::MatriceSym(int m, complex<Real> v) // constructeur dimensions et coefs constants
@@ -383,3 +412,5 @@ Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, Real tol, unsigned
 
     return x;
 }
+
+

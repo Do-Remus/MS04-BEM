@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 
     const string config = "config.txt";
     get_config(config);
-
+    srand(time(NULL));
     // -- Affichage Parametres --
 
     if (rank == 0)
