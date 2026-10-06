@@ -1,5 +1,5 @@
-#ifndef MATRICE_HPP_INCLUDED
-#define MATRICE_HPP_INCLUDED
+#ifndef MATRICE_SYM_HPP_INCLUDED
+#define MATRICE_SYM_HPP_INCLUDED
 
 #include "../global/global.hpp"
 #include "vecteur.hpp"

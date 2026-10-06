@@ -216,6 +216,12 @@ clean_output:
 clean_log:
 	rm -f ./log/*
 
+clean_all:
+	rm -f $(OBJS) $(TARGET)
+	rm -rf $(PROFILE_DIR)
+	rm -f ./outputs/*
+	rm -f ./log/*
+
 
 # ============================================================
 # Information

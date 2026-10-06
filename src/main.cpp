@@ -1,6 +1,8 @@
 #include "global/global.hpp"
-#include "utils/utils.hpp"
-#include "maillage/header_maillage.hpp"
+#include "BEM/free_matrix/commun.hpp"
+#include "geometrie/commun.hpp"
+#include "functions/green.hpp"
+#include "functions/solutions_analytiques.hpp"
 
 int main(int argc, char **argv)
 {
@@ -379,7 +381,7 @@ int main(int argc, char **argv)
             for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
             {
                 uCached += vect_p_cached[i] * integ_simple([&Pj](const Point &Q)
-                                                           { return green_cached_vec(Pj, Q); },
+                                                           { return green_cached(Pj, Q); },
                                                            quadrature_maillage[i]);
             }
 

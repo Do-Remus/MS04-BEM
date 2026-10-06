@@ -1,8 +1,8 @@
 #ifndef MUR_ACOUSTIQUE_HPP_INCLUDED
 #define MUR_ACOUSTIQUE_HPP_INCLUDED
 
-#include "../global/global.hpp"
-#include "maillage.hpp" // Point, Maillage
+#include "../../global/global.hpp"
+#include "../maillage.hpp"
 
 /*
  * Frontière 2D d'un mur acoustique : un rectangle dont le côté DROIT est

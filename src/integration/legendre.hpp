@@ -2,7 +2,7 @@
 #define LEGENDRE_HPP_INCLUDED
 
 #include "../global/global.hpp"
-#include "../maillage/maillage.hpp"
+#include "../geometrie/maillage.hpp"
 
 /* Datatype */
 struct LegendreData

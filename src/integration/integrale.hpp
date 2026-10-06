@@ -5,10 +5,8 @@
 #include "../geometrie/segment.hpp"
 #include "legendre.hpp"
 
-/* Fonctions d'integration */
+/* Fonctions d'intégration */
 
-// permet de faire une intègrale simple sur le segment AB
-// sur f:R^2->R, avec Nbpas1 intervalles sur AB
 template <typename F>
 inline Complex integ_simple(F &&f, const QuadratureSegment &quadrature)
 {
@@ -38,40 +36,16 @@ inline Complex integ_double(F &&f, const QuadratureSegment &AB, const Quadrature
     return result;
 }
 
-inline Complex integ_double_green_vec(const QuadratureSegment &AB, const QuadratureSegment &CD)
+/* Fonctions pré-intégrées */
+
+inline Complex integ_double_log(const Segment &AB)
 {
-    Complex result = 0.0;
+    const Real L = AB.norm;
 
-    for (const auto &qy : CD)
-    {
-        for (const auto &qx : AB)
-        {
+    if (L <= PRECISION_ZERO_DOUBLE)
+        return Complex(0.0, 0.0);
 
-            const Real dx = qx.point.x - qy.point.x;
-            const Real dy = qx.point.y - qy.point.y;
-
-            const Real distance = std::sqrt(dx * dx + dy * dy);
-
-            std::size_t index;
-
-            const std::size_t n_fine = static_cast<std::size_t>(green_cache_cutoff / green_cache_step_fine + 0.5);
-
-            if (distance < green_cache_cutoff)
-            {
-                index = static_cast<std::size_t>(distance / green_cache_step_fine + 0.5);
-            }
-            else
-            {
-                index = n_fine + static_cast<std::size_t>((distance - green_cache_cutoff) / green_cache_step_large + 0.5);
-            }
-
-            result += qy.weight * qx.weight * green_cache[index];
-        }
-    }
-
-    return result;
+    return (L * L / (Real(2.0) * pi)) * (Real(1.5) - std::log(L));
 }
-
-Complex integ_simple_log(const Point &X, const Segment &AB);
 
 #endif

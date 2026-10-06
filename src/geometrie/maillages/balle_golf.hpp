@@ -1,8 +1,8 @@
 #ifndef BALLE_GOLF_HPP_INCLUDED
 #define BALLE_GOLF_HPP_INCLUDED
 
-#include "../global/global.hpp"
-#include "maillage.hpp" // Point, Maillage
+#include "../../global/global.hpp"
+#include "../maillage.hpp"
 
 /*
  * Frontière 2D d'une balle de golf (coupe / silhouette), alvéoles amplifiées.
