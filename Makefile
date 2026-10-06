@@ -15,10 +15,10 @@ TARGET = $(OUT_DIR)/helmholtz
 SRCS_DIR = src
 
 # Source files
-SRCS = $(wildcard $(SRCS_DIR)/*.cpp)
+SRCS = $(shell find $(SRCS_DIR) -name '*.cpp')
 
 # Main
-MAIN = main.cpp
+MAIN = src/main.cpp
 
 # Header directory
 HEAD_DIR = src/headers
@@ -27,13 +27,13 @@ HEAD_DIR = src/headers
 CONFIG_DIR = src/config
 
 # Header files
-HEADERS = $(wildcard $(HEAD_DIR)/*.hpp) $(wildcard $(CONFIG_DIR)/*.hpp)
+HEADERS = $(shell find $(SRCS_DIR) -name '*.hpp')
 
 # Objects directory
 OBJ_DIR = bin/obj
 
 # Object files
-OBJS = $(MAIN:%.cpp=$(OBJ_DIR)/%.o) $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+OBJS = $(patsubst $(SRCS_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
 # ============================================================
 # Profiling tools
@@ -74,14 +74,9 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Compiling main.cpp
-$(OBJ_DIR)/%.o: %.cpp $(HEADERS)
-	@mkdir -p $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Compiling source files
+# Compiling all source files recursively
 $(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp $(HEADERS)
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # ============================================================

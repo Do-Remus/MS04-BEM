@@ -1,0 +1,74 @@
+#include "../maillage.hpp"
+
+void Maillage::ajoute_cercle(const Real pas_maillage, const Cercle &Ob)
+{
+    // Verification pas_maillage > 0
+    if (pas_maillage <= 0)
+    {
+        cout << "ERROR: Le pas du maillage doit-être strictement positif." << endl;
+        exit(-1);
+    }
+
+    // Construction du cercle
+    const unsigned int nb_segments = static_cast<unsigned int>(std::round(2.0 * pi * Ob.rayon / pas_maillage));
+    const Real pas_cercle = 2 * pi / nb_segments;
+
+    for (unsigned int i = 0; i < nb_segments; i++)
+    {
+        Point A(Ob.centre.x + Ob.rayon * cos(pas_cercle * i), Ob.centre.y + Ob.rayon * sin(pas_cercle * i));
+        Point B(Ob.centre.x + Ob.rayon * cos(pas_cercle * (i + 1)), Ob.centre.y + Ob.rayon * sin(pas_cercle * (i + 1)));
+        this->push_back(Segment(A, B));
+    }
+    return;
+}
+
+void Maillage::export_maillage(const string &filename)
+{
+    ofstream f(filename);
+
+    if (!f.is_open())
+    {
+        cout << "ERROR: Le fichier " << filename << " n'a pas pu être ouvert" << endl;
+        exit(-1);
+    }
+
+    for (unsigned int i = 0; i < this->size(); i++)
+    {
+        const Segment &s = this->operator[](i);
+        f << s.P1.x << " " << s.P1.y << " ";
+        f << s.P2.x << " " << s.P2.y << endl;
+    }
+    f.close();
+
+    return;
+}
+
+vector<Point> Maillage::PointsMaillage()
+{ // only is useful for connex meshings
+    vector<Point> points(this->size());
+    for (unsigned int i = 0; i < this->size(); i++)
+    {
+        points[i] = this->operator[](i).P1;
+    }
+    cout << "out of PointsMaillage 0 " << endl;
+    return points;
+}
+
+Maillage::Maillage(const vector<Cercle> &cercles, const Real pas_maillage)
+{
+    // Verification du strict positivité du pas du maillage fait dans ajoute cercle
+    for (unsigned int i = 0; i < cercles.size(); i++)
+    {
+        ajoute_cercle(pas_maillage, cercles[i]);
+    }
+}
+
+Maillage::Maillage(const vector<Point> &points)
+{
+    // suppose que aucun segment ne s'interecte
+    for (unsigned int i = 0; i < points.size() - 1; i++)
+    {
+        this->push_back(Segment(points[i], points[i + 1]));
+    }
+    this->push_back(Segment(points[points.size()], points[0]));
+}
