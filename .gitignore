@@ -1,5 +1,7 @@
 outputs/*
-outputs_archive/*
-out/*
-.vscode
+log/*
 profiling/*
+outputs_archive/*
+code_archive/*
+bin/*
+.vscode

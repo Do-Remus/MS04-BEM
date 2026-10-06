@@ -6,7 +6,7 @@ CXX = mpic++
 CXXFLAGS = -O3 -march=native -std=c++17 -DNDEBUG
 
 # Output directory
-OUT_DIR = out
+OUT_DIR = bin
 
 # Target executable
 TARGET = $(OUT_DIR)/helmholtz
@@ -30,7 +30,7 @@ CONFIG_DIR = src/config
 HEADERS = $(wildcard $(HEAD_DIR)/*.hpp) $(wildcard $(CONFIG_DIR)/*.hpp)
 
 # Objects directory
-OBJ_DIR = out/obj
+OBJ_DIR = bin/obj
 
 # Object files
 OBJS = $(MAIN:%.cpp=$(OBJ_DIR)/%.o) $(SRCS:$(SRCS_DIR)/%.cpp=$(OBJ_DIR)/%.o)
@@ -217,6 +217,9 @@ clean:
 
 clean_output:
 	rm -f ./outputs/*
+
+clean_log:
+	rm -f ./log/*
 
 
 # ============================================================

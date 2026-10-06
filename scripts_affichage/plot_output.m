@@ -37,7 +37,7 @@ set(colorbar, 'FontSize', 40);
 hold on; % Superposition des cercles noirs
 
 % Charger les cercles depuis maillage.txt
-maillage_data = load('outputs/obstacles.txt');
+maillage_data = load('../outputs/obstacles.txt');
 
 % Déterminer si maillage.txt contient les centres et rayons des cercles
 if size(maillage_data, 2) == 3
@@ -85,7 +85,7 @@ set(colorbar, 'FontSize', 40);
 hold on; % Superposition des cercles noirs
 
 % Charger les cercles depuis maillage.txt
-maillage_data = load('outputs/obstacles.txt');
+maillage_data = load('../outputs/obstacles.txt');
 
 % Déterminer si maillage.txt contient les centres et rayons des cercles
 if size(maillage_data, 2) == 3
@@ -133,7 +133,7 @@ set(colorbar, 'FontSize', 40);
 hold on; % Superposition des cercles noirs
 
 % Charger les cercles depuis maillage.txt
-maillage_data = load('outputs/obstacles.txt');
+maillage_data = load('../outputs/obstacles.txt');
 
 % Déterminer si maillage.txt contient les centres et rayons des cercles
 if size(maillage_data, 2) == 3

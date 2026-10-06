@@ -14,12 +14,12 @@ NORMAL_STEP = 100       # une normale toutes les NORMAL_STEP segments
 NORMAL_LENGTH = 1.0    # longueur des flèches (unités du graphe)
 
 # 1. Charger les données depuis le fichier
-data_file = 'outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt'
+data_file = '../outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt'
 data = np.loadtxt(data_file)
 
 # Nom de base des PNG : même nom que le fichier de données (contient k, a et N)
 base_name = os.path.splitext(os.path.basename(data_file))[0]
-save_dir = 'outputs'
+save_dir = '../outputs'
 os.makedirs(save_dir, exist_ok=True)
 
 # Extraire les colonnes
@@ -34,11 +34,11 @@ yq = np.linspace(y.min(), y.max(), 100)
 Xq, Yq = np.meshgrid(xq, yq)
 
 # Charger les obstacles et s'assurer qu'ils sont en 2 dimensions
-maillage_data = np.loadtxt('outputs/obstacles.txt')
+maillage_data = np.loadtxt('../outputs/obstacles.txt')
 maillage_data = np.atleast_2d(maillage_data)
 
 # Charger le maillage (segments) une seule fois
-mesh = np.atleast_2d(np.loadtxt('outputs/test.txt'))
+mesh = np.atleast_2d(np.loadtxt('../outputs/test.txt'))
 x1, y1, x2, y2 = mesh[:, 0], mesh[:, 1], mesh[:, 2], mesh[:, 3]
 
 

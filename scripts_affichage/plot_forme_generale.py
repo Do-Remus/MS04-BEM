@@ -8,8 +8,8 @@ from scipy.interpolate import griddata
 
 
 # --- Fichiers (produits par le bloc TP_balle_golf de main.cpp) ---
-data_file = 'outputs/narval_u_k10.000000_R1.000000_L10.000000_hM0.000500_hS0.050000_d0.000005_N25_q4.txt'
-mesh_file = 'outputs/narval_maillage.txt'
+data_file = '../outputs/narval_u_k10.000000_R1.000000_L10.000000_hM0.000500_hS0.050000_d0.000005_N25_q4.txt'
+mesh_file = '../outputs/narval_maillage.txt'
 
 # --- Champ à tracer : 'diffracte' (u+) ou 'total' (u+ + u_inc) ---
 FIELD = 'diffracte'
@@ -33,7 +33,7 @@ else:
     field_name = 'u+'
 
 base_name = os.path.splitext(os.path.basename(data_file))[0] + '_' + FIELD
-save_dir = 'outputs'
+save_dir = '../outputs'
 os.makedirs(save_dir, exist_ok=True)
 
 # Grille régulière pour l'interpolation

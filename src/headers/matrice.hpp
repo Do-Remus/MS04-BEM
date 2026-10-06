@@ -69,8 +69,6 @@ Vecteur gradConjMatSym(const MatriceSym &A, const Vecteur &b, Real tol = 1e-10, 
 
 Matrice generateur_matrice(const int rang, const int taille);
 
-
-Vecteur generateur_aléatoire_vecteur(const int taille);
-
+Vecteur generateur_aleatoire_vecteur(const int taille);
 
 #endif

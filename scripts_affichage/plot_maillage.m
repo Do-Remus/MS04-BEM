@@ -1,5 +1,5 @@
 % Load the data file (change 'data.txt' to your actual filename)
-data = load('outputs/test.txt');
+data = load('../outputs/test.txt');
 
 % Extract columns
 x1 = data(:,1);

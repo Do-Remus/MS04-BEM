@@ -340,6 +340,8 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
 
 Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter)
 {
+    /* === Initialisation === */
+
     const std::size_t n = b.size();
     Vecteur x(n, 0.0);
 
@@ -355,6 +357,14 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
 
     Complex rho = r.produitBilineaire(r);
 
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    Real startBoucle = MPI_Wtime();
+
+    /* === Boucle principale === */
+
     for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
         Vecteur Ad = produit_A_cached_blocked(maillage, d, quadrature_maillage);
@@ -363,13 +373,10 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
 
         if (scale == 0.0 || std::abs(denom) < 1e-20 * scale)
         {
-            int rank;
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
             if (rank == 0)
             {
                 std::cerr
-                    << "COCG : breakdown, "
+                    << "  COCG : breakdown, "
                     << "denominateur nul "
                     << "a l'iteration "
                     << iter
@@ -393,13 +400,10 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
 
         if (relativeResidual < tol)
         {
-            int rank;
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
             if (rank == 0)
             {
                 std::cout
-                    << "COCG converge en "
+                    << "  COCG converge en "
                     << iter + 1
                     << " iterations, "
                     << "résidu relatif = "
@@ -414,13 +418,10 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
 
         if (std::abs(rho) < 1e-30)
         {
-            int rank;
-            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
             if (rank == 0)
             {
                 std::cerr
-                    << "COCG : breakdown de rho "
+                    << "  COCG : breakdown de rho "
                     << "a l'iteration "
                     << iter
                     << std::endl;
@@ -437,15 +438,22 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
         }
 
         rho = rhoNew;
-    }
 
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Barrier(MPI_COMM_WORLD);
+        const Real endBoucle = MPI_Wtime();
+        const Real tempsBoucle = endBoucle - startBoucle;
+        startBoucle = endBoucle;
+
+        if (rank == 0)
+        {
+            std::cout << "  Iter " << iter << " en " << tempsBoucle << " s, avec un résidu relatif de " << relativeResidual << endl;
+        }
+    }
 
     if (rank == 0)
     {
         std::cout
-            << "COCG : nombre maximal "
+            << "  COCG : nombre maximal "
             << "d'iterations atteint."
             << std::endl;
     }

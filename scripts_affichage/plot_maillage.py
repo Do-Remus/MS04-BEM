@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the data file
-data = np.loadtxt('outputs/test.txt')
+data = np.loadtxt('../outputs/test.txt')
 
 # Extract columns
 x1 = data[:, 0]

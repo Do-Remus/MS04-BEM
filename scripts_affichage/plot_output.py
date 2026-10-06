@@ -6,7 +6,7 @@ from matplotlib.patches import Circle
 from scipy.interpolate import griddata
 
 # 1. Charger les données depuis le fichier
-#data_file = 'outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt' for TP0
+#data_file = '../outputs/u_N_plusResu_k=10.000000_a=1.000000_N=15.txt' for TP0
 
 data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.010000_hS0.100000_d0.100000_N30_q8.txt'
 #data_file = '/Users/remiallen/Documents/3a_ENSTA/MS04-BEM/code/outputs/u_k10.000000_R1.000000_L10.000000_hM0.10000_hS0.100000_d0.100000_N30_q4.txt'
@@ -14,7 +14,7 @@ data = np.loadtxt(data_file)
 
 # Nom de base des PNG : même nom que le fichier de données (contient k, a et N)
 base_name = os.path.splitext(os.path.basename(data_file))[0]
-save_dir = 'outputs'
+save_dir = '../outputs'
 os.makedirs(save_dir, exist_ok=True)
 
 # Extraire les colonnes
@@ -40,7 +40,7 @@ yq = np.linspace(y.min(), y.max(), 100)
 Xq, Yq = np.meshgrid(xq, yq)
 
 # Charger les obstacles et s'assurer qu'ils sont en 2 dimensions
-maillage_data = np.loadtxt('outputs/obstacles.txt')
+maillage_data = np.loadtxt('../outputs/obstacles.txt')
 maillage_data = np.atleast_2d(maillage_data)
 
 
