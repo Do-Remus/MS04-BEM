@@ -5,134 +5,178 @@
 #include "../maillage.hpp"
 
 /*
- * Frontière 2D d'un narval (vue de dessus, symétrique par rapport à y = 0) :
- * corps fuselé, tête arrondie, défense (tusk) pointant vers +x, nageoires
- * pectorales et lobes de la queue (flukes) vers -x.
+ * ============================================================
+ * Frontière 2D d'un narval
+ * ============================================================
  *
- * Construction :
- *   1) demi-contour supérieur défini par points de contrôle (unités : longueur
- *      du corps ~ 2.4, défense incluse ~ 4.1 avant mise à l'échelle) ;
- *   2) symétrie -> contour fermé, orienté anti-horaire ;
- *   3) spline de Catmull-Rom centripète fermée (pas de boucles ni d'overshoot
- *      gênant aux pointes) ;
- *   4) rééchantillonnage à pas constant en abscisse curviligne ;
- *   5) recentrage de la boîte englobante sur l'origine (optionnel).
+ * La géométrie est définie par une spline de Catmull-Rom
+ * centripète fermée.
  *
- * ATTENTION au pas : la défense fait ~0.05*echelle de large, les flukes et la
- * pointe des nageoires ~0.07*echelle. Prendre pas <= largeur/5 environ
- * (0.008 convient pour echelle = 1).
+ * Le maillage final est construit directement sur la spline.
  *
- * Retourne les points SANS répéter le premier à la fin (comme pointsBalleGolf).
+ * ============================================================
  */
-inline std::vector<Point> pointsNarval(const double echelle = 1.0,
-                                       const double pas = 0.008,
-                                       const bool centrer = true)
+inline Maillage maillageNarval(const double echelle = 1.0, const double pas = 0.008, const bool centrer = true)
 {
-    // Demi-contour supérieur, de la pointe de la défense vers l'encoche de la queue
-    // (y > 0 sauf pointe et encoche, situées sur l'axe).
-    const std::vector<std::array<double, 2>> haut = {
-        {2.40, 0.000}, // pointe de la défense
-        {2.30, 0.014},
-        {2.00, 0.026},
-        {1.40, 0.031},
-        {1.14, 0.034}, // sortie de la défense
-        {1.06, 0.100}, // museau
-        {0.92, 0.190},
-        {0.80, 0.250}, // base avant nageoire
-        {0.74, 0.330},
-        {0.66, 0.410}, // pointe nageoire pectorale
-        {0.62, 0.350},
-        {0.54, 0.305}, // base arrière nageoire
-        {0.40, 0.310}, // largeur max du corps
-        {0.00, 0.300},
-        {-0.40, 0.250},
-        {-0.80, 0.170},
-        {-1.10, 0.100},
-        {-1.30, 0.060}, // pédoncule
-        {-1.42, 0.140},
-        {-1.56, 0.300},
-        {-1.68, 0.420}, // pointe du lobe de queue
-        {-1.64, 0.280},
-        {-1.57, 0.120},
-        {-1.50, 0.000} // encoche centrale
-    };
+    /* === Points de contrôle === */
+    vector<Point> controle = {
+        Point(-1.00, 0.00),
+        Point(-0.85, 0.45),
+        Point(-0.45, 0.65),
+        Point(0.00, 0.55),
+        Point(0.45, 0.70),
+        Point(0.85, 0.40),
+        Point(1.00, 0.00),
+        Point(0.85, -0.40),
+        Point(0.45, -0.70),
+        Point(0.00, -0.55),
+        Point(-0.45, -0.65),
+        Point(-0.85, -0.45)};
 
-    // Contour fermé anti-horaire : haut (droite -> gauche), puis bas (gauche -> droite)
-    std::vector<std::array<double, 2>> ctrl = haut;
-    for (int i = static_cast<int>(haut.size()) - 2; i >= 1; --i)
-        ctrl.push_back({haut[i][0], -haut[i][1]});
-
-    const int m = static_cast<int>(ctrl.size());
-    auto C = [&](int i) -> const std::array<double, 2> &
-    { return ctrl[((i % m) + m) % m]; };
-
-    // Catmull-Rom centripète (Barry-Goldman) sur le segment P1->P2
-    auto interp = [&](int i, double t) -> std::array<double, 2>
+    /* === Vérification des paramètres === */
+    if (echelle <= 0.0 || pas <= 0.0 || controle.size() < 4)
     {
-        const auto &P0 = C(i - 1), &P1 = C(i), &P2 = C(i + 1), &P3 = C(i + 2);
-        auto d = [](const std::array<double, 2> &a, const std::array<double, 2> &b)
-        { return std::pow(std::hypot(a[0] - b[0], a[1] - b[1]), 0.5); };
-        const double t0 = 0.0, t1 = t0 + d(P0, P1), t2 = t1 + d(P1, P2), t3 = t2 + d(P2, P3);
-        const double u = t1 + t * (t2 - t1);
-        std::array<double, 2> A1, A2, A3, B1, B2, R;
-        for (int c = 0; c < 2; ++c)
-        {
-            A1[c] = (t1 - u) / (t1 - t0) * P0[c] + (u - t0) / (t1 - t0) * P1[c];
-            A2[c] = (t2 - u) / (t2 - t1) * P1[c] + (u - t1) / (t2 - t1) * P2[c];
-            A3[c] = (t3 - u) / (t3 - t2) * P2[c] + (u - t2) / (t3 - t2) * P3[c];
-            B1[c] = (t2 - u) / (t2 - t0) * A1[c] + (u - t0) / (t2 - t0) * A2[c];
-            B2[c] = (t3 - u) / (t3 - t1) * A2[c] + (u - t1) / (t3 - t1) * A3[c];
-            R[c] = (t2 - u) / (t2 - t1) * B1[c] + (u - t1) / (t2 - t1) * B2[c];
-        }
-        return R;
-    };
-
-    // Échantillonnage fin de la spline + abscisse curviligne
-    const int nSub = 400;
-    std::vector<std::array<double, 2>> fin;
-    fin.reserve(static_cast<size_t>(m) * nSub + 1);
-    for (int i = 0; i < m; ++i)
-        for (int j = 0; j < nSub; ++j)
-            fin.push_back(interp(i, static_cast<double>(j) / nSub));
-    fin.push_back(fin.front()); // fermeture
-
-    std::vector<double> arc(fin.size(), 0.0);
-    for (size_t i = 1; i < fin.size(); ++i)
-        arc[i] = arc[i - 1] + std::hypot(fin[i][0] - fin[i - 1][0], fin[i][1] - fin[i - 1][1]);
-    const double longueur = arc.back();
-
-    // Rééchantillonnage à pas constant
-    const unsigned int n = std::max(3u, static_cast<unsigned int>(std::ceil(longueur / (pas / echelle))));
-    std::vector<std::array<double, 2>> res;
-    res.reserve(n);
-    size_t idx = 0;
-    for (unsigned int i = 0; i < n; ++i)
-    {
-        const double s = longueur * i / n;
-        while (idx + 2 < arc.size() && arc[idx + 1] < s)
-            ++idx;
-        const double f = (s - arc[idx]) / (arc[idx + 1] - arc[idx]);
-        res.push_back({fin[idx][0] + f * (fin[idx + 1][0] - fin[idx][0]),
-                       fin[idx][1] + f * (fin[idx + 1][1] - fin[idx][1])});
+        return Maillage();
     }
 
-    double cx = 0.0;
+    /* === Spline Catmull-Rom === */
+    auto catmullRom = [](const Point &P0, const Point &P1, const Point &P2, const Point &P3, const Real t) -> Point
+    {
+        const Real t2 = t * t;
+        const Real t3 = t2 * t;
+
+        const Real c0 = -0.5 * t3 + t2 - 0.5 * t;
+        const Real c1 = 1.5 * t3 - 2.5 * t2 + 1.0;
+        const Real c2 = -1.5 * t3 + 2.0 * t2 + 0.5 * t;
+        const Real c3 = 0.5 * t3 - 0.5 * t2;
+
+        return Point(
+            c0 * P0.x + c1 * P1.x + c2 * P2.x + c3 * P3.x,
+            c0 * P0.y + c1 * P1.y + c2 * P2.y + c3 * P3.y);
+    };
+
+    /* === Construction de la courbe fine === */
+    const unsigned int nbControle = controle.size();
+
+    const unsigned int nParSegment = 1000;
+
+    vector<Point> pointsFins;
+
+    pointsFins.reserve(nbControle * nParSegment);
+
+    for (unsigned int i = 0; i < nbControle; ++i)
+    {
+        const unsigned int i0 = (i + nbControle - 1) % nbControle;
+        const unsigned int i1 = i;
+        const unsigned int i2 = (i + 1) % nbControle;
+        const unsigned int i3 = (i + 2) % nbControle;
+
+        for (unsigned int j = 0; j < nParSegment; ++j)
+        {
+            const Real t = static_cast<Real>(j) / static_cast<Real>(nParSegment);
+
+            pointsFins.push_back(
+                catmullRom(
+                    controle[i0],
+                    controle[i1],
+                    controle[i2],
+                    controle[i3],
+                    t));
+        }
+    }
+
+    /* === Mise à l'échelle === */
+    for (Point &P : pointsFins)
+    {
+        P.x *= echelle;
+        P.y *= echelle;
+    }
+
+    /* === Centrage horizontal === */
     if (centrer)
     {
-        double xmin = 1e300, xmax = -1e300;
-        for (const auto &p : res)
+        Real xmin = pointsFins[0].x;
+        Real xmax = pointsFins[0].x;
+
+        for (const Point &P : pointsFins)
         {
-            xmin = std::min(xmin, p[0]);
-            xmax = std::max(xmax, p[0]);
+            xmin = std::min(xmin, P.x);
+            xmax = std::max(xmax, P.x);
         }
-        cx = 0.5 * (xmin + xmax);
+
+        const Real centreX = 0.5 * (xmin + xmax);
+
+        for (Point &P : pointsFins)
+        {
+            P.x -= centreX;
+        }
     }
 
-    std::vector<Point> pts;
-    pts.reserve(n);
-    for (const auto &p : res)
-        pts.emplace_back((p[0] - cx) * echelle, p[1] * echelle);
-    return pts;
+    /* === Longueur de la courbe === */
+    const unsigned int M = pointsFins.size();
+
+    Real longueur = 0.0;
+
+    vector<Real> longueurs(M);
+
+    for (unsigned int i = 0; i < M; ++i)
+    {
+        const unsigned int j = (i + 1) % M;
+
+        longueurs[i] = (pointsFins[i] - pointsFins[j]).norm();
+
+        longueur += longueurs[i];
+    }
+
+    if (longueur <= PRECISION_ZERO_DOUBLE)
+    {
+        return Maillage();
+    }
+
+    /* === Nombre de segments === */
+    unsigned int N = static_cast<unsigned int>(std::round(longueur / pas));
+
+    if (N < 3)
+    {
+        N = 3;
+    }
+
+    const Real h = longueur / static_cast<Real>(N);
+
+    /* === Rééchantillonnage en longueur d'arc === */
+    vector<Point> points;
+    points.reserve(N);
+
+    unsigned int j = 0;
+    Real cumul = 0.0;
+
+    for (unsigned int i = 0; i < N; ++i)
+    {
+        const Real cible = static_cast<Real>(i) * h;
+
+        while (j < M - 1 && cumul + longueurs[j] < cible)
+        {
+            cumul += longueurs[j];
+            ++j;
+        }
+
+        const unsigned int j2 = (j + 1) % M;
+
+        const Real longueurSegment = longueurs[j];
+
+        Real t = 0.0;
+
+        if (longueurSegment > PRECISION_ZERO_DOUBLE)
+        {
+            t = (cible - cumul) / longueurSegment;
+        }
+
+        points.emplace_back(
+            pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
+            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
+    }
+
+    return Maillage(points);
 }
 
 #endif

@@ -15,10 +15,10 @@ public:
     Maillage(const vector<Point> &points);
 
     void ajoute_cercle(const Real pas_maillage, const Cercle &Ob);
+
     void export_maillage(const string &filename);
+
     vector<Point> PointsMaillage();
 };
-
-/* Fonctions associées à la classe Maillage */
 
 #endif

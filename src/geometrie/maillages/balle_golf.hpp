@@ -5,95 +5,144 @@
 #include "../maillage.hpp"
 
 /*
- * Frontière 2D d'une balle de golf (coupe / silhouette), alvéoles amplifiées.
+ * ============================================================
+ * Frontière 2D d'une balle de golf
+ * ============================================================
  *
- * Courbe en coordonnées polaires, étoilée par rapport au centre (donc sans
- * auto-intersection) :
+ * La frontière est définie en coordonnées polaires par
  *
- *      r(theta) = R - profondeur * sum_j bump( (theta - theta_j) / demiLargeur )
+ *      r(theta) = R - profondeur * creux(theta)
  *
- * avec theta_j = 2*pi*j/nbAlveoles + decalage et
- *      bump(u) = cos^2(pi*u/2) si |u| < 1, 0 sinon   (classe C^1, support compact).
+ * avec des alvéoles régulièrement réparties.
  *
- * Le pas est ~uniforme en abscisse curviligne : dtheta = pas / sqrt(r^2 + r'^2),
- * puis le nombre de points est ajusté pour fermer exactement la courbe.
+ * Le maillage final est construit directement sur la courbe
+ * analytique. Les points sont choisis de manière à obtenir
+ * des segments de longueur euclidienne quasi constante.
  *
- * Retourne des points ordonnés dans le sens trigonométrique, SANS répéter le
- * premier point à la fin : Maillage(points) doit refermer la courbe
- * (dernier point -> premier point), comme le fait déjà votre code P1 avec
- * (i+1) % N.
- *
- * Paramètres :
- *   rayon          R, rayon de la sphère lisse
- *   nbAlveoles     nombre d'alvéoles sur le pourtour
- *   profondeur     profondeur max d'une alvéole (en fraction de R : 0.12 = 12 %)
- *                  -> une vraie balle fait ~0.5 %, ici on amplifie volontairement
- *   remplissage    fraction de l'écart angulaire occupée par une alvéole, dans ]0,1[
- *                  (<1 : bords lisses entre alvéoles ; =1 : alvéoles jointives)
- *   pas            pas de maillage souhaité (longueur des segments)
+ * ============================================================
  */
-inline std::vector<Point> pointsBalleGolf(const double rayon,
-                                          const unsigned int nbAlveoles = 12,
-                                          const double profondeur = 0.12,
-                                          const double remplissage = 0.8,
-                                          const double pas = 0.02)
+inline Maillage maillageBalleGolf(const double rayon, const unsigned int nbAlveoles = 12, const double profondeur = 0.12, const double remplissage = 0.8, const double pas = 0.02)
 {
-    const double pi_ = std::acos(-1.0);
-    const double ecart = 2.0 * pi_ / nbAlveoles;
-    const double demiLargeur = 0.5 * remplissage * ecart; // support de chaque alvéole
-    const double decalage = 0.5 * ecart;                  // alvéole centrée entre 2 "crêtes" en theta=0
-    const double creux = profondeur * rayon;
-
-    // r(theta) et r'(theta)
-    auto rEtDerivee = [&](double theta, double &r, double &dr)
+    /* === Vérification des paramètres === */
+    if (rayon <= 0.0 || nbAlveoles == 0 || profondeur < 0.0 || pas <= 0.0)
     {
-        // on se ramène à l'alvéole la plus proche
-        double t = std::fmod(theta - decalage, ecart);
-        if (t > 0.5 * ecart)
-            t -= ecart;
-        if (t < -0.5 * ecart)
-            t += ecart;
-        r = rayon;
-        dr = 0.0;
-        if (std::abs(t) < demiLargeur)
+        return Maillage();
+    }
+
+    const double remplissageEffectif = std::max(0.0, std::min(1.0, remplissage));
+
+    /* === Fonction de creux === */
+    auto creux = [&](const Real theta) -> Real
+    {
+        const Real periode = 2.0 * pi / static_cast<Real>(nbAlveoles);
+
+        Real thetaLocal = std::fmod(theta, periode);
+
+        if (thetaLocal < 0.0)
         {
-            const double u = t / demiLargeur;
-            const double c = std::cos(0.5 * pi_ * u);
-            r -= creux * c * c;
-            // d/dtheta[-creux*cos^2(pi u/2)] = creux*(pi/2)*sin(pi u)/demiLargeur
-            dr = creux * (0.5 * pi_ / demiLargeur) * std::sin(pi_ * u);
+            thetaLocal += periode;
         }
+
+        const Real centre = 0.5 * periode;
+        const Real demiLargeur = 0.5 * remplissageEffectif * periode;
+
+        const Real distanceCentre = std::abs(thetaLocal - centre);
+
+        if (distanceCentre >= demiLargeur)
+        {
+            return 0.0;
+        }
+
+        const Real x = distanceCentre / demiLargeur;
+
+        return 0.5 * (1.0 + std::cos(pi * x));
     };
 
-    // 1) intégration de la longueur d'arc (pour fermer proprement)
-    const unsigned int nFin = 200000;
-    const double dth = 2.0 * pi_ / nFin;
-    std::vector<double> arc(nFin + 1, 0.0);
-    for (unsigned int i = 0; i < nFin; ++i)
+    /* === Courbe analytique === */
+    auto rayonTheta = [&](const Real theta) -> Real
     {
-        double r, dr;
-        rEtDerivee((i + 0.5) * dth, r, dr);
-        arc[i + 1] = arc[i] + std::sqrt(r * r + dr * dr) * dth;
-    }
-    const double longueur = arc[nFin];
-    const unsigned int n = std::max(3u, static_cast<unsigned int>(std::ceil(longueur / pas)));
+        return rayon - profondeur * creux(theta);
+    };
 
-    // 2) points équirépartis en abscisse curviligne
-    std::vector<Point> pts;
-    pts.reserve(n);
-    unsigned int idx = 0;
-    for (unsigned int i = 0; i < n; ++i)
+    /* === Approximation fine de la courbe === */
+    const unsigned int nLongueur = 10000;
+
+    vector<Point> pointsFins;
+    pointsFins.reserve(nLongueur);
+
+    for (unsigned int i = 0; i < nLongueur; ++i)
     {
-        const double s = longueur * i / n;
-        while (idx + 1 < nFin && arc[idx + 1] < s)
-            ++idx;
-        const double f = (s - arc[idx]) / (arc[idx + 1] - arc[idx]);
-        const double theta = (idx + f) * dth;
-        double r, dr;
-        rEtDerivee(theta, r, dr);
-        pts.emplace_back(r * std::cos(theta), r * std::sin(theta));
+        const Real theta = 2.0 * pi * static_cast<Real>(i) / static_cast<Real>(nLongueur);
+
+        const Real r = rayonTheta(theta);
+
+        pointsFins.emplace_back(
+            r * std::cos(theta),
+            r * std::sin(theta));
     }
-    return pts;
+
+    /* === Longueur approchée === */
+    Real longueur = 0.0;
+
+    vector<Real> longueurs(nLongueur);
+
+    for (unsigned int i = 0; i < nLongueur; ++i)
+    {
+        const unsigned int j = (i + 1) % nLongueur;
+
+        longueurs[i] = (pointsFins[i] - pointsFins[j]).norm();
+        longueur += longueurs[i];
+    }
+
+    if (longueur <= PRECISION_ZERO_DOUBLE)
+    {
+        return Maillage();
+    }
+
+    /* === Nombre de segments === */
+    unsigned int N = static_cast<unsigned int>(std::round(longueur / pas));
+
+    if (N < 3)
+    {
+        N = 3;
+    }
+
+    const Real h = longueur / static_cast<Real>(N);
+
+    /* === Rééchantillonnage en longueur d'arc === */
+    vector<Point> points;
+    points.reserve(N);
+
+    unsigned int j = 0;
+    Real cumul = 0.0;
+
+    for (unsigned int i = 0; i < N; ++i)
+    {
+        const Real cible = static_cast<Real>(i) * h;
+
+        while (j < nLongueur - 1 && cumul + longueurs[j] < cible)
+        {
+            cumul += longueurs[j];
+            ++j;
+        }
+
+        const unsigned int j2 = (j + 1) % nLongueur;
+
+        const Real longueurSegment = longueurs[j];
+
+        Real t = 0.0;
+
+        if (longueurSegment > PRECISION_ZERO_DOUBLE)
+        {
+            t = (cible - cumul) / longueurSegment;
+        }
+
+        points.emplace_back(
+            pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
+            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
+    }
+
+    return Maillage(points);
 }
 
 #endif
