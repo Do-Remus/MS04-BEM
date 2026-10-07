@@ -1,17 +1,14 @@
-#include "global/global.hpp"
-#include "BEM/free_matrix/commun.hpp"
-#include "geometrie/commun.hpp"
-#include "functions/green.hpp"
-#include "functions/solutions_analytiques.hpp"
+#include "global/commun.hpp"
+#include "BEM/commun.hpp"
+#include "maths/commun.hpp"
+#include "affichage/commun.hpp"
 
 int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
 
-    int rank;
-    int size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
     // -- Initialisations globales --
 
@@ -28,55 +25,40 @@ int main(int argc, char **argv)
     /* -- Area for Final code -- */
     /* ------------------------- */
 
-    /* === Début Programme === */
+    /* === Début du programme === */
 
-    if (rank == 0)
-    {
-        std::cout << "\n=== Parametres du probleme ===" << std::endl;
-        std::cout << "  Nombre d'onde k          : " << k << std::endl;
-    }
+    if (mpi_rank == 0)
+        std::cout << "\n=== Début du programme ===" << std::endl;
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real start = MPI_Wtime();
+    Timers timers;
+    timers.start("programme");
 
-    /* === Initialisation Cache Green === */
+    if (mpi_rank == 0)
+        affichage_parametres();
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real startGreenCache = MPI_Wtime();
+    /* === Initialisation cache de green === */
 
-    if (rank == 0)
-    {
+    if (mpi_rank == 0)
         std::cout << "\n=== Initialisation de Green ===" << std::endl;
-    }
+
+    timers.start("green_cache");
 
     initialiser_green_cache();
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real endGreenCache = MPI_Wtime();
+    timers.end("green_cache");
 
-    const Real tempsGreenCached = endGreenCache - startGreenCache;
+    if (mpi_rank == 0)
+        timers.print("green_cache");
 
-    if (rank == 0)
-    {
-        std::cout << "  Indice de troncature N   : " << idxTroncature << std::endl;
-        std::cout << "  Ordre de quadrature      : " << ordre << std::endl;
-        std::cout << "  Pas large du cache       : " << green_cache_step_large << std::endl;
-        std::cout << "  Pas fin du cache         : " << green_cache_step_fine << std::endl;
-        std::cout << "  Cutoff du cache          : " << green_cache_cutoff << std::endl;
-        std::cout << "  Taille du cache          : " << green_cache_size << std::endl;
-        std::cout << "  Mémoire cache Green      : " << green_cache_size * sizeof(Complex) / (1024.0 * 1024.0) << " MiB" << std::endl;
-        std::cout << "  Temps de construction    : " << tempsGreenCached << " s" << endl;
-    }
+    if (mpi_rank == 0)
+        affichage_approximations();
 
     /* === Création Maillage === */
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real startMaillage = MPI_Wtime();
-
-    if (rank == 0)
-    {
+    if (mpi_rank == 0)
         std::cout << "\n=== Préparation du maillage de l'obstacle ===" << std::endl;
-    }
+
+    timers.start("maillage");
 
     Point O(0, 0);
     Cercle cercle(rayon, O);
@@ -101,59 +83,41 @@ int main(int argc, char **argv)
 
     const unsigned int nbSegmentsMaillage = maillage.size();
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real endMaillage = MPI_Wtime();
-
-    const Real tempsMaillage = endMaillage - startMaillage;
-
-    if (rank == 0)
-    {
-        // -- Export du maillage (un seul processus ecrit) --
+    if (mpi_rank == 0)
         maillage.export_maillage("outputs/cercle_maillage.txt");
 
-        std::cout << "  Centre                 : " << O << std::endl;
-        std::cout << "  Rayon                  : " << rayon << std::endl;
-        std::cout << "  Pas                    : " << pasMaillage << std::endl;
-        std::cout << "  Nombre de segments     : " << nbSegmentsMaillage << std::endl;
-        std::cout << "  Maillage exporte       : outputs/cercle_maillage.txt" << std::endl;
-        std::cout << "  Temps de fabrication   : " << tempsMaillage << " s" << std::endl;
-    }
+    timers.end("maillage");
 
-    /* === Récupération Coefficients Legendre === */
+    if (mpi_rank == 0)
+        timers.print("maillage");
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real startQuad = MPI_Wtime();
+    if (mpi_rank == 0)
+        affichage_maillage(O, nbSegmentsMaillage, "outputs/cercle_maillage.txt");
 
-    if (rank == 0)
-    {
+    /* === Calcul de la quadrature de Legendre === */
+
+    if (mpi_rank == 0)
         std::cout << "\n=== Calcul de la quadrature ===" << std::endl;
-    }
+
+    timers.start("quadrature");
 
     const LegendreData &legendreData = get_legendre_data(ordre);
     const std::vector<QuadratureSegment> quadrature_maillage = get_quadrature_maillage(maillage, legendreData);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real endQuad = MPI_Wtime();
+    timers.end("quadrature");
 
-    const Real tempsQuad = endQuad - startQuad;
-
-    if (rank == 0)
-    {
-        std::cout << "  Temps de fabrication   : " << tempsQuad << " s" << std::endl;
-    }
+    if (mpi_rank == 0)
+        timers.print("quadrature");
 
     /* === Calcul b de la FV de l'équation intégrale === */
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real startCalcB = MPI_Wtime();
-
-    if (rank == 0)
-    {
+    if (mpi_rank == 0)
         std::cout << "\n=== Calcul du second membre de la FV ===" << std::endl;
-    }
+
+    timers.start("b");
 
     Vecteur b_local(nbSegmentsMaillage, 0.0);
-    for (unsigned int i = rank; i < nbSegmentsMaillage; i += size)
+    for (unsigned int i = mpi_rank; i < nbSegmentsMaillage; i += mpi_size)
     {
         b_local[i] = integ_simple([](const Point &Q)
                                   { return -u_inc(Q); },
@@ -164,41 +128,28 @@ int main(int argc, char **argv)
 
     MPI_Allreduce(b_local.data(), vect_b.data(), static_cast<int>(nbSegmentsMaillage), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real endCalcB = MPI_Wtime();
+    timers.end("b");
 
-    const Real tempsCalcB = endCalcB - startCalcB;
-
-    if (rank == 0)
-    {
-        std::cout << "  Temps de fabrication   : " << tempsCalcB << " s" << std::endl;
-    }
+    if (mpi_rank == 0)
+        timers.print("b");
 
     /* === Inversion de la matrice (méthode itérative) === */
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real startResolutionCached = MPI_Wtime();
+    timers.start("resolution");
 
-    if (rank == 0)
-    {
+    if (mpi_rank == 0)
         std::cout << "\n=== Resolution systeme ===" << std::endl;
-    }
 
     Vecteur vect_p_cached = gradConjMatrixFree(maillage, vect_b, quadrature_maillage, tolGradConj, maxIterGradConj);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real endResolutionCached = MPI_Wtime();
+    timers.end("resolution");
 
-    const Real tempsResolutionCached = endResolutionCached - startResolutionCached;
-
-    if (rank == 0)
-    {
-        std::cout << "  Temps de résolution   : " << tempsResolutionCached << std::endl;
-    }
+    if (mpi_rank == 0)
+        timers.print("resolution");
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
 
-    if (rank == 0)
+    if (mpi_rank == 0)
     {
         Vecteur vect_p_ana(nbSegmentsMaillage);
         for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
@@ -208,23 +159,20 @@ int main(int argc, char **argv)
 
         Real erreurPCached = (vect_p_cached - vect_p_ana).norm() / vect_p_ana.norm();
 
-        std::cout << "\n=== Analyse de p ===" << std::endl;
-
-        std::cout << "  Erreur p cached / p analytique L2 : "
+        std::cout << "    Erreur p cached / p analytique L2 : "
                   << erreurPCached
                   << std::endl;
     }
 
-    // -- Reconstruction de la solution --
+    /* === Maillage pour la solution === */
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real startReconstruction = MPI_Wtime();
+    if (mpi_rank == 0)
+        std::cout << "\n=== Maillage pour la solution ===" << std::endl;
 
-    if (rank == 0)
+    timers.start("reconstruction");
+
+    if (mpi_rank == 0)
     {
-
-        std::cout << "\n=== Reconstruction de la solution ===" << std::endl;
-
         // -- Maillage pour la solution --
 
         vector<Point> pointsSolution;
@@ -333,21 +281,15 @@ int main(int argc, char **argv)
             }
         }
 
-        std::cout << "  Points de grille    : " << nbPointsGrille << std::endl;
-        std::cout << "  Points pres du bord : " << pointsSolution.size() - nbPointsGrille << std::endl;
-
         const unsigned int nbPointsSolution = pointsSolution.size();
 
         // -- Affichage --
 
-        std::cout << "\n=== Maillage de solution ===" << std::endl;
-        std::cout << "  Domaine             : [" << xmin << ", " << xmax << "] x ["
-                  << ymin << ", " << ymax << "]" << std::endl;
-        std::cout << "  Taille du domaine   : " << L << " x " << L << std::endl;
-        std::cout << "  Pas                 : " << pasSolution << std::endl;
-        std::cout << "  Distance à la frontière : " << delta << std::endl;
-        std::cout << "  Rayon minimal autorisé   : " << distanceMin << std::endl;
-        std::cout << "  Nombre de points    : " << nbPointsSolution << std::endl;
+        affichage_maillage_solution(nbPointsGrille, nbPointsSolution);
+
+        /* === Reconstruction fnale === */
+
+        std::cout << "\n=== Reconstruction de la solution ===" << std::endl;
 
         // -- Creation du fichier de resultats --
 
@@ -419,56 +361,19 @@ int main(int argc, char **argv)
 
         erreurTotaleL2 = std::sqrt(erreurTotaleL2 / static_cast<Real>(std::max(1u, nbPointsErreur)));
 
-        // -- Prints --
+        // -- Affichage --
 
-        std::cout << "\n=== Erreurs ===" << std::endl;
-
-        std::cout << "    P0 erreur L² : Totale = "
-                  << erreurTotaleL2
-                  << endl;
-
-        std::cout << "    P0 erreur L∞ : Totale = "
-                  << erreurTotaleMax
-                  << endl;
+        affichage_erreurs_solution(erreurTotaleL2, erreurTotaleMax);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real endReconstruction = MPI_Wtime();
-
-    const Real tempsReconstruction = endReconstruction - startReconstruction;
+    timers.end("reconstruction");
 
     // -- End time --
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    const Real end = MPI_Wtime();
+    timers.end("programme");
 
-    const Real tempsTotal = end - start;
-
-    if (rank == 0)
-    {
-        std::cout << "\n=== Temps ===" << std::endl;
-
-        std::cout << "    execution totale      : "
-                  << tempsTotal << " s" << std::endl;
-
-        std::cout << "    creating maillage     : "
-                  << tempsMaillage << " s" << std::endl;
-
-        std::cout << "    creating quadrature   : "
-                  << tempsQuad << " s" << std::endl;
-
-        std::cout << "    creation de b         : "
-                  << tempsCalcB << " s" << std::endl;
-
-        std::cout << "    creation cache        : "
-                  << tempsGreenCached << " s" << std::endl;
-
-        std::cout << "    resolution GC         : "
-                  << tempsResolutionCached << " s" << std::endl;
-
-        std::cout << "    reconstruction u      : "
-                  << tempsReconstruction << " s" << std::endl;
-    }
+    if (mpi_rank == 0)
+        timers.print_all();
 #endif
 
 #ifdef TESTS_CODE

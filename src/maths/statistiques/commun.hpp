@@ -1,0 +1,6 @@
+#ifndef MATHS_STATISTIQUES_COMMUN_HPP_INCLUDED
+#define MATHS_STATISTIQUES_COMMUN_HPP_INCLUDED
+
+#include "basics.hpp"
+
+#endif

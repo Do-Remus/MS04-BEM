@@ -17,6 +17,8 @@
 
 // Parallel work
 #include <mpi.h>
+extern int mpi_rank;
+extern int mpi_size;
 
 // Reading files
 #include <algorithm>
