@@ -8,5 +8,8 @@
 /* Général */
 
 #include "second_membre.hpp"
+#include "reconstruction.hpp"
+#include "erreurs.hpp"
+#include "export.hpp"
 
 #endif

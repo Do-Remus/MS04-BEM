@@ -1,19 +1,82 @@
 #include "../COCG.hpp"
 
-Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter)
+Vecteur preconditionneur_diagonal(const Vecteur &diagonale)
+{
+    const std::size_t N = diagonale.size();
+    Vecteur S(N, 0.0);
+
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        S[i] = 1.0 / std::sqrt(diagonale[i]);
+    }
+
+    return S;
+}
+
+Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecteur &diagonale, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    Vecteur Sx = x;
+
+    for (std::size_t i = 0; i < x.size(); ++i)
+    {
+        Sx[i] *= S[i];
+    }
+
+    Vecteur ASx = produit_A_x(Sx, maillage, quadrature_maillage, diagonale);
+
+    Vecteur y = ASx;
+
+    for (std::size_t i = 0; i < x.size(); ++i)
+    {
+        y[i] *= S[i];
+    }
+
+    return y;
+}
+
+Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter)
 {
     /* === Initialisation === */
 
     const std::size_t n = b.size();
-    Vecteur x(n, 0.0);
 
-    Vecteur r = b; // car x0 = 0
+    /*
+     * Calcul et construction du preconditionneur.
+     */
+    Vecteur diagonale = diagonale_A(maillage, quadrature_maillage);
+    // Vecteur S(n, 1.0); // cas sans preconditionnement
+    Vecteur S = preconditionneur_diagonal(diagonale);
+
+    /*
+     * Second membre preconditionne :
+     *
+     *     b_preconditionne = S b
+     */
+    Vecteur b_preconditionne = b;
+
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        b_preconditionne[i] *= S[i];
+    }
+
+    /*
+     * On resout :
+     *
+     *     S A S y = S b
+     *
+     * puis :
+     *
+     *     x = S y
+     */
+    Vecteur y(n, 0.0);
+
+    Vecteur r = b_preconditionne;
     Vecteur d = r;
 
-    const Real bnorm = b.norm();
+    const Real bnorm = b_preconditionne.norm();
 
     if (bnorm == 0.0)
-        return x;
+        return y;
 
     Real relativeResidual = 1.0;
 
@@ -26,7 +89,7 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
 
     for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
-        Vecteur Ad = produit_A_cached_blocked(maillage, d, quadrature_maillage);
+        Vecteur Ad = produit_A_preconditionne(d, S, diagonale, maillage, quadrature_maillage);
         const Complex denom = d.produitBilineaire(Ad);
         const Real scale = d.norm() * Ad.norm();
 
@@ -44,14 +107,14 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
                     << std::endl;
             }
 
-            return x;
+            return y;
         }
 
         const Complex alpha = rho / denom;
 
         for (std::size_t i = 0; i < n; ++i)
         {
-            x[i] += alpha * d[i];
+            y[i] += alpha * d[i];
             r[i] -= alpha * Ad[i];
         }
 
@@ -70,6 +133,13 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
                     << std::endl;
             }
 
+            Vecteur x(n, 0.0);
+
+            for (std::size_t i = 0; i < n; ++i)
+            {
+                x[i] = S[i] * y[i];
+            }
+
             return x;
         }
 
@@ -86,7 +156,7 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
                     << std::endl;
             }
 
-            return x;
+            return y;
         }
 
         const Complex beta = rhoNew / rho;
@@ -115,6 +185,13 @@ Vecteur gradConjMatrixFree(const Maillage &maillage, const Vecteur &b, const std
             << "  COCG : nombre maximal "
             << "d'iterations atteint."
             << std::endl;
+    }
+
+    Vecteur x(n, 0.0);
+
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        x[i] = S[i] * y[i];
     }
 
     return x;

@@ -21,9 +21,9 @@ void affichage_approximations();
 
 void affichage_maillage(const Point &centre, unsigned int nbSegments, const std::string &nomFichier);
 
-void affichage_erreur_p(Real erreur);
+void affichage_erreur_relative_p(Real erreur);
 
-void affichage_maillage_solution(unsigned int nbPointsGrille, unsigned int nbPointsSolution);
+void affichage_maillage_solution(unsigned int nbPointsSolution);
 
 void affichage_erreurs_solution(Real erreurL2, Real erreurLinf);
 

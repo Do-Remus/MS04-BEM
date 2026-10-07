@@ -9,7 +9,6 @@ Real green_cache_step_fine_inv = 1 / green_cache_step_fine;
 Real green_cache_step_large = 0.05 * lambda;
 Real green_cache_step_large_inv = 1 / green_cache_step_large;
 Real green_cache_cutoff = 0.5 * lambda;
-Real delta = green_cache_step_fine;
 std::size_t green_cache_size = 0;
 
 void initialiser_green_cache()

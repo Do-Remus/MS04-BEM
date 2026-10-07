@@ -31,12 +31,12 @@ void affichage_maillage(const Point &centre, unsigned int nbSegments, const std:
     affichage_ligne("Maillage exporte", nomFichier);
 }
 
-void affichage_erreur_p(Real erreur)
+void affichage_erreur_relative_p(Real erreur)
 {
-    affichage_ligne("Erreur L2 p", erreur);
+    affichage_ligne("Erreur relative L2 p", erreur);
 }
 
-void affichage_maillage_solution(unsigned int nbPointsGrille, unsigned int nbPointsSolution)
+void affichage_maillage_solution(unsigned int nbPointsSolution)
 {
     affichage_ligne("Domaine", std::string("[") +
                                    std::to_string(-L / 2.0) + ", " +
@@ -47,7 +47,6 @@ void affichage_maillage_solution(unsigned int nbPointsGrille, unsigned int nbPoi
     affichage_ligne("Pas", pasSolution);
     affichage_ligne("Distance a la frontiere", delta);
     affichage_ligne("Rayon minimal autorise", rayon + delta);
-    affichage_ligne("Points de grille", nbPointsGrille);
     affichage_ligne("Nombre de points", nbPointsSolution);
 }
 

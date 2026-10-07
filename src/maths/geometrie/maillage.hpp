@@ -22,4 +22,8 @@ public:
     vector<Point> PointsMaillage();
 };
 
+/* Fonctions associées à la class */
+
+std::vector<Point> construire_maillage_solution(const Maillage &maillage);
+
 #endif

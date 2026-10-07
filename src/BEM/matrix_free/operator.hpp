@@ -4,10 +4,9 @@
 #include "../../global/commun.hpp"
 #include "../../maths/commun.hpp"
 
-// Calcul de Ax parallelisé
-Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage);
-
 // Calcul de Ax par blocks et parallelisé
-Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage);
+Vecteur produit_A_x(const Vecteur &x, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Vecteur &diagonale, const std::size_t BLOCK = 8);
+
+Vecteur diagonale_A(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage);
 
 #endif

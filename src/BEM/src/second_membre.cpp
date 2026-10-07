@@ -1,7 +1,9 @@
 #include "../second_membre.hpp"
 
-Vecteur calculer_second_membre(const std::vector<QuadratureSegment> &quadrature_maillage, unsigned int nbSegmentsMaillage)
+Vecteur calculer_second_membre(const std::vector<QuadratureSegment> &quadrature_maillage)
 {
+    const unsigned int nbSegmentsMaillage = quadrature_maillage.size();
+
     Vecteur b_local(nbSegmentsMaillage, 0.0);
 
     for (unsigned int i = mpi_rank; i < nbSegmentsMaillage; i += mpi_size)

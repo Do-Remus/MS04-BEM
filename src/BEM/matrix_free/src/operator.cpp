@@ -1,67 +1,10 @@
 #include "../operator.hpp"
 
-Vecteur produit_A_cached(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage)
-{
-    const unsigned int N = maillage.size();
-
-    /*
-     * Chaque processus possède son propre vecteur local.
-     *
-     * Il contient les contributions calculées par ce processus
-     * pour toutes les composantes.
-     */
-    Vecteur y_local(N, 0.0);
-
-    /*
-     * Répartition cyclique des lignes.
-     *
-     * mpi_rank 0 : 0, mpi_size, 2*mpi_size, ...
-     * mpi_rank 1 : 1, mpi_size+1, 2*mpi_size+1, ...
-     */
-    for (unsigned int i = mpi_rank; i < N; i += mpi_size)
-    {
-        const Segment &S = maillage[i];
-        const QuadratureSegment &qS = quadrature_maillage[i];
-
-        Complex aii = integ_double_log(S);
-
-        aii += integ_double([](const Point &Q, const Point &P)
-                            { return green_reguliere_cached(Q, P); },
-                            qS,
-                            qS);
-
-        y_local[i] += aii * x[i];
-
-        for (unsigned int j = i + 1; j < N; ++j)
-        {
-            const Complex aij = integ_double([](const Point &Q, const Point &P)
-                                             { return green_cached(Q, P); },
-                                             qS,
-                                             quadrature_maillage[j]);
-
-            y_local[i] += aij * x[j];
-            y_local[j] += aij * x[i];
-        }
-    }
-
-    /*
-     * Chaque rang possède maintenant une partie des contributions.
-     *
-     * On somme les contributions de tous les rangs.
-     */
-    Vecteur y(N, 0.0);
-
-    MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
-
-    return y;
-}
-
-Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, const std::vector<QuadratureSegment> &quadrature_maillage)
+Vecteur produit_A_x(const Vecteur &x, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Vecteur &diagonale, const std::size_t BLOCK)
 {
     const std::size_t N = maillage.size();
 
     Vecteur y_local(N, 0.0);
-    constexpr std::size_t BLOCK = 8; // Modifiable pour optimiser
 
     // Buffers réutilisés
     std::vector<Complex> yi(BLOCK);
@@ -79,17 +22,7 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
 
         for (std::size_t i = ib; i < i_end; ++i)
         {
-            const Segment &S = maillage[i];
-            const QuadratureSegment &qS = quadrature_maillage[i];
-
-            Complex aii = integ_double_log(S);
-
-            aii += integ_double([](const Point &Q, const Point &P)
-                                { return green_reguliere_cached(Q, P); },
-                                qS,
-                                qS);
-
-            yi[i - ib] += aii * x[i];
+            yi[i - ib] += diagonale[i] * x[i];
         }
 
         // -- HORS-DIAGONALE : i < j --
@@ -110,10 +43,7 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
 
                 for (std::size_t j = j_start; j < j_end; ++j)
                 {
-                    const Complex aij = integ_double([](const Point &Q, const Point &P)
-                                                     { return green_cached(Q, P); },
-                                                     qS,
-                                                     quadrature_maillage[j]);
+                    const Complex aij = integ_double(green_cached, qS, quadrature_maillage[j]);
 
                     yi[i - ib] += aij * x[j];
                     yj[j - jb] += aij * x[i];
@@ -139,4 +69,33 @@ Vecteur produit_A_cached_blocked(const Maillage &maillage, const Vecteur &x, con
     MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 
     return y;
+}
+
+Vecteur diagonale_A(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    const std::size_t N = maillage.size();
+    Vecteur diagonaleLocale(N, 0.0);
+
+    /*
+     * Chaque processus calcule une partie de la diagonale.
+     */
+    for (std::size_t i = mpi_rank; i < N; i += mpi_size)
+    {
+        const Segment &S = maillage[i];
+        const QuadratureSegment &qS = quadrature_maillage[i];
+
+        Complex aii = integ_double_log(S);
+        aii += integ_double(green_reguliere_cached, qS, qS);
+
+        diagonaleLocale[i] = aii;
+    }
+
+    /*
+     * Chaque processus récupère la diagonale complète.
+     */
+    Vecteur diagonale(N, 0.0);
+
+    MPI_Allreduce(diagonaleLocale.data(), diagonale.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
+
+    return diagonale;
 }

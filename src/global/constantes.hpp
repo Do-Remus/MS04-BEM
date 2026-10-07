@@ -13,4 +13,8 @@ extern const Real pi;
 extern complex<Real> I;
 extern const Real gamma_euler;
 
+/* Variables globales */
+
+extern Real delta;
+
 #endif
