@@ -22,7 +22,7 @@
  *
  * ============================================================
  */
-inline Maillage maillageBalleGolf(const double rayon, const unsigned int nbAlveoles = 12, const double profondeur = 0.12, const double remplissage = 0.8, const double pas = 0.02)
+inline Maillage maillage_balle_de_golf(const double rayon, const unsigned int nbAlveoles = 12, const double profondeur = 0.12, const double remplissage = 0.8, const double pas = 0.02)
 {
     /* === Vérification des paramètres === */
     if (rayon <= 0.0 || nbAlveoles == 0 || profondeur < 0.0 || pas <= 0.0)

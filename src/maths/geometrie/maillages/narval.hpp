@@ -17,7 +17,7 @@
  *
  * ============================================================
  */
-inline Maillage maillageNarval(const double echelle = 1.0, const double pas = 0.008, const bool centrer = true)
+inline Maillage maillage_narval(const double echelle = 1.0, const double pas = 0.008, const bool centrer = true)
 {
     /* === Points de contrôle === */
     vector<Point> controle = {

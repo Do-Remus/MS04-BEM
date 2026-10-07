@@ -17,7 +17,7 @@
  *
  * ============================================================
  */
-inline Maillage maillageMurAcoustique(const double largeur = 0.5, const double hauteur = 4.0, const unsigned int nbPointes = 8, const double profondeur = 0.6, const double pas = 0.01, const bool centrer = true)
+inline Maillage maillage_mur_acoustique(const double largeur = 0.5, const double hauteur = 4.0, const unsigned int nbPointes = 8, const double profondeur = 0.6, const double pas = 0.01, const bool centrer = true)
 {
     /* === Vérification des paramètres === */
     if (largeur <= 0.0 || hauteur <= 0.0 || profondeur <= 0.0 || nbPointes == 0 || pas <= 0.0)

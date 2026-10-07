@@ -11,5 +11,6 @@
 #include "maillages/balle_golf.hpp"
 #include "maillages/mur_anechoique.hpp"
 #include "maillages/narval.hpp"
+#include "maillages/cercle.hpp"
 
 #endif

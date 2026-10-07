@@ -17,7 +17,7 @@ public:
 
     void ajoute_cercle(const Real pas_maillage, const Cercle &Ob);
 
-    void export_maillage(const string &filename);
+    void export_maillage(const string &filename) const;
 
     vector<Point> PointsMaillage();
 };

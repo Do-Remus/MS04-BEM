@@ -22,7 +22,7 @@ void Maillage::ajoute_cercle(const Real pas_maillage, const Cercle &Ob)
     return;
 }
 
-void Maillage::export_maillage(const string &filename)
+void Maillage::export_maillage(const string &filename) const
 {
     ofstream f(filename);
 

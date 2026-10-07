@@ -1,12 +1,10 @@
-#include "global/commun.hpp"
-#include "BEM/commun.hpp"
-#include "maths/commun.hpp"
-#include "affichage/commun.hpp"
+#include "wrapper/commun.hpp"
 
 int main(int argc, char **argv)
 {
-    MPI_Init(&argc, &argv);
+    // -- Initialisation MPI --
 
+    MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
@@ -27,132 +25,121 @@ int main(int argc, char **argv)
 
     /* === Début du programme === */
 
-    if (mpi_rank == 0)
-        std::cout << "\n=== Début du programme ===" << std::endl;
-
     Timers timers;
     timers.start("programme");
 
     if (mpi_rank == 0)
+    {
+        std::cout << "\n=== Début du programme ===" << std::endl;
         affichage_parametres();
+    }
 
     /* === Initialisation cache de green === */
 
-    if (mpi_rank == 0)
-        std::cout << "\n=== Initialisation de Green ===" << std::endl;
-
-    timers.start("green_cache");
-
-    initialiser_green_cache();
-
-    timers.end("green_cache");
-
-    if (mpi_rank == 0)
-        timers.print("green_cache");
-
-    if (mpi_rank == 0)
-        affichage_approximations();
+    run("Initialisation de Green", timers, "green_cache", initialiser_green_cache, affichage_approximations);
 
     /* === Création Maillage === */
 
-    if (mpi_rank == 0)
-        std::cout << "\n=== Préparation du maillage de l'obstacle ===" << std::endl;
+    // Maillage du Cercle
 
-    timers.start("maillage");
+    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
+                            [&](const Maillage &maillage)
+                            {
+                                maillage.export_maillage("outputs/cercle_maillage.txt");
 
-    Point O(0, 0);
-    Cercle cercle(rayon, O);
+                                affichage_maillage(Point(0, 0), maillage.size(), "outputs/cercle_maillage.txt");
+                            });
 
-    Maillage maillage;
-    maillage.ajoute_cercle(pasMaillage, cercle);
+    // Maillage du Narval
 
-    // Autres maillages:
+    // Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage",
+    //                         [&]()
+    //                         {
+    //                             return maillage_narval(
+    //                                 1.0,    // echelle
+    //                                 0.008,  // pas
+    //                                 true    // centrer
+    //                             );
+    //                         },
+    //                         [&](const Maillage &maillage)
+    //                         {
+    //                             maillage.export_maillage("outputs/narval_maillage.txt");
 
-    /* //balle de golf
-    vector<Point> pts = pointsBalleGolf(1.0,    // rayon R
-                                    10,     // nombre d'alvéoles
-                                    0.12,   // profondeur = 12 % de R (amplifié)
-                                    0.8,    // remplissage angulaire d'une alvéole
-                                    pasMaillage); // pas du maillage
-    */
+    //                             affichage_maillage(Point(0, 0), maillage.size(), "outputs/narval_maillage.txt"
+    //                         );
+    //                         });
 
-    /* // Narval
-    const vector<Point> pts = pointsNarval(1.0, pasMaillage);
-    Maillage maillage(pts);
-    */
+    // Maillage du mur acoustique
 
-    const unsigned int nbSegmentsMaillage = maillage.size();
+    // Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage",
+    //                         [&]()
+    //                         {
+    //                             return maillage_mur_acoustique(
+    //                                 0.5,   // largeur
+    //                                 4.0,   // hauteur
+    //                                 8,     // nbPointes
+    //                                 0.6,   // profondeur
+    //                                 0.01,  // pas
+    //                                 true   // centrer
+    //                             );
+    //                         },
+    //                         [&](const Maillage &maillage)
+    //                         {
+    //                             maillage.export_maillage("outputs/mur_acoustique_maillage.txt");
 
-    if (mpi_rank == 0)
-        maillage.export_maillage("outputs/cercle_maillage.txt");
+    //                             affichage_maillage(Point(0, 0), maillage.size(), "outputs/mur_acoustique_maillage.txt");
+    //                         });
 
-    timers.end("maillage");
+    // Maillage de la balle de golf
 
-    if (mpi_rank == 0)
-        timers.print("maillage");
+    // Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage",
+    //                         [&]()
+    //                         {
+    //                             return maillage_balle_de_golf(
+    //                                 rayon,
+    //                                 12,    // nbAlveoles
+    //                                 0.12,  // profondeur
+    //                                 0.8,   // remplissage
+    //                                 0.02   // pas
+    //                             );
+    //                         },
+    //                         [&](const Maillage &maillage)
+    //                         {
+    //                             maillage.export_maillage("outputs/balle_de_golf_maillage.txt");
 
-    if (mpi_rank == 0)
-        affichage_maillage(O, nbSegmentsMaillage, "outputs/cercle_maillage.txt");
+    //                             affichage_maillage(Point(0, 0), maillage.size(), "outputs/balle_de_golf_maillage.txt");
+    //                         });
 
     /* === Calcul de la quadrature de Legendre === */
 
-    if (mpi_rank == 0)
-        std::cout << "\n=== Calcul de la quadrature ===" << std::endl;
-
-    timers.start("quadrature");
-
-    const LegendreData &legendreData = get_legendre_data(ordre);
-    const std::vector<QuadratureSegment> quadrature_maillage = get_quadrature_maillage(maillage, legendreData);
-
-    timers.end("quadrature");
-
-    if (mpi_rank == 0)
-        timers.print("quadrature");
+    const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
+                                                                   [&]()
+                                                                   {
+                                                                       return get_quadrature_maillage(maillage, get_legendre_data(ordre));
+                                                                   });
 
     /* === Calcul b de la FV de l'équation intégrale === */
 
-    if (mpi_rank == 0)
-        std::cout << "\n=== Calcul du second membre de la FV ===" << std::endl;
+    Vecteur vect_b = run("Calcul du second membre de la FV", timers, "b",
+                         [&]()
+                         {
+                             return calculer_second_membre(quadrature_maillage, maillage.size());
+                         });
 
-    timers.start("b");
+    /* === Inversion du système Ap = b (méthode itérative) === */
 
-    Vecteur b_local(nbSegmentsMaillage, 0.0);
-    for (unsigned int i = mpi_rank; i < nbSegmentsMaillage; i += mpi_size)
-    {
-        b_local[i] = integ_simple([](const Point &Q)
-                                  { return -u_inc(Q); },
-                                  quadrature_maillage[i]);
-    }
-
-    Vecteur vect_b(nbSegmentsMaillage, 0.0);
-
-    MPI_Allreduce(b_local.data(), vect_b.data(), static_cast<int>(nbSegmentsMaillage), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
-
-    timers.end("b");
-
-    if (mpi_rank == 0)
-        timers.print("b");
-
-    /* === Inversion de la matrice (méthode itérative) === */
-
-    timers.start("resolution");
-
-    if (mpi_rank == 0)
-        std::cout << "\n=== Resolution systeme ===" << std::endl;
-
-    Vecteur vect_p_cached = gradConjMatrixFree(maillage, vect_b, quadrature_maillage, tolGradConj, maxIterGradConj);
-
-    timers.end("resolution");
-
-    if (mpi_rank == 0)
-        timers.print("resolution");
+    Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
+                                [&]()
+                                {
+                                    return gradConjMatrixFree(maillage, vect_b, quadrature_maillage, tolGradConj, maxIterGradConj);
+                                });
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
 
     if (mpi_rank == 0)
     {
-        Vecteur vect_p_ana(nbSegmentsMaillage);
-        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        Vecteur vect_p_ana(maillage.size());
+        for (unsigned int i = 0; i < maillage.size(); i++)
         {
             vect_p_ana[i] = p_analytique(maillage[i].milieu, idxTroncature);
         }
@@ -189,7 +176,7 @@ int main(int argc, char **argv)
 
         Real bxmin = std::numeric_limits<Real>::max(), bxmax = -bxmin;
         Real bymin = bxmin, bymax = -bxmin;
-        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        for (unsigned int i = 0; i < maillage.size(); i++)
         {
             bxmin = std::min<Real>(bxmin, maillage[i].P1.x);
             bxmax = std::max<Real>(bxmax, maillage[i].P1.x);
@@ -209,7 +196,7 @@ int main(int argc, char **argv)
             bool dedans = false;
             Real d2min = std::numeric_limits<Real>::max();
 
-            for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+            for (unsigned int i = 0; i < maillage.size(); i++)
             {
                 const Point &A = maillage[i].P1;
                 const Point &B = maillage[i].P2;
@@ -252,7 +239,7 @@ int main(int argc, char **argv)
         const unsigned int nbPointsGrille = pointsSolution.size();
 
         Real arc = pasProche; // force un point sur le premier segment
-        for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+        for (unsigned int i = 0; i < maillage.size(); i++)
         {
             const Real ex = maillage[i].P2.x - maillage[i].P1.x;
             const Real ey = maillage[i].P2.y - maillage[i].P1.y;
@@ -320,7 +307,7 @@ int main(int argc, char **argv)
 
             // -- Interpolation cte --
 
-            for (unsigned int i = 0; i < nbSegmentsMaillage; i++)
+            for (unsigned int i = 0; i < maillage.size(); i++)
             {
                 uCached += vect_p_cached[i] * integ_simple([&Pj](const Point &Q)
                                                            { return green_cached(Pj, Q); },
