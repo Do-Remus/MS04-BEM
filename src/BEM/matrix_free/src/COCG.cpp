@@ -22,7 +22,7 @@ Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecte
         Sx[i] *= S[i];
     }
 
-    Vecteur ASx = produit_A_x(Sx, maillage, quadrature_maillage, diagonale);
+    Vecteur ASx = produit_A_x_vec(Sx, maillage, quadrature_maillage, diagonale);
 
     Vecteur y = ASx;
 

@@ -15,6 +15,9 @@
 #include <boost/math/special_functions/bessel.hpp>
 #include <boost/math/special_functions/legendre.hpp>
 
+// Vectorized work
+#include <immintrin.h>
+
 // Parallel work
 #include <mpi.h>
 extern int mpi_rank;

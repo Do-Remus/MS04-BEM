@@ -7,6 +7,8 @@
 // Calcul de Ax par blocks et parallelisé
 Vecteur produit_A_x(const Vecteur &x, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Vecteur &diagonale, const std::size_t BLOCK = 8);
 
+Vecteur produit_A_x_vec(const Vecteur &x, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Vecteur &diagonale, const std::size_t BLOCK = 8);
+
 Vecteur diagonale_A(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage);
 
 #endif

@@ -2,8 +2,8 @@
 CXX = mpic++
 
 # Compiler flags
-# CXXFLAGS = -O3 -march=native -g -Wall -Wextra -std=c++17 -fno-omit-frame-pointer
-CXXFLAGS = -O3 -march=native -std=c++17 -DNDEBUG
+#CXXFLAGS = -O3 -march=native -fopt-info-vec-missed -fopt-info-vec-optimized -std=c++17 -DNDEBUG
+CXXFLAGS = -O3 -march=native  -std=c++17 -DNDEBUG 
 
 # Output directory
 OUT_DIR = bin
