@@ -77,3 +77,56 @@ const std::vector<QuadratureSegment> get_quadrature_maillage(const Maillage &mai
 
     return quadrature;
 }
+
+QuadratureSIMD construire_quadrature_SIMD(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    QuadratureSIMD q;
+
+    q.N = maillage.size();
+    q.nq = quadrature_maillage[0].size();
+
+    const std::size_t N = q.N;
+    const std::size_t nq = q.nq;
+
+    /*
+     * Allocation.
+     */
+    q.target_x.resize(N * nq);
+    q.target_y.resize(N * nq);
+    q.target_w.resize(N * nq);
+
+    q.source_x.resize(N * nq);
+    q.source_y.resize(N * nq);
+    q.source_w.resize(N * nq);
+
+    /*
+     * Remplissage.
+     */
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        for (std::size_t a = 0; a < nq; ++a)
+        {
+            const auto &qa = quadrature_maillage[i][a];
+
+            /*
+             * Layout cible :
+             *
+             * [i][a]
+             */
+            q.target_x[i * nq + a] = qa.point.x;
+            q.target_y[i * nq + a] = qa.point.y;
+            q.target_w[i * nq + a] = qa.weight;
+
+            /*
+             * Layout source transposé :
+             *
+             * [a][i]
+             */
+            q.source_x[a * N + i] = qa.point.x;
+            q.source_y[a * N + i] = qa.point.y;
+            q.source_w[a * N + i] = qa.weight;
+        }
+    }
+
+    return q;
+}

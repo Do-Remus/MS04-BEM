@@ -102,6 +102,14 @@ int main(int argc, char **argv)
                                                                        return get_quadrature_maillage(maillage, get_legendre_data(ordre));
                                                                    });
 
+    /* === Réorganisation de la quadrature pour le SIMD === */
+
+    const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
+                                               [&]()
+                                               {
+                                                   return construire_quadrature_SIMD(maillage, quadrature_maillage);
+                                               });
+
     /* === Calcul b de la FV de l'équation intégrale === */
 
     Vecteur vect_b = run("Calcul du second membre de la FV", timers, "b",
@@ -115,7 +123,7 @@ int main(int argc, char **argv)
     Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
                                 [&]()
                                 {
-                                    return COCG(maillage, vect_b, quadrature_maillage, tolGradConj, maxIterGradConj);
+                                    return COCG(maillage, vect_b, quadrature_maillage, quadrature_simd, tolGradConj, maxIterGradConj);
                                 });
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */

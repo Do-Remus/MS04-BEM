@@ -10,6 +10,7 @@ Real green_cache_step_large = 0.05 * lambda;
 Real green_cache_step_large_inv = 1 / green_cache_step_large;
 Real green_cache_cutoff = 0.5 * lambda;
 std::size_t green_cache_size = 0;
+std::size_t green_cache_n_fine = 0;
 
 void initialiser_green_cache()
 {
@@ -35,10 +36,10 @@ void initialiser_green_cache()
 
     // -- Nombre de cases dans chaque zone --
 
-    std::size_t n_fine = static_cast<std::size_t>(green_cache_cutoff / green_cache_step_fine + 0.5);
+    green_cache_n_fine = static_cast<std::size_t>(green_cache_cutoff / green_cache_step_fine + 0.5);
     std::size_t n_large = static_cast<std::size_t>((distance_max - green_cache_cutoff) / green_cache_step_large + 0.5);
 
-    green_cache_size = n_fine + n_large + 1;
+    green_cache_size = green_cache_n_fine + n_large + 1;
 
     // -- Mémoire partagée MPI --
 
@@ -79,7 +80,7 @@ void initialiser_green_cache()
         {
             double distance;
 
-            if (index <= n_fine)
+            if (index <= green_cache_n_fine)
             {
                 // Zone fine
                 distance = index * green_cache_step_fine;
@@ -87,7 +88,7 @@ void initialiser_green_cache()
             else
             {
                 // Zone grossière
-                distance = green_cache_cutoff + (index - n_fine) * green_cache_step_large;
+                distance = green_cache_cutoff + (index - green_cache_n_fine) * green_cache_step_large;
             }
 
             if (distance == 0.0)
@@ -105,4 +106,11 @@ void initialiser_green_cache()
 
     MPI_Barrier(shm_comm);
     MPI_Comm_free(&shm_comm);
+
+    green_cache_simd.cutoff = simd_set1(green_cache_cutoff);
+    green_cache_simd.fine = simd_set1(green_cache_step_fine);
+    green_cache_simd.fine_inv = simd_set1(green_cache_step_fine_inv);
+    green_cache_simd.large = simd_set1(green_cache_step_large);
+    green_cache_simd.large_inv = simd_set1(green_cache_step_large_inv);
+    green_cache_simd.n_fine = simd_set1(static_cast<Real>(green_cache_n_fine));
 }

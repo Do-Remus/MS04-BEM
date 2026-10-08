@@ -13,7 +13,7 @@ Vecteur preconditionneur_diagonal(const Vecteur &diagonale)
     return S;
 }
 
-Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecteur &diagonale, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecteur &diagonale, const QuadratureSIMD &quadrature)
 {
     Vecteur Sx = x;
 
@@ -22,7 +22,7 @@ Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecte
         Sx[i] *= S[i];
     }
 
-    Vecteur ASx = produit_A_x_vec(Sx, maillage, quadrature_maillage, diagonale);
+    Vecteur ASx = produit_A_x(Sx, quadrature, diagonale);
 
     Vecteur y = ASx;
 
@@ -34,7 +34,7 @@ Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecte
     return y;
 }
 
-Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, Real tol, unsigned int maxIter)
+Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, const QuadratureSIMD &quadrature_simd, Real tol, unsigned int maxIter)
 {
     /* === Initialisation === */
 
@@ -89,7 +89,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
 
     for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
-        Vecteur Ad = produit_A_preconditionne(d, S, diagonale, maillage, quadrature_maillage);
+        Vecteur Ad = produit_A_preconditionne(d, S, diagonale, quadrature_simd);
         const Complex denom = d.produitBilineaire(Ad);
         const Real scale = d.norm() * Ad.norm();
 
@@ -182,7 +182,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
     if (mpi_rank == 0)
     {
         std::cout
-            << "  COCG : nombre maximal "
+            << "    COCG : nombre maximal "
             << "d'iterations atteint."
             << std::endl;
     }
