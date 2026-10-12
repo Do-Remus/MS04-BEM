@@ -4,9 +4,9 @@
 
 ostream &operator<<(ostream &out, const Matrice &A)
 {
-    for (int i = 1; i <= A.n; i++)
+    for (int i = 0; i < A.n; i++)
     {
-        for (int j = 1; j <= A.m; j++)
+        for (int j = 0; j < A.m; j++)
         {
             out << A(i, j) << " ";
         }
@@ -14,6 +14,9 @@ ostream &operator<<(ostream &out, const Matrice &A)
     }
     return out;
 }
+
+
+
 
 Matrice generateur_aleatoire_matrice(const int rang, const int taille)
 {
@@ -30,9 +33,26 @@ Matrice generateur_aleatoire_matrice(const int rang, const int taille)
         Vecteur v = generateur_aleatoire_vecteur(taille);
 
         // verification de liberté des vecteurs v1,..,v_r
+        for(unsigned int j=0; j<i; j++){
+            if( abs((v-mat(i)).produitBilineaire(mat(i))) < 1e-8){
+                v[j] += 1;
+            }
+        }
+        //ecriture de la ligne générée dans la matrice
+        for(unsigned int j=0; j<taille; j++){
+            mat(i,j) = v[j];
+        }
+        i++;
     }
     // generateur aléatoire de combinaisons linéaires pour completer la matrice
-
+    for(unsigned int i=rang; i<taille; i++){
+        Vecteur coefs_combinaison_lineaire = generateur_aleatoire_vecteur(rang);
+        for(unsigned int j=0; j<rang; j++){
+            for(unsigned int k =0; k<taille; k++){
+                mat(i,k)+=  coefs_combinaison_lineaire[j]* mat(j,k);
+            }
+        }
+    }
     // generateur aléatoire de permutation des colonnes (ou lignes)
     return mat;
 }
@@ -66,6 +86,20 @@ complex<Real> Matrice::operator()(int i, int j) const
     }
     return coefs[i * m + j];
 }
+
+Vecteur Matrice::operator()(int i) const
+{
+    if (i >= n || i < 0)
+    {
+        cout << "overflow in matrix coordinates ; i= " << i << " n lines from matrix size (n,m) = (" << n << "," << m << ")" << endl;
+        std::exit(1);
+    }
+    Vecteur ligne(m, 0);
+    for (int j = 0; j < m; j++)
+        ligne[j] = (*this)(i, j);
+    return ligne;
+}
+
 
 Vecteur Matrice::operator*(const Vecteur &v) const
 {

@@ -4,9 +4,15 @@
 #include "../global/commun.hpp"
 #include "../maths/algebre/vecteur.hpp"
 
-// #define SIMD_AVX2
-#define SIMD_AVX512
-// #define SIMD_NEON
+#if defined(__aarch64__) || defined(_M_ARM64)
+    #define SIMD_NEON
+#elif defined(__AVX512F__)
+    #define SIMD_AVX512
+#elif defined(__AVX2__)
+    #define SIMD_AVX2
+#else
+    #error "No supported SIMD target."
+#endif
 
 #if (defined(SIMD_AVX2) + defined(SIMD_AVX512) + defined(SIMD_NEON)) != 1
 #error "Define exactly one of SIMD_AVX2, SIMD_AVX512 or SIMD_NEON"
@@ -178,7 +184,9 @@ inline SimdIndex simd_double_to_int(const Simd x)
     return _mm512_cvttpd_epi32(x);
 #else
     // Convert two doubles to signed 32-bit integers, rounding toward zero.
-    return vcvtq_s32_f64(x);
+    alignas(16) double values[2];
+    vst1q_f64(values, x);
+    return vset_lane_s32(static_cast<int32_t>(values[1]), vdup_n_s32(static_cast<int32_t>(values[0])),1);
 #endif
 }
 

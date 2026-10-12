@@ -3,29 +3,35 @@
 
 #include "../../global/commun.hpp"
 
-class Vecteur : public std::vector<Complex>
-{
-public:
-    using std::vector<Complex>::vector; // récupère les constructeurs de vector
 
-    Complex produitHermitien(const Vecteur &v) const;
-    Complex produitBilineaire(const Vecteur &v) const;
-    Vecteur operator+(const Vecteur &v) const;
-    Vecteur operator-(const Vecteur &v) const;
-    Vecteur operator*(const Complex &a) const;
+using Vecteur = Eigen::VectorXcd;
 
-    friend Vecteur operator*(const Complex &a, const Vecteur &v)
-    {
-        return v * a;
-    }
 
-    Real norm() const;
-};
+// class Vecteur : public std::vector<Complex>
+// {
+// public:
+//     using std::vector<Complex>::vector; // récupère les constructeurs de vector
 
-/* Fonctions associées au type Vecteur */
+//     Complex produitHermitien(const Vecteur &v) const;
+//     Complex produitBilineaire(const Vecteur &v) const;
+//     Vecteur operator+(const Vecteur &v) const;
+//     Vecteur operator-(const Vecteur &v) const;
+//     Vecteur operator*(const Complex &a) const;
 
-ostream &operator<<(ostream &out, const Vecteur &u);
+//     friend Vecteur operator*(const Complex &a, const Vecteur &v)
+//     {
+//         return v * a;
+//     }
 
-Vecteur generateur_aleatoire_vecteur(const int taille);
+//     Real norm() const;
+// };
 
+// // Fonctions associées au type Vecteur 
+
+// ostream &operator<<(ostream &out, const Vecteur &u);
+
+// Vecteur generateur_aleatoire_vecteur(const int taille);
+
+
+Complex produitBilineaire(const Vecteur &x, const Vecteur &y);
 #endif

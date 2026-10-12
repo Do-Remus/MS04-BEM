@@ -156,16 +156,28 @@ int main(int argc, char **argv)
 
     if (mpi_rank == 0)
         timers.print_all();
+
+    // -- liberation mémoire --
+    MPI_Win_free(&green_cache_win);
 #endif
 
 #ifdef TESTS_CODE
     /* -------------------- */
     /* -- Area for tests -- */
     /* -------------------- */
+
+    
+    cout<<A<<endl;
+
+    double HI = 12345.67; // set HI and LO according to your problem.
+    double LO = 879.01;
+    double range= HI-LO;
+    Matrice m(10,10); // 3x3 Matrix filled with random numbers between (-1,1)
+    m = m*range/2.; // add 1 to the matrix to have values between 0 and 2; multiply with range/2
+    cout << "m =\n" << m << endl;
 #endif
 
     // -- Fin --
-    MPI_Win_free(&green_cache_win);
     MPI_Finalize();
 
     return 0;

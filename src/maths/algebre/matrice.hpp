@@ -5,6 +5,9 @@
 
 #include "vecteur.hpp"
 
+using Matrice = Eigen::MatrixXcd;
+
+/*
 class Matrice
 {
 protected:
@@ -17,13 +20,18 @@ public:
 
     virtual complex<Real> &operator()(int i, int j);
     virtual complex<Real> operator()(int i, int j) const;
+    //lecture d'une ligne
+    virtual Vecteur operator()(int i) const;
     virtual Vecteur operator*(const Vecteur &v) const;
 
     virtual ~Matrice() = default;
 };
 
 ostream &operator<<(ostream &out, const Matrice &A);
-
 Matrice generateur_aleatoire_matrice(const int rang, const int taille);
+*/
+
+
+
 
 #endif
