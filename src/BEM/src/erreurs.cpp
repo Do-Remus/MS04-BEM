@@ -1,15 +1,15 @@
 #include "../erreurs.hpp"
 
-ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSolution, const std::vector<Complex> &u_cached)
+ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached)
 {
     // Répartition des points entre les processus
     ErreursSolution result;
 
-    const unsigned int nbPoints = pointsSolution.size();
-    const unsigned int nbPointsBase = nbPoints / mpi_size;
-    const unsigned int reste = nbPoints % mpi_size;
-    const unsigned int nbPointsLocaux = nbPointsBase + (mpi_rank < static_cast<int>(reste) ? 1 : 0);
-    const unsigned int indiceDebut = mpi_rank * nbPointsBase + std::min(static_cast<unsigned int>(mpi_rank), reste);
+    const Index nbPoints = pointsSolution.size();
+    const Index nbPointsBase = nbPoints / mpi_size;
+    const Index reste = nbPoints % mpi_size;
+    const Index nbPointsLocaux = nbPointsBase + (mpi_rank < static_cast<int>(reste) ? 1 : 0);
+    const Index indiceDebut = mpi_rank * nbPointsBase + std::min(static_cast<Index>(mpi_rank), reste);
 
     std::vector<Complex> u_analytique_local(nbPointsLocaux, Complex(0.0));
     std::vector<Real> erreurs_local(nbPointsLocaux, 0.0);
@@ -18,9 +18,9 @@ ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSoluti
     Real erreurMaxLocale = 0.0;
 
     // Calcul des solutions analytiques et des erreurs locales
-    for (unsigned int i = 0; i < nbPointsLocaux; i++)
+    for (Index i = 0; i < nbPointsLocaux; i++)
     {
-        const unsigned int j = indiceDebut + i;
+        const Index j = indiceDebut + i;
 
         const Point &Pj = pointsSolution[j];
         const Complex uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
@@ -94,12 +94,12 @@ ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSoluti
 
 Real calculer_erreur_relative_p(const Maillage &maillage, const Vecteur &vect_p_cached)
 {
-    const unsigned int nbSegments = maillage.size();
+    const Index nbSegments = maillage.size();
 
     Real sommeErreurLocale = 0.0;
     Real sommeAnalytiqueLocale = 0.0;
 
-    for (unsigned int i = mpi_rank; i < nbSegments; i += mpi_size)
+    for (Index i = mpi_rank; i < nbSegments; i += mpi_size)
     {
         const Complex pExact = p_analytique(maillage[i].milieu, idxTroncature);
         const Complex difference = vect_p_cached[i] - pExact;

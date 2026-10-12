@@ -4,6 +4,6 @@
 #include "../global/commun.hpp"
 #include "erreurs.hpp"
 
-void ecrire_solution(const std::vector<Point> &pointsSolution, const std::vector<Complex> &u_cached, const ErreursSolution &erreurs);
+void ecrire_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached, const ErreursSolution &erreurs);
 
 #endif

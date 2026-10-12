@@ -5,6 +5,7 @@
 
 using Real = double;
 using Complex = std::complex<Real>;
+using Index = std::size_t;
 
 inline MPI_Datatype mpi_complex_type()
 {

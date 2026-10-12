@@ -17,7 +17,8 @@ int main(int argc, char **argv)
     const string config = "config.txt";
     get_config(config);
 
-#define FINAL_CODE // FINAL_CODE or TESTS_CODE
+#define TESTS_CODE // FINAL_CODE or TESTS_CODE
+
 #ifdef FINAL_CODE
     /* ------------------------- */
     /* -- Area for Final code -- */
@@ -140,8 +141,8 @@ int main(int argc, char **argv)
 
     /* === Reconstruction finale === */
 
-    const std::vector<Complex> u_cached = run("Reconstruction de la solution", timers, "reconstruction", [&]()
-                                              { return reconstruire_solution(pointsSolution, maillage, quadrature_maillage, vect_p_cached); });
+    const Vecteur u_cached = run("Reconstruction de la solution", timers, "reconstruction", [&]()
+                                 { return reconstruire_solution(pointsSolution, maillage, quadrature_maillage, vect_p_cached); });
 
     /* === Validation de la solution  === */
 
@@ -166,15 +167,108 @@ int main(int argc, char **argv)
     /* -- Area for tests -- */
     /* -------------------- */
 
-    
-    cout<<A<<endl;
+    const Eigen::Index N = 20;
+    const Eigen::Index maxRank = N / 4;
+    const Eigen::Index rankTroncature = N / 4;
 
-    double HI = 12345.67; // set HI and LO according to your problem.
-    double LO = 879.01;
-    double range= HI-LO;
-    Matrice m(10,10); // 3x3 Matrix filled with random numbers between (-1,1)
-    m = m*range/2.; // add 1 to the matrix to have values between 0 and 2; multiply with range/2
-    cout << "m =\n" << m << endl;
+    Matrice A = matrice_aleatoire(maxRank, N);
+
+    // Vérification des dimensions
+    std::cout << "Dimensions de A : "
+              << A.rows() << " x " << A.cols() << '\n';
+
+    // Pour une matrice complexe, utiliser JacobiSVD
+    Eigen::JacobiSVD<Matrice> svd(
+        A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    const auto &sigma = svd.singularValues();
+
+    const Eigen::Index r = std::min(
+        rankTroncature,
+        static_cast<Eigen::Index>(sigma.size()));
+
+    if (r < 0)
+        throw std::invalid_argument("Rang de troncature invalide");
+
+    const Real sigmaMax = sigma.size() > 0 ? sigma(0) : 0.0;
+
+    const Real tol =
+        std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
+
+    Eigen::Index rangReel = 0;
+
+    for (Eigen::Index i = 0; i < sigma.size(); ++i)
+        if (sigma(i) > tol)
+            ++rangReel;
+
+    // SVD tronquée
+    Matrice U_r = svd.matrixU().leftCols(r);
+    Matrice V_r = svd.matrixV().leftCols(r);
+    auto sigma_r = sigma.head(r);
+
+    Matrice A_r = U_r * sigma_r.asDiagonal() * V_r.adjoint();
+
+    const Real normeA = A.norm();
+    const Real erreurAbsolue = (A - A_r).norm();
+    const Real erreurRelative =
+        normeA > 0.0 ? erreurAbsolue / normeA : 0.0;
+
+    // Memory usage comparison
+    const std::size_t originalBytes =
+        static_cast<std::size_t>(A.size()) * sizeof(Complex);
+
+    const std::size_t truncatedBytes =
+        static_cast<std::size_t>(U_r.size()) * sizeof(Complex) + static_cast<std::size_t>(sigma_r.size()) * sizeof(Real) + static_cast<std::size_t>(V_r.size()) * sizeof(Complex);
+
+    const double originalMB = originalBytes / (1024.0 * 1024.0);
+    const double truncatedMB = truncatedBytes / (1024.0 * 1024.0);
+
+    const double savedBytes =
+        static_cast<double>(originalBytes) - truncatedBytes;
+
+    const double savedMB = savedBytes / (1024.0 * 1024.0);
+
+    const double savedPercent =
+        originalBytes > 0
+            ? 100.0 * savedBytes / originalBytes
+            : 0.0;
+
+    std::cout << std::scientific << std::setprecision(6);
+
+    std::cout << "\n========== ANALYSE SVD ==========\n";
+    std::cout << "Dimensions             : "
+              << A.rows() << " x " << A.cols() << '\n';
+    std::cout << "Rang demande            : " << maxRank << '\n';
+    std::cout << "Rang numerique estime   : " << rangReel << '\n';
+    std::cout << "Rang de troncature      : " << r << '\n';
+    std::cout << "Tolerance de rang       : " << tol << '\n';
+
+    std::cout << "\nValeurs singulieres :\n";
+    for (Eigen::Index i = 0; i < sigma.size(); ++i)
+    {
+        std::cout << "sigma[" << i << "] = "
+                  << sigma(i)
+                  << (sigma(i) > tol ? " (significative)" : " (petite)")
+                  << '\n';
+    }
+
+    std::cout << "\n========== ERREUR ==========\n";
+    std::cout << "Norme de A              : " << normeA << '\n';
+    std::cout << "Norme de A_r            : " << A_r.norm() << '\n';
+    std::cout << "Erreur absolue          : " << erreurAbsolue << '\n';
+    std::cout << "Erreur relative         : " << erreurRelative << '\n';
+    std::cout << "================================\n";
+
+    std::cout << "\n========== MEMORY SAVINGS ==========\n";
+    std::cout << "Original matrix       : "
+              << originalMB << " MiB\n";
+    std::cout << "Truncated SVD factors : "
+              << truncatedMB << " MiB\n";
+    std::cout << "Memory saved          : "
+              << savedMB << " MiB\n";
+    std::cout << "Space reduction       : "
+              << savedPercent << " %\n";
+    std::cout << "====================================\n";
 #endif
 
     // -- Fin --

@@ -3,17 +3,13 @@
 
 #include "../../global/commun.hpp"
 
-
 using Vecteur = Eigen::VectorXcd;
-
 
 // class Vecteur : public std::vector<Complex>
 // {
 // public:
 //     using std::vector<Complex>::vector; // récupère les constructeurs de vector
 
-//     Complex produitHermitien(const Vecteur &v) const;
-//     Complex produitBilineaire(const Vecteur &v) const;
 //     Vecteur operator+(const Vecteur &v) const;
 //     Vecteur operator-(const Vecteur &v) const;
 //     Vecteur operator*(const Complex &a) const;
@@ -26,12 +22,11 @@ using Vecteur = Eigen::VectorXcd;
 //     Real norm() const;
 // };
 
-// // Fonctions associées au type Vecteur 
+// // Fonctions associées au type Vecteur
 
 // ostream &operator<<(ostream &out, const Vecteur &u);
 
 // Vecteur generateur_aleatoire_vecteur(const int taille);
-
 
 Complex produitBilineaire(const Vecteur &x, const Vecteur &y);
 #endif

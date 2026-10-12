@@ -55,8 +55,8 @@ extern Real green_cache_step_large;
 extern Real green_cache_step_large_inv;
 extern Real green_cache_cutoff;
 extern Real delta;
-extern std::size_t green_cache_n_fine;
-extern std::size_t green_cache_size;
+extern Index green_cache_n_fine;
+extern Index green_cache_size;
 
 // Green cached
 inline Complex green_cached(const Point &p1, const Point &p2)
@@ -66,15 +66,15 @@ inline Complex green_cached(const Point &p1, const Point &p2)
 
     const Real distance = std::sqrt(dx * dx + dy * dy);
 
-    std::size_t index;
+    Index index;
 
     if (distance < green_cache_cutoff)
     {
-        index = static_cast<std::size_t>(distance / green_cache_step_fine + 0.5);
+        index = static_cast<Index>(distance / green_cache_step_fine + 0.5);
     }
     else
     {
-        index = green_cache_n_fine + static_cast<std::size_t>((distance - green_cache_cutoff) / green_cache_step_large + 0.5);
+        index = green_cache_n_fine + static_cast<Index>((distance - green_cache_cutoff) / green_cache_step_large + 0.5);
     }
 
     return green_cache[index];
@@ -127,7 +127,7 @@ inline void green_cached_SIMD(const Simd Ax, const Simd Ay, const Simd Bx, const
      * Conversion des indices en entiers.
      *
      * Les indices sont positifs, donc la troncature
-     * correspond au static_cast<std::size_t>() de
+     * correspond au static_cast<Index>() de
      * green_cached().
      */
     const SimdIndex index = simd_double_to_int(index_selectionne);

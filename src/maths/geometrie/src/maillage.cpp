@@ -10,15 +10,16 @@ void Maillage::ajoute_cercle(const Real pas_maillage, const Cercle &Ob)
     }
 
     // Construction du cercle
-    const unsigned int nb_segments = static_cast<unsigned int>(std::round(2.0 * pi * Ob.rayon / pas_maillage));
+    const Index nb_segments = static_cast<Index>(std::round(2.0 * pi * Ob.rayon / pas_maillage));
     const Real pas_cercle = 2 * pi / nb_segments;
 
-    for (unsigned int i = 0; i < nb_segments; i++)
+    for (Index i = 0; i < nb_segments; i++)
     {
         Point A(Ob.centre.x + Ob.rayon * cos(pas_cercle * i), Ob.centre.y + Ob.rayon * sin(pas_cercle * i));
         Point B(Ob.centre.x + Ob.rayon * cos(pas_cercle * (i + 1)), Ob.centre.y + Ob.rayon * sin(pas_cercle * (i + 1)));
         this->push_back(Segment(A, B));
     }
+
     return;
 }
 
@@ -32,12 +33,13 @@ void Maillage::export_maillage(const string &filename) const
         exit(-1);
     }
 
-    for (unsigned int i = 0; i < this->size(); i++)
+    for (Index i = 0; i < this->size(); i++)
     {
         const Segment &s = this->operator[](i);
         f << s.P1.x << " " << s.P1.y << " ";
         f << s.P2.x << " " << s.P2.y << endl;
     }
+
     f.close();
 
     return;
@@ -46,18 +48,21 @@ void Maillage::export_maillage(const string &filename) const
 vector<Point> Maillage::PointsMaillage()
 { // only is useful for connex meshings
     vector<Point> points(this->size());
-    for (unsigned int i = 0; i < this->size(); i++)
+
+    for (Index i = 0; i < this->size(); i++)
     {
         points[i] = this->operator[](i).P1;
     }
+
     cout << "out of PointsMaillage 0 " << endl;
+
     return points;
 }
 
 Maillage::Maillage(const vector<Cercle> &cercles, const Real pas_maillage)
 {
     // Verification du strict positivité du pas du maillage fait dans ajoute cercle
-    for (unsigned int i = 0; i < cercles.size(); i++)
+    for (Index i = 0; i < cercles.size(); i++)
     {
         ajoute_cercle(pas_maillage, cercles[i]);
     }
@@ -66,10 +71,11 @@ Maillage::Maillage(const vector<Cercle> &cercles, const Real pas_maillage)
 Maillage::Maillage(const vector<Point> &points)
 {
     // suppose que aucun segment ne s'interecte
-    for (unsigned int i = 0; i < points.size() - 1; i++)
+    for (Index i = 0; i < points.size() - 1; i++)
     {
         this->push_back(Segment(points[i], points[i + 1]));
     }
+
     this->push_back(Segment(points[points.size()], points[0]));
 }
 
@@ -95,7 +101,7 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
     Real bymin = bxmin;
     Real bymax = -bxmin;
 
-    for (unsigned int i = 0; i < maillage.size(); i++)
+    for (Index i = 0; i < maillage.size(); i++)
     {
         bxmin = std::min<Real>(bxmin, maillage[i].P1.x);
         bxmax = std::max<Real>(bxmax, maillage[i].P1.x);
@@ -109,8 +115,7 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
     {
         // Point suffisamment loin de la boite englobante :
         // il est nécessairement extérieur à l'obstacle.
-        if (M.x < bxmin - delta || M.x > bxmax + delta ||
-            M.y < bymin - delta || M.y > bymax + delta)
+        if (M.x < bxmin - delta || M.x > bxmax + delta || M.y < bymin - delta || M.y > bymax + delta)
         {
             return true;
         }
@@ -122,7 +127,7 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
         const Real epsilon = 1e-10;
         const Real yTest = M.y + epsilon;
 
-        for (unsigned int i = 0; i < maillage.size(); i++)
+        for (Index i = 0; i < maillage.size(); i++)
         {
             const Point &A = maillage[i].P1;
             const Point &B = maillage[i].P2;
@@ -130,9 +135,7 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
             // Test d'intersection du rayon horizontal avec le segment.
             if ((A.y > yTest) != (B.y > yTest))
             {
-                const Real xIntersection =
-                    A.x +
-                    (yTest - A.y) * (B.x - A.x) / (B.y - A.y);
+                const Real xIntersection = A.x + (yTest - A.y) * (B.x - A.x) / (B.y - A.y);
 
                 if (M.x < xIntersection)
                     dedans = !dedans;
@@ -147,29 +150,16 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
 
             if (len2 > 0.0)
             {
-                t =
-                    ((M.x - A.x) * ex +
-                     (M.y - A.y) * ey) /
-                    len2;
-
-                t = std::max<Real>(
-                    0.0,
-                    std::min<Real>(1.0, t));
+                t = std::max<Real>(0.0, std::min<Real>(1.0, ((M.x - A.x) * ex + (M.y - A.y) * ey) / len2));
             }
 
-            const Real dx =
-                M.x - (A.x + t * ex);
+            const Real dx = M.x - (A.x + t * ex);
+            const Real dy = M.y - (A.y + t * ey);
 
-            const Real dy =
-                M.y - (A.y + t * ey);
-
-            d2min = std::min(
-                d2min,
-                dx * dx + dy * dy);
+            d2min = std::min(d2min, dx * dx + dy * dy);
         }
 
-        return !dedans &&
-               d2min >= delta * delta;
+        return !dedans && d2min >= delta * delta;
     };
     // -- 1) Grille reguliere, filtree par la vraie forme de l'obstacle --
 
@@ -190,16 +180,11 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
     // sur la normale sortante a des distances multiples de pasMaillage.
     const Real pasProche = 0.02;
 
-    const std::vector<Real> multiplesProches = {
-        2.0,
-        4.0,
-        8.0,
-        16.0,
-        32.0};
+    const std::vector<Real> multiplesProches = {2.0, 4.0, 8.0, 16.0, 32.0};
 
     Real arc = pasProche;
 
-    for (unsigned int i = 0; i < maillage.size(); i++)
+    for (Index i = 0; i < maillage.size(); i++)
     {
         const Real ex = maillage[i].P2.x - maillage[i].P1.x;
         const Real ey = maillage[i].P2.y - maillage[i].P1.y;
@@ -220,16 +205,10 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
 
         for (const Real m : multiplesProches)
         {
-            const Real d = std::max<Real>(
-                delta,
-                m * pasMaillage);
+            const Real d = std::max<Real>(delta, m * pasMaillage);
+            const Point M(C.x + d * nx, C.y + d * ny);
 
-            const Point M(
-                C.x + d * nx,
-                C.y + d * ny);
-
-            if (M.x < xmin || M.x > xmax ||
-                M.y < ymin || M.y > ymax)
+            if (M.x < xmin || M.x > xmax || M.y < ymin || M.y > ymax)
             {
                 continue;
             }

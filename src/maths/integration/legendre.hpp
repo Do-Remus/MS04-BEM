@@ -3,6 +3,7 @@
 
 #include "../../global/commun.hpp"
 
+#include "../algebre/vecteur.hpp"
 #include "../geometrie/commun.hpp"
 
 /* Datatype */

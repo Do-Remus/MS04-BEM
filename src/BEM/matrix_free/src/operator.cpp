@@ -1,24 +1,24 @@
 #include "../operator.hpp"
 
-Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Vecteur &diagonale, const std::size_t NB_BLOCK)
+Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Vecteur &diagonale, const Index NB_BLOCK)
 {
-    const std::size_t BLOCK = NB_BLOCK * SIMD_WIDTH;
+    const Index BLOCK = NB_BLOCK * SIMD_WIDTH;
 
-    constexpr std::size_t IBLOCK = 4;
+    constexpr Index IBLOCK = 4;
 
-    const std::size_t N = quadrature.N;
+    const Index N = quadrature.N;
 
-    Vecteur y_local(N, 0.0);
+    Vecteur y_local = Vecteur::Zero(N);
     std::vector<Real> y_source_re(BLOCK, 0.0);
     std::vector<Real> y_source_im(BLOCK, 0.0);
 
     /*
      * Blocs cibles.
      */
-    for (std::size_t debut_bloc_cible = mpi_rank * BLOCK; debut_bloc_cible < N; debut_bloc_cible += mpi_size * BLOCK)
+    for (Index debut_bloc_cible = mpi_rank * BLOCK; debut_bloc_cible < N; debut_bloc_cible += mpi_size * BLOCK)
     {
-        const std::size_t fin_bloc_cible = std::min(debut_bloc_cible + BLOCK, N);
-        const std::size_t nombre_lignes_cibles = fin_bloc_cible - debut_bloc_cible;
+        const Index fin_bloc_cible = std::min(debut_bloc_cible + BLOCK, N);
+        const Index nombre_lignes_cibles = fin_bloc_cible - debut_bloc_cible;
 
         std::vector<Real> y_cible_re(nombre_lignes_cibles, 0.0);
         std::vector<Real> y_cible_im(nombre_lignes_cibles, 0.0);
@@ -26,7 +26,7 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
         /*
          * Diagonale.
          */
-        for (std::size_t indice_cible = debut_bloc_cible; indice_cible < fin_bloc_cible; ++indice_cible)
+        for (Index indice_cible = debut_bloc_cible; indice_cible < fin_bloc_cible; ++indice_cible)
         {
             const Complex contribution_diagonale = diagonale[indice_cible] * x[indice_cible];
 
@@ -37,10 +37,10 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
         /*
          * Blocs sources.
          */
-        for (std::size_t debut_bloc_source = debut_bloc_cible; debut_bloc_source < N; debut_bloc_source += BLOCK)
+        for (Index debut_bloc_source = debut_bloc_cible; debut_bloc_source < N; debut_bloc_source += BLOCK)
         {
-            const std::size_t fin_bloc_source = std::min(debut_bloc_source + BLOCK, N);
-            const std::size_t nombre_sources = fin_bloc_source - debut_bloc_source;
+            const Index fin_bloc_source = std::min(debut_bloc_source + BLOCK, N);
+            const Index nombre_sources = fin_bloc_source - debut_bloc_source;
 
             std::fill(y_source_re.begin(), y_source_re.begin() + nombre_sources, 0.0);
             std::fill(y_source_im.begin(), y_source_im.begin() + nombre_sources, 0.0);
@@ -48,7 +48,7 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
             /*
              * Micro-blocs cibles complets.
              */
-            std::size_t debut_micro_bloc_cible = debut_bloc_cible;
+            Index debut_micro_bloc_cible = debut_bloc_cible;
 
             for (; debut_micro_bloc_cible + IBLOCK <= fin_bloc_cible; debut_micro_bloc_cible += IBLOCK)
             {
@@ -66,7 +66,7 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
             /*
              * Écriture du bloc source.
              */
-            for (std::size_t indice_source = debut_bloc_source; indice_source < fin_bloc_source; ++indice_source)
+            for (Index indice_source = debut_bloc_source; indice_source < fin_bloc_source; ++indice_source)
             {
                 y_local[indice_source] += Complex(y_source_re[indice_source - debut_bloc_source], y_source_im[indice_source - debut_bloc_source]);
             }
@@ -75,7 +75,7 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
         /*
          * Écriture du bloc cible.
          */
-        for (std::size_t indice_cible = debut_bloc_cible; indice_cible < fin_bloc_cible; ++indice_cible)
+        for (Index indice_cible = debut_bloc_cible; indice_cible < fin_bloc_cible; ++indice_cible)
         {
             y_local[indice_cible] += Complex(y_cible_re[indice_cible - debut_bloc_cible], y_cible_im[indice_cible - debut_bloc_cible]);
         }
@@ -84,7 +84,7 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
     /*
      * Réduction MPI.
      */
-    Vecteur y(N, 0.0);
+    Vecteur y = Vecteur::Zero(N);
 
     MPI_Allreduce(y_local.data(), y.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 
@@ -93,13 +93,13 @@ Vecteur produit_A_x(const Vecteur &x, const QuadratureSIMD &quadrature, const Ve
 
 Vecteur diagonale_A(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
-    const std::size_t N = maillage.size();
-    Vecteur diagonaleLocale(N, 0.0);
+    const Index N = maillage.size();
+    Vecteur diagonaleLocale = Vecteur::Zero(N);
 
     /*
      * Chaque processus calcule une partie de la diagonale.
      */
-    for (std::size_t i = mpi_rank; i < N; i += mpi_size)
+    for (Index i = mpi_rank; i < N; i += mpi_size)
     {
         const Segment &S = maillage[i];
         const QuadratureSegment &qS = quadrature_maillage[i];
@@ -113,7 +113,7 @@ Vecteur diagonale_A(const Maillage &maillage, const std::vector<QuadratureSegmen
     /*
      * Chaque processus récupère la diagonale complète.
      */
-    Vecteur diagonale(N, 0.0);
+    Vecteur diagonale = Vecteur::Zero(N);
 
     MPI_Allreduce(diagonaleLocale.data(), diagonale.data(), static_cast<int>(N), mpi_complex_type(), MPI_SUM, MPI_COMM_WORLD);
 

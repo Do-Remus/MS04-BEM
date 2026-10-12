@@ -48,7 +48,7 @@ const std::vector<QuadratureSegment> get_quadrature_maillage(const Maillage &mai
 {
     std::vector<QuadratureSegment> quadrature(maillage.size());
 
-    for (std::size_t i = 0; i < maillage.size(); ++i)
+    for (Index i = 0; i < maillage.size(); ++i)
     {
         const Segment &S = maillage[i];
         auto &q = quadrature[i];
@@ -58,7 +58,7 @@ const std::vector<QuadratureSegment> get_quadrature_maillage(const Maillage &mai
         // Pour un ordre impair contenant r = 0 : 2*n - 1
         q.reserve(2 * data.roots.size());
 
-        for (std::size_t k = 0; k < data.roots.size(); ++k)
+        for (Index k = 0; k < data.roots.size(); ++k)
         {
             const Real r = data.roots[k];
             const Real w = data.weights[k];
@@ -85,8 +85,8 @@ QuadratureSIMD construire_quadrature_SIMD(const Maillage &maillage, const std::v
     q.N = maillage.size();
     q.nq = quadrature_maillage[0].size();
 
-    const std::size_t N = q.N;
-    const std::size_t nq = q.nq;
+    const Index N = q.N;
+    const Index nq = q.nq;
 
     /*
      * Allocation.
@@ -102,9 +102,9 @@ QuadratureSIMD construire_quadrature_SIMD(const Maillage &maillage, const std::v
     /*
      * Remplissage.
      */
-    for (std::size_t i = 0; i < N; ++i)
+    for (Index i = 0; i < N; ++i)
     {
-        for (std::size_t a = 0; a < nq; ++a)
+        for (Index a = 0; a < nq; ++a)
         {
             const auto &qa = quadrature_maillage[i][a];
 

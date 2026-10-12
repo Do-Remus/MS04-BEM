@@ -62,33 +62,7 @@
 //         std::real(produitHermitien(*this)));
 // }
 
-// Complex Vecteur::produitHermitien(const Vecteur &v) const
-// {
-//     if (size() != v.size())
-//         throw std::invalid_argument("Tailles incompatibles");
-
-//     Complex resultat = 0.0;
-
-//     for (std::size_t i = 0; i < size(); ++i)
-//         resultat += std::conj((*this)[i]) * v[i];
-
-//     return resultat;
-// }
-
-// Complex Vecteur::produitBilineaire(const Vecteur &v) const
-// {
-//     if (size() != v.size())
-//         throw std::invalid_argument("Tailles incompatibles");
-
-//     Complex resultat = 0.0;
-
-//     for (std::size_t i = 0; i < size(); ++i)
-//         resultat += (*this)[i] * v[i];
-
-//     return resultat;
-// }
-
-
-Complex produitBilineaire(const Vecteur &x, const Vecteur &y){
-    return (x.transpose()*y)(0,0);
+Complex produitBilineaire(const Vecteur &x, const Vecteur &y)
+{
+    return (x.transpose() * y)(0, 0);
 }

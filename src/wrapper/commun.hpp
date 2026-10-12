@@ -27,8 +27,7 @@ decltype(auto) run(const std::string &titre, Timers &timers, const std::string &
     }
     else
     {
-        decltype(auto) resultat =
-            std::forward<F>(fonction)();
+        decltype(auto) resultat = std::forward<F>(fonction)();
 
         timers.end(nomTimer);
 

@@ -4,6 +4,7 @@
 // General
 #include <time.h>
 #include <cstdlib>
+#include <stdexcept>
 #include <iomanip>
 #include <unordered_map>
 

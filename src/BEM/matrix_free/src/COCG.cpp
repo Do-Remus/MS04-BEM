@@ -2,10 +2,10 @@
 
 Vecteur preconditionneur_diagonal(const Vecteur &diagonale)
 {
-    const std::size_t N = diagonale.size();
-    Vecteur S(N, 0.0);
+    const Index N = diagonale.size();
+    Vecteur S = Vecteur::Zero(N);
 
-    for (std::size_t i = 0; i < N; ++i)
+    for (Index i = 0; i < N; ++i)
     {
         S[i] = 1.0 / std::sqrt(diagonale[i]);
     }
@@ -15,30 +15,20 @@ Vecteur preconditionneur_diagonal(const Vecteur &diagonale)
 
 Vecteur produit_A_preconditionne(const Vecteur &x, const Vecteur &S, const Vecteur &diagonale, const QuadratureSIMD &quadrature)
 {
-    Vecteur Sx = x;
-
-    for (std::size_t i = 0; i < x.size(); ++i)
-    {
-        Sx[i] *= S[i];
-    }
+    Vecteur Sx = S.cwiseProduct(x);
 
     Vecteur ASx = produit_A_x(Sx, quadrature, diagonale);
 
-    Vecteur y = ASx;
-
-    for (std::size_t i = 0; i < x.size(); ++i)
-    {
-        y[i] *= S[i];
-    }
+    Vecteur y = S.cwiseProduct(ASx);
 
     return y;
 }
 
-Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, const QuadratureSIMD &quadrature_simd, Real tol, unsigned int maxIter)
+Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, const QuadratureSIMD &quadrature_simd, Real tol, Index maxIter)
 {
     /* === Initialisation === */
 
-    const std::size_t n = b.size();
+    const Index n = b.size();
 
     /*
      * Calcul et construction du preconditionneur.
@@ -52,13 +42,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
      *
      *     b_preconditionne = S b
      */
-    Vecteur b_preconditionne = b;
-
-    for (std::size_t i = 0; i < n; ++i)
-    {
-        b_preconditionne[i] *= S[i];
-    }
-
+    Vecteur b_preconditionne = S.cwiseProduct(b);
     /*
      * On resout :
      *
@@ -68,7 +52,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
      *
      *     x = S y
      */
-    Vecteur y(n, 0.0);
+    Vecteur y = Vecteur::Zero(n);
 
     Vecteur r = b_preconditionne;
     Vecteur d = r;
@@ -80,17 +64,17 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
 
     Real relativeResidual = 1.0;
 
-    Complex rho = r.produitBilineaire(r);
+    Complex rho = produitBilineaire(r, r);
 
     MPI_Barrier(MPI_COMM_WORLD);
     Real startBoucle = MPI_Wtime();
 
     /* === Boucle principale === */
 
-    for (unsigned int iter = 0; iter < maxIter; ++iter)
+    for (Index iter = 0; iter < maxIter; ++iter)
     {
         Vecteur Ad = produit_A_preconditionne(d, S, diagonale, quadrature_simd);
-        const Complex denom = d.produitBilineaire(Ad);
+        const Complex denom = produitBilineaire(Ad, d);
         const Real scale = d.norm() * Ad.norm();
 
         if (scale == 0.0 || std::abs(denom) < 1e-20 * scale)
@@ -112,11 +96,8 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
 
         const Complex alpha = rho / denom;
 
-        for (std::size_t i = 0; i < n; ++i)
-        {
-            y[i] += alpha * d[i];
-            r[i] -= alpha * Ad[i];
-        }
+        y += alpha * d;
+        r -= alpha * Ad;
 
         relativeResidual = r.norm() / bnorm;
 
@@ -133,17 +114,12 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
                     << std::endl;
             }
 
-            Vecteur x(n, 0.0);
-
-            for (std::size_t i = 0; i < n; ++i)
-            {
-                x[i] = S[i] * y[i];
-            }
+            Vecteur x = S.cwiseProduct(y);
 
             return x;
         }
 
-        const Complex rhoNew = r.produitBilineaire(r);
+        const Complex rhoNew = produitBilineaire(r, r);
 
         if (std::abs(rho) < 1e-30)
         {
@@ -156,16 +132,14 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
                     << std::endl;
             }
 
-            return y;
+            Vecteur x = S.cwiseProduct(y);
+
+            return x;
         }
 
         const Complex beta = rhoNew / rho;
 
-        for (std::size_t i = 0; i < n; ++i)
-        {
-            d[i] = r[i] + beta * d[i];
-        }
-
+        d = r + beta * d;
         rho = rhoNew;
 
         MPI_Barrier(MPI_COMM_WORLD);
@@ -187,12 +161,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
             << std::endl;
     }
 
-    Vecteur x(n, 0.0);
-
-    for (std::size_t i = 0; i < n; ++i)
-    {
-        x[i] = S[i] * y[i];
-    }
+    Vecteur x = S.cwiseProduct(y);
 
     return x;
 }

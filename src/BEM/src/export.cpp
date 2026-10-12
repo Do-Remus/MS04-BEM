@@ -1,6 +1,6 @@
 #include "../export.hpp"
 
-void ecrire_solution(const std::vector<Point> &pointsSolution, const std::vector<Complex> &u_cached, const ErreursSolution &erreurs)
+void ecrire_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached, const ErreursSolution &erreurs)
 {
     const string filename = string("outputs/cercle_u") +
                             "_k" + std::to_string(k) +
@@ -25,10 +25,9 @@ void ecrire_solution(const std::vector<Point> &pointsSolution, const std::vector
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 
-    for (unsigned int j = 0; j < pointsSolution.size(); j++)
+    for (Index j = 0; j < pointsSolution.size(); j++)
     {
         const Complex &uExact = erreurs.u_analytique[j];
-
         const Complex &uCached = u_cached[j];
 
         file << pointsSolution[j].x << " "

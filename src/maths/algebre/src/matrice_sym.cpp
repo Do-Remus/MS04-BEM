@@ -64,7 +64,7 @@ Vecteur COCG(const MatriceSym &A, const Vecteur &b, Real tol, unsigned int maxIt
 {
     const std::size_t n = b.size();
 
-    Vecteur x(n, 0.0);
+    Vecteur x = Vecteur::Zero(n);
 
     Vecteur r = b - A * x;
     Vecteur d = r;
@@ -75,12 +75,12 @@ Vecteur COCG(const MatriceSym &A, const Vecteur &b, Real tol, unsigned int maxIt
     if (bnorm == 0.0)
         return x;
 
-    Complex rho = r.produitBilineaire(r);
+    Complex rho = produitBilineaire(r, r);
 
     for (unsigned int iter = 0; iter < maxIter; ++iter)
     {
         Vecteur Ad = A * d;
-        const Complex denom = d.produitBilineaire(Ad);
+        const Complex denom = produitBilineaire(Ad, d);
         const Real scale = d.norm() * Ad.norm();
 
         if (scale == 0 || std::abs(denom) < 1e-20 * scale)
@@ -107,7 +107,7 @@ Vecteur COCG(const MatriceSym &A, const Vecteur &b, Real tol, unsigned int maxIt
             return x;
         }
 
-        const Complex rhoNew = r.produitBilineaire(r);
+        const Complex rhoNew = produitBilineaire(r, r);
 
         if (std::abs(rho) < 1e-30)
         {
@@ -139,14 +139,16 @@ MatriceSym::MatriceSym(int m, complex<Real> v) // constructeur dimensions et coe
     {
         return;
     }
-    coefs.resize((n * (n + 1)) / 2, v);
+    coefs.resize((n * (n + 1)) / 2);
+    coefs.setConstant(v);
 }
 
 MatriceSym::MatriceSym(const Vecteur &d)
 {
     n = static_cast<int>(d.size());
 
-    coefs.resize(n * (n + 1) / 2, 0.0);
+    coefs.resize((n * (n + 1)) / 2);
+    coefs.setConstant(0.0);
 
     for (int i = 0; i < n; ++i)
     {
@@ -179,7 +181,8 @@ Vecteur MatriceSym::operator*(const Vecteur &v) const
         exit(-1);
     }
 
-    Vecteur b(n, 0.0);
+    Vecteur b = Vecteur::Zero(n);
+    ;
 
     for (int i = 0; i < n; ++i)
     {

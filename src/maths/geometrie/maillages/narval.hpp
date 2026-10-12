@@ -51,14 +51,12 @@ inline Maillage maillage_narval(const double echelle = 1.0, const double pas = 0
         const Real c2 = -1.5 * t3 + 2.0 * t2 + 0.5 * t;
         const Real c3 = 0.5 * t3 - 0.5 * t2;
 
-        return Point(
-            c0 * P0.x + c1 * P1.x + c2 * P2.x + c3 * P3.x,
-            c0 * P0.y + c1 * P1.y + c2 * P2.y + c3 * P3.y);
+        return Point(c0 * P0.x + c1 * P1.x + c2 * P2.x + c3 * P3.x,
+                     c0 * P0.y + c1 * P1.y + c2 * P2.y + c3 * P3.y);
     };
 
     /* === Construction de la courbe fine === */
     const unsigned int nbControle = controle.size();
-
     const unsigned int nParSegment = 1000;
 
     vector<Point> pointsFins;
@@ -76,13 +74,7 @@ inline Maillage maillage_narval(const double echelle = 1.0, const double pas = 0
         {
             const Real t = static_cast<Real>(j) / static_cast<Real>(nParSegment);
 
-            pointsFins.push_back(
-                catmullRom(
-                    controle[i0],
-                    controle[i1],
-                    controle[i2],
-                    controle[i3],
-                    t));
+            pointsFins.push_back(catmullRom(controle[i0], controle[i1], controle[i2], controle[i3], t));
         }
     }
 
@@ -172,9 +164,8 @@ inline Maillage maillage_narval(const double echelle = 1.0, const double pas = 0
             t = (cible - cumul) / longueurSegment;
         }
 
-        points.emplace_back(
-            pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
-            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
+        points.emplace_back(pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
+                            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
     }
 
     return Maillage(points);

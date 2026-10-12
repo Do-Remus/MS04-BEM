@@ -77,9 +77,8 @@ inline Maillage maillage_balle_de_golf(const double rayon, const unsigned int nb
 
         const Real r = rayonTheta(theta);
 
-        pointsFins.emplace_back(
-            r * std::cos(theta),
-            r * std::sin(theta));
+        pointsFins.emplace_back(r * std::cos(theta),
+                                r * std::sin(theta));
     }
 
     /* === Longueur approchée === */
@@ -138,9 +137,8 @@ inline Maillage maillage_balle_de_golf(const double rayon, const unsigned int nb
             t = (cible - cumul) / longueurSegment;
         }
 
-        points.emplace_back(
-            pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
-            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
+        points.emplace_back(pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
+                            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
     }
 
     return Maillage(points);

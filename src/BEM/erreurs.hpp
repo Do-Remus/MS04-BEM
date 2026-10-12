@@ -13,7 +13,7 @@ struct ErreursSolution
     Real erreurMax;
 };
 
-ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSolution, const std::vector<Complex> &u_cached);
+ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached);
 
 Real calculer_erreur_relative_p(const Maillage &maillage, const Vecteur &vect_p_cached);
 

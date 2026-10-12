@@ -143,9 +143,8 @@ inline Maillage maillage_mur_acoustique(const double largeur = 0.5, const double
             t = (s - arc[j]) / longueurSegment;
         }
 
-        points.emplace_back(
-            S.P1.x + t * (S.P2.x - S.P1.x),
-            S.P1.y + t * (S.P2.y - S.P1.y));
+        points.emplace_back(S.P1.x + t * (S.P2.x - S.P1.x),
+                            S.P1.y + t * (S.P2.y - S.P1.y));
     }
 
     return Maillage(points);
