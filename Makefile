@@ -1,9 +1,21 @@
 # Compiler
 CXX = mpic++
 
+# Détection automatique d'Eigen
+EIGEN_DIRS := $(wildcard \
+    /usr/include/eigen3 \
+    /usr/local/include/eigen3 \
+    /opt/homebrew/include/eigen3 \
+    external/eigen)
+
+ifeq ($(strip $(EIGEN_DIRS)),)
+$(error Eigen introuvable. Installe Eigen ou place-le dans external/eigen)
+endif
+
 # Compiler flags
 #CXXFLAGS = -O3 -g -march=native -fopt-info-vec-missed -fopt-info-vec-optimized -std=c++17 -DNDEBUG
 CXXFLAGS = -O3 -march=native  -std=c++17 -DNDEBUG 
+CXXFLAGS += $(addprefix -I,$(EIGEN_DIRS))
 
 # Output directory
 OUT_DIR = bin
