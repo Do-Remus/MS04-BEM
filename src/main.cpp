@@ -269,6 +269,12 @@ int main(int argc, char **argv)
     std::cout << "Space reduction       : "
               << savedPercent << " %\n";
     std::cout << "====================================\n";
+
+
+    // -- Test de ACA pivotage complet
+    vector<Vecteur> U_V = full_pivoted_cross_approximation(A, maxRank, 1e-8);
+    
+
 #endif
 
     // -- Fin --

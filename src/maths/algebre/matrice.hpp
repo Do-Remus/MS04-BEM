@@ -30,4 +30,8 @@ using Matrice = Eigen::MatrixXcd;
 
 Matrice matrice_aleatoire(const unsigned int rang, const Index taille);
 
+vector<Vecteur> full_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance);
+
+vector<Vecteur> partial_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance);
+
 #endif

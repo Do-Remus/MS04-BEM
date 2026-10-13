@@ -16,6 +16,84 @@ Matrice matrice_aleatoire(const unsigned int rang, const Index taille)
     return U * V;
 }
 
+
+
+vector<Vecteur> full_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance){
+    //initialisation de la matrice R et A localement
+    Matrice Aiter = Matrice::Zero(A.rows(),A.cols());
+    Matrice Riter(A);
+
+    // first [rang-1] vectors are the u_k, then v_k are from [rang] to [2*rang -1]
+    vector<Vecteur> U_V(2*rang);
+
+    //boucle principale
+    int k=0;
+    double Anorm = A.norm();
+    while(k<rang && Riter.norm() >= tolerance*Anorm){
+        //trouver le pivot (valeur maximale en valeur absolue )
+        Index i_pivot =0;
+        Index j_pivot=0;
+        double abs_value_pivot=-1;
+        for(Index i=0; i<A.rows(); i++){
+            for(Index j=0; j<A.cols(); j++){
+                double a = abs(Riter(i,j));
+                if(a > abs_value_pivot){
+                    abs_value_pivot = a;
+                    i_pivot=i;
+                    j_pivot =j;
+                }
+            }
+        }
+
+        //extraire u_k+1 et v_k+1, et iteration Aiter, Riter
+       U_V[k+rang] = Riter.row(i_pivot);
+       U_V[k] = Riter.col(j_pivot)/Riter(i_pivot, j_pivot);
+       Aiter = Aiter + U_V[k]*U_V[k+rang].transpose();
+       cout<<"||A -Aiter|| = "<<(A-Aiter).norm()<<endl;
+       Riter = Riter - U_V[k]*U_V[k+rang].transpose();
+       k++;
+    }
+    return U_V;
+
+}
+
+
+vector<Vecteur> partial_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance){
+    //initialisation de la matrice R et A localement
+    Matrice Aiter = Matrice::Zero(A.rows(),A.cols());
+    Matrice Riter(A);
+
+    // first [rang-1] vectors are the u_k, then v_k are from [rang] to [2*rang -1]
+    vector<Vecteur> U_V(2*rang);
+
+    //boucle principale
+    int k=0;
+    double Anorm = A.norm();
+    while(k<rang && Riter.norm() >= tolerance*Anorm){
+        //trouver le pivot  (valeur maximale en valeur absolue) !!!! sur la ligne k !!!!
+        Index i_pivot =0;
+        Index j_pivot=k;
+        double abs_value_pivot=-1;
+        for(Index j=0; j<A.cols(); j++){
+            double a = abs(Riter(k,j));
+            if(a > abs_value_pivot){
+                abs_value_pivot = a;
+                j_pivot =j;
+            }
+        }
+
+        //extraire u_k+1 et v_k+1, et iteration Aiter, Riter
+       U_V[k+rang] = Riter.row(i_pivot);
+       U_V[k] = Riter.col(j_pivot)/Riter(i_pivot, j_pivot);
+       Aiter = Aiter + U_V[k]*U_V[k+rang].transpose();
+       cout<<"||A -Aiter|| = "<<(A-Aiter).norm()<<endl;
+       Riter = Riter - U_V[k]*U_V[k+rang].transpose();
+       k++;
+    }
+    return U_V;
+
+}
+
 // ostream &operator<<(ostream &out, const Matrice &A)
 // {
 //     for (int i = 0; i < A.n; i++)
