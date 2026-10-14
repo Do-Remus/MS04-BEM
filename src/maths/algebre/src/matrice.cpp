@@ -16,134 +16,178 @@ Matrice matrice_aleatoire(const unsigned int rang, const Index taille)
     return U * V;
 }
 
+ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Eigen::Index rang_max, const double tolerance)
+{
+    // Index
+    const Eigen::Index m = A.rows();
+    const Eigen::Index n = A.cols();
 
+    // Structure de retour
+    ACA_decomposition aca;
 
-vector<Vecteur> full_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance){
-    //initialisation de la matrice R et A localement
-    Matrice Aiter = Matrice::Zero(A.rows(),A.cols());
-    Matrice Riter(A);
+    // Norme de A
+    const double norm_A = A.norm();
 
-    // first [rang-1] vectors are the u_k, then v_k are from [rang] to [2*rang -1]
-    vector<Vecteur> U_V(2*rang);
+    // Cas limites
+    if (m == 0 || n == 0 || norm_A == 0.0 || rang_max <= 0 || tolerance >= 1.0)
+    {
+        aca.U = Matrice(m, 0);
+        aca.V = Matrice(n, 0);
+        aca.rang = 0;
 
-    //boucle principale
-    int k=0;
-    double Anorm = A.norm();
-    while(k<rang && Riter.norm() >= tolerance*Anorm){
-        //trouver le pivot (valeur maximale en valeur absolue )
-        Index i_pivot =0;
-        Index j_pivot=0;
-        double abs_value_pivot=-1;
-        for(Index i=0; i<A.rows(); i++){
-            for(Index j=0; j<A.cols(); j++){
-                double a = abs(Riter(i,j));
-                if(a > abs_value_pivot){
-                    abs_value_pivot = a;
-                    i_pivot=i;
-                    j_pivot =j;
-                }
-            }
-        }
-
-        //extraire u_k+1 et v_k+1, et iteration Aiter, Riter
-       U_V[k+rang] = Riter.row(i_pivot);
-       U_V[k] = Riter.col(j_pivot)/Riter(i_pivot, j_pivot);
-       Aiter = Aiter + U_V[k]*U_V[k+rang].transpose();
-       cout<<"||A -Aiter|| = "<<(A-Aiter).norm()<<endl;
-       Riter = Riter - U_V[k]*U_V[k+rang].transpose();
-       k++;
+        return aca;
     }
-    return U_V;
 
+    // Le rang ne peut pas dépasser min(m,n)
+    const Eigen::Index rang_max_reel = std::min(rang_max, std::min(m, n));
+
+    // Initialisation des matrices
+    Matrice R_k = A;
+
+    vector<Vecteur> U;
+    U.reserve(rang_max_reel);
+
+    vector<Vecteur> V;
+    V.reserve(rang_max_reel);
+
+    // Boucle principale
+    Eigen::Index k = 0;
+
+    while (k < rang_max_reel && R_k.norm() > tolerance * norm_A)
+    {
+        // Trouver le pivot (valeur maximale en valeur absolue )
+        const auto [i_pivot, j_pivot] = indices_max_absolu(R_k);
+
+        // Aucun pivot non nul : le résidu est nul
+        if (i_pivot < 0 || std::abs(R_k(i_pivot, j_pivot)) == 0.0)
+            break;
+
+        // Mise à jour des vecteurs
+        V.push_back(R_k.row(i_pivot).transpose());
+        U.push_back(R_k.col(j_pivot) / R_k(i_pivot, j_pivot));
+
+        // Mise à jour du résidu
+        R_k -= U.back() * V.back().transpose();
+
+        // Mise à jour du rang
+        ++k;
+    }
+
+    aca.U = vecteurs_vers_matrice(U);
+    aca.V = vecteurs_vers_matrice(V);
+    aca.rang = k;
+
+    return aca;
 }
 
+ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Eigen::Index rang_max, const double tolerance)
+{
+    // Index
+    const Eigen::Index m = A.rows();
+    const Eigen::Index n = A.cols();
 
-ACA_decomposition partial_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance){
-    // first [rang-1] vectors are the u_k, then v_k are from [rang] to [2*rang -1]
-    ACA_decomposition sol;
-    sol.U.reserve(rang);
-    sol.V.reserve(rang);
-    //vector<Vecteur> U_V(2*rang);
-    //boucle principale
-    Index k=0;
-    Index next_ipivot_index =0;
-    double Anorm = A.norm();
-    double tol_sq = tolerance*tolerance;
-    Index Arows = A.rows();
-    Index Acols = A.cols();
-    vector<int> row_used(Arows,0);
-    row_used[0] =1; //first line will be used to as first iteration
-    double Aiter_Frobenius_norm = 0.;
-    double new_rank1_contribution = 1.;
-    while(k<=rang && new_rank1_contribution >= tol_sq*Aiter_Frobenius_norm){
-        //init pour les vecteurs u_k+1 et v_k+1
-        Vecteur u = Vecteur::Zero(Arows);
-        Vecteur v = Vecteur::Zero(Acols);
-        //trouver le pivot  (valeur maximale en valeur absolue) !!!! sur la ligne k !!!!
-        //i pivot is next_ipivot_index, j_pivot is searched
-        Index j_pivot=0;
-        double abs_value_pivot=-1;
-        complex<double> value_pivot = 0.;
-        for(Index j=0; j<Acols; j++){
-            complex<double> Riter_ipivot_j = A(next_ipivot_index,j);
-            for(Index l=0; l< k; l++){
-                Riter_ipivot_j -= sol.U[l][next_ipivot_index] * sol.V[l][j];
-            }
-            //extraction du coeff Riter_kj = Riter_ipivot_j la k ieme ligne de Rk pour definir v_k+1
-            v[j] = Riter_ipivot_j;
-            
-            //check maximalité de la norme du coeff
-            double a = abs(Riter_ipivot_j);
-            if(a > abs_value_pivot){
-                abs_value_pivot = a;
-                value_pivot = Riter_ipivot_j;
-                j_pivot =j;
-            }
-        }
-        if(abs_value_pivot < tol_sq){
-            return sol;
-        }
-       //calcul u_k+1 sans construire Riter 
-       for(Index i=0; i< Arows ; i++){
-            complex<double> Riter_i_jpivot = A(i,j_pivot);
-            for(Index l=0; l<k; l++){
-                Riter_i_jpivot -=sol.U[l][i] * sol.V[l][j_pivot];
-            }
-            u[i] = Riter_i_jpivot / value_pivot;
-       }
+    // Structure de retour
+    ACA_decomposition aca;
 
-       //push de u et v dans le struct 
-        sol.U.push_back(u);
-        sol.V.push_back(v);
-       //calcul iteratif de la norme de Frobenius pour Ak
-       complex<double> sum=0.;
-       for(Index l=0; l<k; l++){
-            //complex<double> uTu = U_V[k].transpose()*U_V[l].conjugate();
-            //complex<double> vTv = U_V[l+rang].transpose()*U_V[k+rang].conjugate();
-            sum += sol.U[l].dot(sol.U[k]) * sol.V[l].dot(sol.V[k]);
-       }
-       new_rank1_contribution =  sol.U[k].squaredNorm()* sol.V[k].squaredNorm();
-       cout<<"k ="<<k<<", new_rank1_contribution = "<<new_rank1_contribution<<endl;
-       Aiter_Frobenius_norm += 2*sum.real() + new_rank1_contribution ;
-       
-       //cout<<"abs(||A|| -||Aiter||) = "<<abs(Anorm - Aiter_Frobenius_norm)<<endl;
-       //Riter = Riter - U_V[k]*U_V[k+rang].transpose();
-      
-       //Find best index of line for next iteration
-       double best=0.;
-       for(Index i=0; i<Arows; i++){
-        if(row_used[i]==0 && abs(sol.U[k][i]) > best){
-            best = abs(sol.U[k][i]);
-            next_ipivot_index = i;
-        }
-       }
-       //add next_ipivot_index to used rows
-       row_used[next_ipivot_index] =1;
-       //k increment for while loop
-        k++;
+    // Le rang ne peut pas dépasser min(m,n)
+    const Eigen::Index rang_max_reel = std::min(rang_max, std::min(m, n));
+
+    // Cas limites
+    if (m == 0 || n == 0 || rang_max_reel <= 0)
+    {
+        aca.U = Matrice(m, 0);
+        aca.V = Matrice(n, 0);
+        aca.rang = 0;
+
+        return aca;
     }
-    return sol;
 
+    // Initialisation des matrices
+    vector<Vecteur> U;
+    U.reserve(rang_max_reel);
+
+    vector<Vecteur> V;
+    V.reserve(rang_max_reel);
+
+    std::vector<bool> ligne_utilisee(m, false);
+
+    // Boucle principale
+    Eigen::Index k = 0;
+    Eigen::Index i_pivot = 0;
+
+    // ||A_k||_F^2 et <A, A_k>_F
+    double norm_Frobenius_A_k_squared = 0.0;
+    double tolerance_squared = tolerance * tolerance;
+
+    while (k < rang_max_reel)
+    {
+        // Calcul de la ligne i_pivot du résidu,
+        // sans construire toute la matrice résiduelle.
+        Vecteur ligne_residuelle = A.row(i_pivot).transpose();
+
+        for (Eigen::Index j = 0; j < k; ++j)
+            ligne_residuelle -= U[j][i_pivot] * V[j];
+
+        // Pivot maximal sur la ligne sélectionnée
+        Eigen::Index j_pivot = indice_max_absolu(ligne_residuelle);
+
+        // Pivot nul sur cette ligne, elle n'est pas utilisable
+        if (j_pivot < 0)
+        {
+            break;
+        }
+
+        V.push_back(ligne_residuelle);
+
+        // Calcul de la colonne du résidu, normalisée
+        Vecteur colonne_residuelle = A.col(j_pivot);
+
+        for (Eigen::Index i = 0; i < k; ++i)
+            colonne_residuelle -= V[i][j_pivot] * U[i];
+
+        colonne_residuelle /= ligne_residuelle[j_pivot];
+
+        U.push_back(colonne_residuelle);
+
+        // Contribution de rang 1 : ||u_k v_k^T||_F^2
+        const double contribution_squared = colonne_residuelle.squaredNorm() * ligne_residuelle.squaredNorm();
+
+        // Mise a jour de ||A_k||_F^2
+        Complex cross_sum(0.0, 0.0);
+
+        for (Eigen::Index i = 0; i < k; ++i)
+            cross_sum += U[i].dot(colonne_residuelle) * V[i].dot(ligne_residuelle);
+
+        norm_Frobenius_A_k_squared += 2.0 * cross_sum.real() + contribution_squared;
+        norm_Frobenius_A_k_squared = std::max(0.0, norm_Frobenius_A_k_squared);
+
+        ++k;
+
+        // Critere de stagnation:
+        // ||u_k|| ||v_k|| <= tolerance * ||A_k||_F
+        if (contribution_squared <= tolerance_squared * norm_Frobenius_A_k_squared)
+        {
+            break;
+        }
+
+        // Marquer la ligne de pivot comme utilisee
+        ligne_utilisee[i_pivot] = true;
+
+        // Choisir la ligne suivante avec max |u[i]|
+        // parmi les lignes non encore utilisees.
+        i_pivot = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
+
+        // Toutes les lignes ont été utilisées
+        if (i_pivot < 0)
+            break;
+    }
+
+    // Conversion des facteurs en matrices
+    aca.U = vecteurs_vers_matrice(U);
+    aca.V = vecteurs_vers_matrice(V);
+    aca.rang = k;
+
+    return aca;
 }
 
 // ostream &operator<<(ostream &out, const Matrice &A)

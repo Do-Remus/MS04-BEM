@@ -167,8 +167,8 @@ int main(int argc, char **argv)
     /* -- Area for tests -- */
     /* -------------------- */
 
-    const Eigen::Index N = 20;
-    const Eigen::Index maxRank = N / 4;
+    const Eigen::Index N = 2000;
+    const Eigen::Index maxRank = N / 10;
     const Eigen::Index rankTroncature = N / 4;
 
     Matrice A = matrice_aleatoire(maxRank, N);
@@ -213,27 +213,64 @@ int main(int argc, char **argv)
     const Real erreurRelative =
         normeA > 0.0 ? erreurAbsolue / normeA : 0.0;
 
-    // Memory usage comparison
-    const std::size_t originalBytes =
-        static_cast<std::size_t>(A.size()) * sizeof(Complex);
+    // -- Test de ACA pivotage complet
+    ACA_decomposition aca = full_pivoted_cross_approximation(A, maxRank, 1e-8);
 
-    const std::size_t truncatedBytes =
-        static_cast<std::size_t>(U_r.size()) * sizeof(Complex) + static_cast<std::size_t>(sigma_r.size()) * sizeof(Real) + static_cast<std::size_t>(V_r.size()) * sizeof(Complex);
+    // -- Test de ACA pivotage partiel
+    ACA_decomposition aca_partial = partial_pivoted_cross_approximation(A, maxRank, 1e-8);
+
+    Matrice A_aca = aca.U * aca.V.transpose();
+    Matrice A_aca_partial = aca_partial.U * aca_partial.V.transpose();
+
+    // -- Erreurs
+    const Real erreurAbsolueACA = (A - A_aca).norm();
+    const Real erreurRelativeACA =
+        normeA > 0.0 ? erreurAbsolueACA / normeA : 0.0;
+
+    const Real erreurAbsolueACAPartial = (A - A_aca_partial).norm();
+    const Real erreurRelativeACAPartial =
+        normeA > 0.0 ? erreurAbsolueACAPartial / normeA : 0.0;
+
+    // -- Comparaison de mémoire SVD tronqué
+    const std::size_t originalBytes = static_cast<std::size_t>(A.size()) * sizeof(Complex);
+
+    const std::size_t truncatedBytes = static_cast<std::size_t>(U_r.size()) * sizeof(Complex) + static_cast<std::size_t>(sigma_r.size()) * sizeof(Real) + static_cast<std::size_t>(V_r.size()) * sizeof(Complex);
 
     const double originalMB = originalBytes / (1024.0 * 1024.0);
     const double truncatedMB = truncatedBytes / (1024.0 * 1024.0);
 
-    const double savedBytes =
-        static_cast<double>(originalBytes) - truncatedBytes;
+    const double savedBytes = static_cast<double>(originalBytes) - truncatedBytes;
 
     const double savedMB = savedBytes / (1024.0 * 1024.0);
 
-    const double savedPercent =
-        originalBytes > 0
-            ? 100.0 * savedBytes / originalBytes
-            : 0.0;
+    const double savedPercent = originalBytes > 0 ? 100.0 * savedBytes / originalBytes : 0.0;
 
     std::cout << std::scientific << std::setprecision(6);
+
+    // -- Comparaison de mémoire ACA
+    auto memoireACA = [](const ACA_decomposition &d) -> std::size_t
+    {
+        return static_cast<std::size_t>(
+                   d.U.size() + d.V.size()) *
+               sizeof(Complex);
+    };
+
+    const std::size_t memoireACAComplet = memoireACA(aca);
+    const std::size_t memoireACAPartiel = memoireACA(aca_partial);
+
+    auto MiB = [](std::size_t bytes) -> double
+    {
+        return static_cast<double>(bytes) / (1024.0 * 1024.0);
+    };
+
+    auto tauxCompression = [&](std::size_t bytes) -> double
+    {
+        return bytes > 0
+                   ? 100.0 * (1.0 -
+                              static_cast<double>(bytes) /
+                                  static_cast<double>(originalBytes))
+                   : 0.0;
+    };
 
     std::cout << "\n========== ANALYSE SVD ==========\n";
     std::cout << "Dimensions             : "
@@ -243,15 +280,6 @@ int main(int argc, char **argv)
     std::cout << "Rang de troncature      : " << r << '\n';
     std::cout << "Tolerance de rang       : " << tol << '\n';
 
-    std::cout << "\nValeurs singulieres :\n";
-    for (Eigen::Index i = 0; i < sigma.size(); ++i)
-    {
-        std::cout << "sigma[" << i << "] = "
-                  << sigma(i)
-                  << (sigma(i) > tol ? " (significative)" : " (petite)")
-                  << '\n';
-    }
-
     std::cout << "\n========== ERREUR ==========\n";
     std::cout << "Norme de A              : " << normeA << '\n';
     std::cout << "Norme de A_r            : " << A_r.norm() << '\n';
@@ -259,7 +287,7 @@ int main(int argc, char **argv)
     std::cout << "Erreur relative         : " << erreurRelative << '\n';
     std::cout << "================================\n";
 
-    std::cout << "\n========== MEMORY SAVINGS ==========\n";
+    std::cout << "\n========== MEMOIRE SVD ==========\n";
     std::cout << "Original matrix       : "
               << originalMB << " MiB\n";
     std::cout << "Truncated SVD factors : "
@@ -270,11 +298,29 @@ int main(int argc, char **argv)
               << savedPercent << " %\n";
     std::cout << "====================================\n";
 
+    std::cout << "\n========== ANALYSE ACA ==========\n";
 
-    // -- Test de ACA pivotage complet
-    vector<Vecteur> U_V = full_pivoted_cross_approximation(A, maxRank, 1e-8);
-    ACA_decomposition U_V_partial = partial_pivoted_cross_approximation(A, maxRank+1, 1e-8);
-    
+    std::cout << "\n--- ACA : pivotage complet ---\n";
+    std::cout << "Rang obtenu             : " << aca.rang << '\n';
+    std::cout << "Erreur absolue          : " << erreurAbsolueACA << '\n';
+    std::cout << "Erreur relative         : " << erreurRelativeACA << '\n';
+    std::cout << "Memoire des facteurs    : "
+              << MiB(memoireACAComplet) << " MiB\n";
+    std::cout << "Reduction memoire       : "
+              << tauxCompression(memoireACAComplet) << " %\n";
+
+    std::cout << "\n--- ACA : pivotage partiel ---\n";
+    std::cout << "Rang obtenu             : " << aca_partial.rang << '\n';
+    std::cout << "Erreur absolue          : "
+              << erreurAbsolueACAPartial << '\n';
+    std::cout << "Erreur relative         : "
+              << erreurRelativeACAPartial << '\n';
+    std::cout << "Memoire des facteurs    : "
+              << MiB(memoireACAPartiel) << " MiB\n";
+    std::cout << "Reduction memoire       : "
+              << tauxCompression(memoireACAPartiel) << " %\n";
+
+    std::cout << "=================================\n";
 
 #endif
 
