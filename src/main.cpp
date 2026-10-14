@@ -273,6 +273,7 @@ int main(int argc, char **argv)
 
     // -- Test de ACA pivotage complet
     vector<Vecteur> U_V = full_pivoted_cross_approximation(A, maxRank, 1e-8);
+    ACA_decomposition U_V_partial = partial_pivoted_cross_approximation(A, maxRank+1, 1e-8);
     
 
 #endif

@@ -7,6 +7,11 @@
 
 using Matrice = Eigen::MatrixXcd;
 
+struct ACA_decomposition{
+    vector<Vecteur> U;
+    vector<Vecteur> V;
+};
+
 // class Matrice
 // {
 // protected:
@@ -32,6 +37,6 @@ Matrice matrice_aleatoire(const unsigned int rang, const Index taille);
 
 vector<Vecteur> full_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance);
 
-vector<Vecteur> partial_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance);
+ACA_decomposition partial_pivoted_cross_approximation(const Matrice& A, const Index rang, double tolerance);
 
 #endif
