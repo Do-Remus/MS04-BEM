@@ -167,7 +167,7 @@ int main(int argc, char **argv)
     /* -- Area for tests -- */
     /* -------------------- */
 
-    const Eigen::Index N = 2000;
+    const Eigen::Index N = 100;
     const Eigen::Index maxRank = N / 10;
     const Eigen::Index rankTroncature = N / 4;
 
@@ -175,25 +175,25 @@ int main(int argc, char **argv)
 
     // Vérification des dimensions
     std::cout << "Dimensions de A : "
-              << A.rows() << " x " << A.cols() << '\n';
+              << A.rows() << " x " << A.cols() << std::endl;
+
+    std::cout << "SVD..." << std::endl;
 
     // Pour une matrice complexe, utiliser JacobiSVD
-    Eigen::JacobiSVD<Matrice> svd(
-        A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::JacobiSVD<Matrice> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    std::cout << "Troncature..." << std::endl;
 
     const auto &sigma = svd.singularValues();
 
-    const Eigen::Index r = std::min(
-        rankTroncature,
-        static_cast<Eigen::Index>(sigma.size()));
+    const Eigen::Index r = std::min(rankTroncature, static_cast<Eigen::Index>(sigma.size()));
 
     if (r < 0)
         throw std::invalid_argument("Rang de troncature invalide");
 
     const Real sigmaMax = sigma.size() > 0 ? sigma(0) : 0.0;
 
-    const Real tol =
-        std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
+    const Real tol = std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
 
     Eigen::Index rangReel = 0;
 
@@ -213,11 +213,17 @@ int main(int argc, char **argv)
     const Real erreurRelative =
         normeA > 0.0 ? erreurAbsolue / normeA : 0.0;
 
+    std::cout << "ACA..." << std::endl;
+
     // -- Test de ACA pivotage complet
     ACA_decomposition aca = full_pivoted_cross_approximation(A, maxRank, 1e-8);
 
+    std::cout << "ACA Partiel..." << std::endl;
+
     // -- Test de ACA pivotage partiel
     ACA_decomposition aca_partial = partial_pivoted_cross_approximation(A, maxRank, 1e-8);
+
+    std::cout << "Préaffichage..." << std::endl;
 
     Matrice A_aca = aca.U * aca.V.transpose();
     Matrice A_aca_partial = aca_partial.U * aca_partial.V.transpose();
