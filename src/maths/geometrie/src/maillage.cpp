@@ -45,7 +45,7 @@ void Maillage::export_maillage(const string &filename) const
     return;
 }
 
-vector<Point> Maillage::PointsMaillage()
+vector<Point> Maillage::PointsMaillage() const
 { // only is useful for connex meshings
     vector<Point> points(this->size());
 
@@ -218,4 +218,41 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
         }
     }
     return pointsSolution;
+}
+
+Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100)
+{
+    Arbre arbre = std::make_unique<Noeud>();
+
+    arbre->niveau = 0;
+
+    // -- Initialisation de la première boite --
+
+    const std::vector<Point> &points = maillage.PointsMaillage();
+    arbre->indices.resize(points.size());
+
+    arbre->boite.x_min = std::numeric_limits<double>::infinity();
+    arbre->boite.x_max = -std::numeric_limits<double>::infinity();
+
+    arbre->boite.y_min = std::numeric_limits<double>::infinity();
+    arbre->boite.y_max = -std::numeric_limits<double>::infinity();
+
+    for (Index i = 0; i < points.size(); ++i)
+    {
+        arbre->indices[i] = i;
+
+        const Point &point = points[i];
+
+        arbre->boite.x_min = std::min(arbre->boite.x_min, point.x);
+        arbre->boite.x_max = std::max(arbre->boite.x_max, point.x);
+
+        arbre->boite.y_min = std::min(arbre->boite.y_min, point.y);
+        arbre->boite.y_max = std::max(arbre->boite.y_max, point.y);
+    }
+
+    arbre->boite.calculer_diametre();
+
+    // -- Construction récursive de l'arbre --
+
+    return arbre;
 }
