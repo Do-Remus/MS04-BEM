@@ -3,7 +3,7 @@
 Matrice get_matrice_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
     const Index N = maillage.size();
-    Matrice A = Matrice::Zero(N,N);
+    Matrice A = Matrice::Zero(N, N);
 
     for (Index i = 0; i < N; ++i)
     {
@@ -51,6 +51,34 @@ Vecteur colonne_bem(const Eigen::Index j, const Maillage &maillage, const std::v
     Vecteur colonne(N);
 
     for (Eigen::Index i = 0; i < N; ++i)
+    {
+        colonne[i] = matrice_bem(i, j, maillage, quadrature_maillage);
+    }
+
+    return colonne;
+}
+
+Vecteur ligne_bem(const Eigen::Index i, const std::vector<Eigen::Index> selection_j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    const Eigen::Index N = static_cast<Eigen::Index>(selection_j.size());
+
+    Vecteur ligne(N);
+
+    for (const Eigen::Index j : selection_j)
+    {
+        ligne[j] = matrice_bem(i, j, maillage, quadrature_maillage);
+    }
+
+    return ligne;
+}
+
+Vecteur colonne_bem(const Eigen::Index j, const std::vector<Eigen::Index> selection_i, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    const Eigen::Index N = static_cast<Eigen::Index>(selection_i.size());
+
+    Vecteur colonne(N);
+
+    for (const Eigen::Index i : selection_i)
     {
         colonne[i] = matrice_bem(i, j, maillage, quadrature_maillage);
     }

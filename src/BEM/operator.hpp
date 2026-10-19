@@ -10,6 +10,10 @@ Vecteur ligne_bem(const Eigen::Index i, const Maillage &maillage, const std::vec
 
 Vecteur colonne_bem(const Eigen::Index j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage);
 
+Vecteur ligne_bem(const Eigen::Index i, const std::vector<Eigen::Index> selection_j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage);
+
+Vecteur colonne_bem(const Eigen::Index j, const std::vector<Eigen::Index> selection_i, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage);
+
 inline Complex matrice_bem(const Eigen::Index i, const Eigen::Index j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
     const Segment &Si = maillage[i];
