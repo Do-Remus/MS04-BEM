@@ -167,12 +167,27 @@ int main(int argc, char **argv)
     /* -- Area for tests -- */
     /* -------------------- */
 
-    const Eigen::Index N = 100;
-    const Eigen::Index maxRank = N / 10;
-    const Eigen::Index rankTroncature = N / 4;
+    Timers timers;
 
-    Matrice A = matrice_aleatoire(maxRank, N);
+    //Matrice A = matrice_aleatoire(maxRank, N);
+    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
+                            [&](const Maillage &maillage)
+                            {
+                                maillage.export_maillage("outputs/cercle_maillage.txt");
+                                affichage_maillage(Point(0, 0), maillage.size(), "outputs/cercle_maillage.txt");
+                            });
 
+    const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
+                                                                   [&]()
+                                                                   {
+                                                                       return get_quadrature_maillage(maillage, get_legendre_data(ordre));
+                                                                   });     
+    const Eigen::Index N = maillage.size();
+    const Eigen::Index maxRank = N;
+    //const Eigen::Index rankTroncature = maxRank;
+    for(Eigen::Index rankTroncature=10; rankTroncature <N+1 ; rankTroncature+=30){
+    std::cout<< " N ="<< N<<std::endl;                   
+    Matrice A = get_matrice_bem(maillage,quadrature_maillage);
     // Vérification des dimensions
     std::cout << "Dimensions de A : "
               << A.rows() << " x " << A.cols() << std::endl;
@@ -180,8 +195,8 @@ int main(int argc, char **argv)
     std::cout << "SVD..." << std::endl;
 
     // Pour une matrice complexe, utiliser JacobiSVD
+    timers.start("svd");
     Eigen::JacobiSVD<Matrice> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
     std::cout << "Troncature..." << std::endl;
 
     const auto &sigma = svd.singularValues();
@@ -196,10 +211,12 @@ int main(int argc, char **argv)
     const Real tol = std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
 
     Eigen::Index rangReel = 0;
-
+    
     for (Eigen::Index i = 0; i < sigma.size(); ++i)
         if (sigma(i) > tol)
             ++rangReel;
+
+    timers.end("svd");
 
     // SVD tronquée
     Matrice U_r = svd.matrixU().leftCols(r);
@@ -216,13 +233,15 @@ int main(int argc, char **argv)
     std::cout << "ACA..." << std::endl;
 
     // -- Test de ACA pivotage complet
+    timers.start("ACA_pivot_complet");
     ACA_decomposition aca = full_pivoted_cross_approximation(A, maxRank, 1e-8);
-
+    timers.end("ACA_pivot_complet");
     std::cout << "ACA Partiel..." << std::endl;
 
     // -- Test de ACA pivotage partiel
+    timers.start("ACA_pivot_partiel");
     ACA_decomposition aca_partial = partial_pivoted_cross_approximation(A, maxRank, 1e-8);
-
+    timers.end("ACA_pivot_partiel");
     std::cout << "Préaffichage..." << std::endl;
 
     Matrice A_aca = aca.U * aca.V.transpose();
@@ -285,6 +304,9 @@ int main(int argc, char **argv)
     std::cout << "Rang numerique estime   : " << rangReel << '\n';
     std::cout << "Rang de troncature      : " << r << '\n';
     std::cout << "Tolerance de rang       : " << tol << '\n';
+    std::cout << "Temps de calcul         : ";
+    timers.print("svd");
+    std::cout<< '\n';
 
     std::cout << "\n========== ERREUR ==========\n";
     std::cout << "Norme de A              : " << normeA << '\n';
@@ -314,6 +336,9 @@ int main(int argc, char **argv)
               << MiB(memoireACAComplet) << " MiB\n";
     std::cout << "Reduction memoire       : "
               << tauxCompression(memoireACAComplet) << " %\n";
+    std::cout << "Temps de calcul         : ";
+    timers.print("ACA_pivot_complet");
+    std::cout<< '\n';
 
     std::cout << "\n--- ACA : pivotage partiel ---\n";
     std::cout << "Rang obtenu             : " << aca_partial.rang << '\n';
@@ -326,7 +351,12 @@ int main(int argc, char **argv)
     std::cout << "Reduction memoire       : "
               << tauxCompression(memoireACAPartiel) << " %\n";
 
+    std::cout << "Temps de calcul         : ";
+    timers.print("ACA_pivot_partiel");
+    std::cout<< '\n';
+
     std::cout << "=================================\n";
+}
 
 #endif
 

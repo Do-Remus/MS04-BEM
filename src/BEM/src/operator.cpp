@@ -3,7 +3,7 @@
 Matrice get_matrice_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
     const Index N = maillage.size();
-    Matrice A = Matrice::Zero(N);
+    Matrice A = Matrice::Zero(N,N);
 
     for (Index i = 0; i < N; ++i)
     {
