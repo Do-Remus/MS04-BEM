@@ -27,6 +27,4 @@ inline Complex matrice_bem(const Eigen::Index i, const Eigen::Index j, const Mai
     return integ_double(green, qi, quadrature_maillage[j]);
 }
 
-ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Eigen::Index rang_max, const double tolerance);
-
 #endif

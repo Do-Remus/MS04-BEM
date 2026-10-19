@@ -4,4 +4,8 @@
 #include "../../global/commun.hpp"
 #include "../../maths/commun.hpp"
 
+#include "../commun.hpp"
+
+ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Eigen::Index rang_max, const double tolerance);
+
 #endif
