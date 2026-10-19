@@ -1,10 +1,10 @@
 #include "../operator.hpp"
 
-ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Eigen::Index rang_max, const double tolerance)
+ACA_decomposition aca_bem(const std::vector<Eigen::Index> selection_i, const std::vector<Eigen::Index> selection_j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Eigen::Index rang_max, const double tolerance)
 {
     // Index
-    const Eigen::Index m = static_cast<Eigen::Index>(maillage.size());
-    const Eigen::Index n = m;
+    const Eigen::Index m = static_cast<Eigen::Index>(selection_i.size());
+    const Eigen::Index n = static_cast<Eigen::Index>(selection_j.size());
 
     // Structure de retour
     ACA_decomposition aca;
@@ -43,7 +43,7 @@ ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<Quadrature
     {
         // Calcul de la ligne i_pivot du résidu,
         // sans construire toute la matrice résiduelle.
-        Vecteur ligne_residuelle = ligne_bem(i_pivot, maillage, quadrature_maillage);
+        Vecteur ligne_residuelle = ligne_bem(selection_i[i_pivot], selection_j, maillage, quadrature_maillage);
 
         for (Eigen::Index j = 0; j < k; ++j)
             ligne_residuelle -= U[j][i_pivot] * V[j];
@@ -60,7 +60,7 @@ ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<Quadrature
         V.push_back(ligne_residuelle);
 
         // Calcul de la colonne du résidu, normalisée
-        Vecteur colonne_residuelle = colonne_bem(j_pivot, maillage, quadrature_maillage);
+        Vecteur colonne_residuelle = colonne_bem(selection_j[j_pivot], selection_i, maillage, quadrature_maillage);
 
         for (Eigen::Index i = 0; i < k; ++i)
             colonne_residuelle -= V[i][j_pivot] * U[i];
