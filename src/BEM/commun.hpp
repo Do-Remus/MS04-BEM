@@ -11,5 +11,6 @@
 #include "reconstruction.hpp"
 #include "erreurs.hpp"
 #include "export.hpp"
+#include "operator.hpp"
 
 #endif
