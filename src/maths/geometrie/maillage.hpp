@@ -61,4 +61,6 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage);
 
 Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100);
 
+void subdivision_arbre_recursive( Noeud &neoud, const Index N_leafs, std::vector<Point> &points);
+
 #endif

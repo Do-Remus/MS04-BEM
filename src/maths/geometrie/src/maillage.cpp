@@ -220,13 +220,12 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
     return pointsSolution;
 }
 
-Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100)
+Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
 {
     Arbre arbre = std::make_unique<Noeud>();
+    // -- Initialisation du 1er noeud --
 
     arbre->niveau = 0;
-
-    // -- Initialisation de la première boite --
 
     const std::vector<Point> &points = maillage.PointsMaillage();
     arbre->indices.resize(points.size());
@@ -253,6 +252,52 @@ Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 
     arbre->boite.calculer_diametre();
 
     // -- Construction récursive de l'arbre --
-
     return arbre;
+}
+
+
+void subdivision_arbre_recursive( Noeud &noeud, const Index N_leafs, std::vector<Point> &points){
+
+    if(noeud.indices.size() > N_leafs){
+        const double largeur = (noeud.boite.x_max - noeud.boite.x_min);
+        const double hauteur = (noeud.boite.y_max - noeud.boite.y_min);
+
+        //separation geometrique en 2 groupe divisée selon la plus longue direction
+        //trouver quelle est la direction choisie (x ou y) puis definir nouvelles boites englobantes definies comme les moities de la boite englobante du parent
+        const bool couper_x  = (largeur >= hauteur);
+        const double milieu = couper_x ? (noeud.boite.x_min +noeud.boite.x_max)/2. : (noeud.boite.y_min +noeud.boite.y_max)/2.;
+        noeud.fils_droit = std::make_unique<Noeud>();
+        noeud.fils_gauche = std::make_unique<Noeud>();
+        noeud.fils_gauche->niveau = noeud.niveau +1;
+        noeud.fils_droit->niveau = noeud.niveau +1;
+
+        //fils droit
+        noeud.fils_droit->boite.x_min = noeud.boite.x_min;
+        noeud.fils_droit->boite.y_min = noeud.boite.y_min;
+        noeud.fils_droit->boite.x_max = couper_x ? milieu : noeud.boite.x_max;
+        noeud.fils_droit->boite.y_max = couper_x ? noeud.boite.y_max : milieu;
+
+        //fils gauche
+        noeud.fils_gauche->boite.x_min = couper_x ? milieu : noeud.boite.x_min;
+        noeud.fils_gauche->boite.y_min = couper_x ? noeud.boite.y_min : milieu;
+        noeud.fils_gauche->boite.x_max = noeud.boite.x_max;
+        noeud.fils_gauche->boite.x_max = noeud.boite.x_max;
+
+        //iteration sur les points indexés dans le parent pour séparation sur les 2 fils
+        for(Index i=0; i<noeud.indices.size(); i++){
+            const double coord = couper_x ? points[noeud.indices[i]].x : points[noeud.indices[i]].y;
+            if(coord <= milieu){
+                noeud.fils_droit->indices.push_back(noeud.indices[i]);
+            }else{
+                noeud.fils_gauche->indices.push_back(noeud.indices[i]);
+            }
+        }
+        
+
+    }else{
+        return;
+    }
+    subdivision_arbre_recursive(*noeud.fils_gauche, N_leafs, points);
+    subdivision_arbre_recursive(*noeud.fils_droit, N_leafs, points);
+
 }
