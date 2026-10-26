@@ -39,11 +39,16 @@ struct Noeud
 
 using Arbre = std::unique_ptr<Noeud>;
 
+using Intervalle = std::pair<Index, Index>;
+
+using IntervallesClusters = std::unordered_map<const Noeud *, Intervalle>;
+
 enum class TypeBloc
 {
     Interne,    // Possède quatre blocs fils
     Admissible, // Bloc admissible : compression ACA possible
-    Dense       // Bloc non admissible : stockage dense
+    Dense,      // Bloc non admissible : stockage dense
+    Vide        // Bloc avec aucun point
 };
 
 struct Bloc
@@ -72,17 +77,35 @@ public:
     void export_maillage(const string &filename) const;
 
     vector<Point> PointsMaillage() const;
+    vector<Point> PointsMilieuMaillage() const;
 };
 
 /* Fonctions associées à la classe */
 
-std::vector<Point> construire_maillage_solution(const Maillage &maillage);
-
-Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100);
-
-void subdivision_arbre_recursive( Noeud &neoud, const Index N_leafs, std::vector<Point> &points);
 double distance(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b);
 
 bool sont_admissibles(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b, const double eta);
+
+std::vector<Point> construire_maillage_solution(const Maillage &maillage);
+
+void subdivision_arbre_recursive(Noeud &neoud, const Index N_leafs, const std::vector<Point> &points);
+
+Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100);
+
+ArbreBlocs construire_bloc_recursif(const Noeud &tau, const Noeud &sigma, const double eta);
+
+std::vector<Index> construire_permutation(const Arbre &arbre);
+
+std::vector<Index> construire_permutation_inverse(const std::vector<Index> &permutation);
+
+void construire_intervalles_recursifs(const Noeud &noeud, Index &position, IntervallesClusters &intervalles);
+
+IntervallesClusters construire_intervalles_clusters(const Arbre &arbre);
+
+void ecrire_arbre_clusters(const Arbre &arbre, const std::string &fichier);
+
+ArbreBlocs construire_arbre_blocs(const Arbre &arbre_clusters, const double eta);
+
+void ecrire_arbre_blocs(const ArbreBlocs &arbre, const std::string &fichier, const IntervallesClusters &intervalles);
 
 #endif

@@ -54,7 +54,20 @@ vector<Point> Maillage::PointsMaillage() const
         points[i] = this->operator[](i).P1;
     }
 
-    cout << "out of PointsMaillage 0 " << endl;
+    return points;
+}
+
+vector<Point> Maillage::PointsMilieuMaillage() const
+{
+    vector<Point> points(this->size());
+
+    for (Index i = 0; i < this->size(); ++i)
+    {
+        const auto &segment = this->operator[](i);
+
+        points[i].x = (segment.P1.x + segment.P2.x) / 2.0;
+        points[i].y = (segment.P1.y + segment.P2.y) / 2.0;
+    }
 
     return points;
 }
@@ -80,6 +93,18 @@ Maillage::Maillage(const vector<Point> &points)
 }
 
 /* Fonctions associées à la class */
+
+double distance(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b)
+{
+    double distance_x = std::max({0.0, boite_a.x_min - boite_b.x_max, boite_b.x_min - boite_a.x_max});
+    double distance_y = std::max({0.0, boite_a.y_min - boite_b.y_max, boite_b.y_min - boite_a.y_max});
+    return std::sqrt(distance_x * distance_x + distance_y * distance_y);
+}
+
+bool sont_admissibles(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b, const double eta)
+{
+    return std::min(boite_a.diametre, boite_b.diametre) <= eta * distance(boite_a, boite_b);
+}
 
 std::vector<Point> construire_maillage_solution(const Maillage &maillage)
 {
@@ -220,6 +245,61 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
     return pointsSolution;
 }
 
+void subdivision_arbre_recursive(Noeud &noeud, const Index N_leafs, const std::vector<Point> &points)
+{
+
+    if (noeud.indices.size() > N_leafs)
+    {
+        const double largeur = (noeud.boite.x_max - noeud.boite.x_min);
+        const double hauteur = (noeud.boite.y_max - noeud.boite.y_min);
+
+        // separation geometrique en 2 groupe divisée selon la plus longue direction
+        // trouver quelle est la direction choisie (x ou y) puis definir nouvelles boites englobantes definies comme les moities de la boite englobante du parent
+        const bool couper_x = (largeur >= hauteur);
+        const double milieu = couper_x ? (noeud.boite.x_min + noeud.boite.x_max) / 2. : (noeud.boite.y_min + noeud.boite.y_max) / 2.;
+        noeud.fils_droit = std::make_unique<Noeud>();
+        noeud.fils_gauche = std::make_unique<Noeud>();
+        noeud.fils_gauche->niveau = noeud.niveau + 1;
+        noeud.fils_droit->niveau = noeud.niveau + 1;
+
+        // fils droit
+        noeud.fils_droit->boite.x_min = noeud.boite.x_min;
+        noeud.fils_droit->boite.y_min = noeud.boite.y_min;
+        noeud.fils_droit->boite.x_max = couper_x ? milieu : noeud.boite.x_max;
+        noeud.fils_droit->boite.y_max = couper_x ? noeud.boite.y_max : milieu;
+
+        // fils gauche
+        noeud.fils_gauche->boite.x_min = couper_x ? milieu : noeud.boite.x_min;
+        noeud.fils_gauche->boite.y_min = couper_x ? noeud.boite.y_min : milieu;
+        noeud.fils_gauche->boite.x_max = noeud.boite.x_max;
+        noeud.fils_gauche->boite.y_max = noeud.boite.y_max;
+
+        // iteration sur les points indexés dans le parent pour séparation sur les 2 fils
+        for (Index i = 0; i < noeud.indices.size(); i++)
+        {
+            const double coord = couper_x ? points[noeud.indices[i]].x : points[noeud.indices[i]].y;
+            if (coord <= milieu)
+            {
+                noeud.fils_droit->indices.push_back(noeud.indices[i]);
+            }
+            else
+            {
+                noeud.fils_gauche->indices.push_back(noeud.indices[i]);
+            }
+        }
+
+        // Calcul des diamètres des boîtes des deux fils
+        noeud.fils_gauche->boite.calculer_diametre();
+        noeud.fils_droit->boite.calculer_diametre();
+    }
+    else
+    {
+        return;
+    }
+    subdivision_arbre_recursive(*noeud.fils_gauche, N_leafs, points);
+    subdivision_arbre_recursive(*noeud.fils_droit, N_leafs, points);
+}
+
 Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
 {
     Arbre arbre = std::make_unique<Noeud>();
@@ -227,7 +307,7 @@ Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
 
     arbre->niveau = 0;
 
-    const std::vector<Point> &points = maillage.PointsMaillage();
+    const std::vector<Point> &points = maillage.PointsMilieuMaillage();
     arbre->indices.resize(points.size());
 
     arbre->boite.x_min = std::numeric_limits<double>::infinity();
@@ -252,66 +332,138 @@ Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
     arbre->boite.calculer_diametre();
 
     // -- Construction récursive de l'arbre --
+    subdivision_arbre_recursive(*arbre, N_leafs, points);
+
     return arbre;
 }
 
+std::vector<Index> construire_permutation(const Arbre &arbre)
+{
+    std::vector<Index> permutation;
 
-void subdivision_arbre_recursive( Noeud &noeud, const Index N_leafs, std::vector<Point> &points){
+    if (!arbre)
+        return permutation;
 
-    if(noeud.indices.size() > N_leafs){
-        const double largeur = (noeud.boite.x_max - noeud.boite.x_min);
-        const double hauteur = (noeud.boite.y_max - noeud.boite.y_min);
+    // Parcours en profondeur : gauche puis droite.
+    auto visiter = [&](auto &&self, const Noeud &noeud) -> void
+    {
+        if (noeud.est_feuille())
+        {
+            for (const Index i : noeud.indices)
+                permutation.push_back(i);
 
-        //separation geometrique en 2 groupe divisée selon la plus longue direction
-        //trouver quelle est la direction choisie (x ou y) puis definir nouvelles boites englobantes definies comme les moities de la boite englobante du parent
-        const bool couper_x  = (largeur >= hauteur);
-        const double milieu = couper_x ? (noeud.boite.x_min +noeud.boite.x_max)/2. : (noeud.boite.y_min +noeud.boite.y_max)/2.;
-        noeud.fils_droit = std::make_unique<Noeud>();
-        noeud.fils_gauche = std::make_unique<Noeud>();
-        noeud.fils_gauche->niveau = noeud.niveau +1;
-        noeud.fils_droit->niveau = noeud.niveau +1;
-
-        //fils droit
-        noeud.fils_droit->boite.x_min = noeud.boite.x_min;
-        noeud.fils_droit->boite.y_min = noeud.boite.y_min;
-        noeud.fils_droit->boite.x_max = couper_x ? milieu : noeud.boite.x_max;
-        noeud.fils_droit->boite.y_max = couper_x ? noeud.boite.y_max : milieu;
-
-        //fils gauche
-        noeud.fils_gauche->boite.x_min = couper_x ? milieu : noeud.boite.x_min;
-        noeud.fils_gauche->boite.y_min = couper_x ? noeud.boite.y_min : milieu;
-        noeud.fils_gauche->boite.x_max = noeud.boite.x_max;
-        noeud.fils_gauche->boite.x_max = noeud.boite.x_max;
-
-        //iteration sur les points indexés dans le parent pour séparation sur les 2 fils
-        for(Index i=0; i<noeud.indices.size(); i++){
-            const double coord = couper_x ? points[noeud.indices[i]].x : points[noeud.indices[i]].y;
-            if(coord <= milieu){
-                noeud.fils_droit->indices.push_back(noeud.indices[i]);
-            }else{
-                noeud.fils_gauche->indices.push_back(noeud.indices[i]);
-            }
+            return;
         }
-        
 
-    }else{
+        if (noeud.fils_gauche)
+            self(self, *noeud.fils_gauche);
+
+        if (noeud.fils_droit)
+            self(self, *noeud.fils_droit);
+    };
+
+    visiter(visiter, *arbre);
+
+    return permutation;
+}
+
+std::vector<Index> construire_permutation_inverse(const std::vector<Index> &permutation)
+{
+    std::vector<Index> inverse(permutation.size());
+    std::vector<bool> vu(permutation.size(), false);
+
+    for (Index k = 0; k < permutation.size(); ++k)
+    {
+        const Index i = permutation[k];
+
+        if (i >= permutation.size() || vu[i])
+            throw std::runtime_error(
+                "La permutation contient un indice invalide ou un doublon.");
+
+        inverse[i] = k;
+        vu[i] = true;
+    }
+
+    return inverse;
+}
+
+void construire_intervalles_recursifs(const Noeud &noeud, Index &position, IntervallesClusters &intervalles)
+{
+    const Index debut = position;
+
+    if (noeud.est_feuille())
+    {
+        position += noeud.indices.size();
+        intervalles[&noeud] = {debut, position};
         return;
     }
-    subdivision_arbre_recursive(*noeud.fils_gauche, N_leafs, points);
-    subdivision_arbre_recursive(*noeud.fils_droit, N_leafs, points);
 
+    if (noeud.fils_gauche)
+    {
+        construire_intervalles_recursifs(
+            *noeud.fils_gauche, position, intervalles);
+    }
+
+    if (noeud.fils_droit)
+    {
+        construire_intervalles_recursifs(
+            *noeud.fils_droit, position, intervalles);
+    }
+
+    intervalles[&noeud] = {debut, position};
 }
 
-double distance(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b)
+IntervallesClusters construire_intervalles_clusters(const Arbre &arbre)
 {
-    double distance_x = std::max({0.0, boite_a.x_min - boite_b.x_max, boite_b.x_min - boite_b.x_max});
-    double distance_y = std::max({0.0, boite_a.y_min - boite_b.y_max, boite_b.y_min - boite_b.y_max});
-    return std::sqrt(distance_x * distance_x + distance_y * distance_y);
+    IntervallesClusters intervalles;
+
+    if (!arbre)
+        return intervalles;
+
+    Index position = 0;
+
+    construire_intervalles_recursifs(*arbre, position, intervalles);
+
+    return intervalles;
 }
 
-bool sont_admissibles(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b, const double eta)
+void ecrire_arbre_clusters(const Arbre &arbre, const std::string &fichier)
 {
-    return std::min(boite_a.diametre, boite_b.diametre) <= eta * distance(boite_a, boite_b);
+    std::ofstream out(fichier);
+
+    if (!out)
+        throw std::runtime_error("Impossible d'ouvrir " + fichier);
+
+    out << "id,parent,niveau,taille,x_min,x_max,y_min,y_max,diametre\n";
+    out << std::setprecision(17);
+
+    if (!arbre)
+        return;
+
+    std::size_t prochain_id = 0;
+
+    auto visiter = [&](auto &&self, const Noeud &noeud, long long parent_id) -> void
+    {
+        const std::size_t id = prochain_id++;
+
+        out << id << ','
+            << parent_id << ','
+            << noeud.niveau << ','
+            << noeud.indices.size() << ','
+            << noeud.boite.x_min << ','
+            << noeud.boite.x_max << ','
+            << noeud.boite.y_min << ','
+            << noeud.boite.y_max << ','
+            << noeud.boite.diametre << '\n';
+
+        if (noeud.fils_gauche)
+            self(self, *noeud.fils_gauche, static_cast<long long>(id));
+
+        if (noeud.fils_droit)
+            self(self, *noeud.fils_droit, static_cast<long long>(id));
+    };
+
+    visiter(visiter, *arbre, -1);
 }
 
 ArbreBlocs construire_bloc_recursif(const Noeud &tau, const Noeud &sigma, const double eta)
@@ -321,6 +473,13 @@ ArbreBlocs construire_bloc_recursif(const Noeud &tau, const Noeud &sigma, const 
 
     bloc->cluster_lignes = &tau;
     bloc->cluster_colonnes = &sigma;
+
+    // 0. Le bloc est vide : c'est une feuille particulière.
+    if (tau.indices.empty() || sigma.indices.empty())
+    {
+        bloc->type = TypeBloc::Vide;
+        return bloc;
+    }
 
     // 1. Le bloc est admissible : c'est une feuille.
     if (sont_admissibles(tau.boite, sigma.boite, eta))
@@ -357,4 +516,84 @@ ArbreBlocs construire_arbre_blocs(const Arbre &arbre_clusters, const double eta)
     }
 
     return construire_bloc_recursif(*arbre_clusters, *arbre_clusters, eta);
+}
+
+void ecrire_arbre_blocs(const ArbreBlocs &arbre, const std::string &fichier, const IntervallesClusters &intervalles)
+{
+    std::ofstream out(fichier);
+
+    if (!out)
+        throw std::runtime_error("Impossible d'ouvrir " + fichier);
+
+    out << "id,parent,niveau,type,m,n,"
+           "i_debut,i_fin,j_debut,j_fin,"
+           "x_min_l,x_max_l,y_min_l,y_max_l,"
+           "x_min_c,x_max_c,y_min_c,y_max_c\n";
+
+    out << std::setprecision(17);
+
+    if (!arbre)
+        return;
+
+    auto nom_type = [](TypeBloc type) -> const char *
+    {
+        switch (type)
+        {
+        case TypeBloc::Interne:
+            return "Interne";
+        case TypeBloc::Admissible:
+            return "Admissible";
+        case TypeBloc::Dense:
+            return "Dense";
+        case TypeBloc::Vide:
+            return "Vide";
+        }
+        return "Inconnu";
+    };
+
+    std::size_t prochain_id = 0;
+
+    auto visiter = [&](auto &&self, const Bloc &bloc, long long parent_id, std::size_t niveau) -> void
+    {
+        const std::size_t id = prochain_id++;
+
+        const auto &l = bloc.cluster_lignes->boite;
+        const auto &c = bloc.cluster_colonnes->boite;
+
+        const auto [i_debut, i_fin] =
+            intervalles.at(bloc.cluster_lignes);
+        const auto [j_debut, j_fin] =
+            intervalles.at(bloc.cluster_colonnes);
+
+        out << id << ','
+            << parent_id << ','
+            << niveau << ','
+            << nom_type(bloc.type) << ','
+            << bloc.cluster_lignes->indices.size() << ','
+            << bloc.cluster_colonnes->indices.size() << ','
+            << i_debut << ','
+            << i_fin << ','
+            << j_debut << ','
+            << j_fin << ','
+            << l.x_min << ','
+            << l.x_max << ','
+            << l.y_min << ','
+            << l.y_max << ','
+            << c.x_min << ','
+            << c.x_max << ','
+            << c.y_min << ','
+            << c.y_max << '\n';
+
+        for (const auto &ligne : bloc.fils)
+        {
+            for (const auto &enfant : ligne)
+            {
+                if (enfant)
+                    self(self, *enfant,
+                         static_cast<long long>(id), niveau + 1);
+            }
+        }
+    };
+
+    visiter(visiter, *arbre, -1, 0);
 }

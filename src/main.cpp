@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 
     Timers timers;
 
-    //Matrice A = matrice_aleatoire(maxRank, N);
+    // Matrice A = matrice_aleatoire(maxRank, N);
     Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
                             [&](const Maillage &maillage)
                             {
@@ -177,186 +177,216 @@ int main(int argc, char **argv)
                                 affichage_maillage(Point(0, 0), maillage.size(), "outputs/cercle_maillage.txt");
                             });
 
-    const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
-                                                                   [&]()
-                                                                   {
-                                                                       return get_quadrature_maillage(maillage, get_legendre_data(ordre));
-                                                                   });     
-    const Eigen::Index N = maillage.size();
-    const Eigen::Index maxRank = N;
-    //const Eigen::Index rankTroncature = maxRank;
-    for(Eigen::Index rankTroncature=10; rankTroncature <N+1 ; rankTroncature+=30){
-    std::cout<< " N ="<< N<<std::endl;                   
-    Matrice A = get_matrice_bem(maillage,quadrature_maillage);
-    // Vérification des dimensions
-    std::cout << "Dimensions de A : "
-              << A.rows() << " x " << A.cols() << std::endl;
+    // const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
+    //                                                                [&]()
+    //                                                                {
+    //                                                                    return get_quadrature_maillage(maillage, get_legendre_data(ordre));
+    //                                                                });
+    // const Eigen::Index N = maillage.size();
+    // const Eigen::Index maxRank = N;
+    // // const Eigen::Index rankTroncature = maxRank;
+    // for (Eigen::Index rankTroncature = 10; rankTroncature < N + 1; rankTroncature += 30)
+    // {
+    //     std::cout << " N =" << N << std::endl;
+    //     Matrice A = get_matrice_bem(maillage, quadrature_maillage);
+    //     // Vérification des dimensions
+    //     std::cout << "Dimensions de A : "
+    //               << A.rows() << " x " << A.cols() << std::endl;
 
-    std::cout << "SVD..." << std::endl;
+    //     std::cout << "SVD..." << std::endl;
 
-    // Pour une matrice complexe, utiliser JacobiSVD
-    timers.start("svd");
-    Eigen::JacobiSVD<Matrice> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    std::cout << "Troncature..." << std::endl;
+    //     // Pour une matrice complexe, utiliser JacobiSVD
+    //     timers.start("svd");
+    //     Eigen::JacobiSVD<Matrice> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    //     std::cout << "Troncature..." << std::endl;
 
-    const auto &sigma = svd.singularValues();
+    //     const auto &sigma = svd.singularValues();
 
-    const Eigen::Index r = std::min(rankTroncature, static_cast<Eigen::Index>(sigma.size()));
+    //     const Eigen::Index r = std::min(rankTroncature, static_cast<Eigen::Index>(sigma.size()));
 
-    if (r < 0)
-        throw std::invalid_argument("Rang de troncature invalide");
+    //     if (r < 0)
+    //         throw std::invalid_argument("Rang de troncature invalide");
 
-    const Real sigmaMax = sigma.size() > 0 ? sigma(0) : 0.0;
+    //     const Real sigmaMax = sigma.size() > 0 ? sigma(0) : 0.0;
 
-    const Real tol = std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
+    //     const Real tol = std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
 
-    Eigen::Index rangReel = 0;
-    
-    for (Eigen::Index i = 0; i < sigma.size(); ++i)
-        if (sigma(i) > tol)
-            ++rangReel;
+    //     Eigen::Index rangReel = 0;
 
-    timers.end("svd");
+    //     for (Eigen::Index i = 0; i < sigma.size(); ++i)
+    //         if (sigma(i) > tol)
+    //             ++rangReel;
 
-    // SVD tronquée
-    Matrice U_r = svd.matrixU().leftCols(r);
-    Matrice V_r = svd.matrixV().leftCols(r);
-    auto sigma_r = sigma.head(r);
+    //     timers.end("svd");
 
-    Matrice A_r = U_r * sigma_r.asDiagonal() * V_r.adjoint();
+    //     // SVD tronquée
+    //     Matrice U_r = svd.matrixU().leftCols(r);
+    //     Matrice V_r = svd.matrixV().leftCols(r);
+    //     auto sigma_r = sigma.head(r);
 
-    const Real normeA = A.norm();
-    const Real erreurAbsolue = (A - A_r).norm();
-    const Real erreurRelative =
-        normeA > 0.0 ? erreurAbsolue / normeA : 0.0;
+    //     Matrice A_r = U_r * sigma_r.asDiagonal() * V_r.adjoint();
 
-    std::cout << "ACA..." << std::endl;
+    //     const Real normeA = A.norm();
+    //     const Real erreurAbsolue = (A - A_r).norm();
+    //     const Real erreurRelative =
+    //         normeA > 0.0 ? erreurAbsolue / normeA : 0.0;
 
-    // -- Test de ACA pivotage complet
-    timers.start("ACA_pivot_complet");
-    ACA_decomposition aca = full_pivoted_cross_approximation(A, maxRank, 1e-8);
-    timers.end("ACA_pivot_complet");
-    std::cout << "ACA Partiel..." << std::endl;
+    //     std::cout << "ACA..." << std::endl;
 
-    // -- Test de ACA pivotage partiel
-    timers.start("ACA_pivot_partiel");
-    ACA_decomposition aca_partial = partial_pivoted_cross_approximation(A, maxRank, 1e-8);
-    timers.end("ACA_pivot_partiel");
-    std::cout << "Préaffichage..." << std::endl;
+    //     // -- Test de ACA pivotage complet
+    //     timers.start("ACA_pivot_complet");
+    //     ACA_decomposition aca = full_pivoted_cross_approximation(A, maxRank, 1e-8);
+    //     timers.end("ACA_pivot_complet");
+    //     std::cout << "ACA Partiel..." << std::endl;
 
-    Matrice A_aca = aca.U * aca.V.transpose();
-    Matrice A_aca_partial = aca_partial.U * aca_partial.V.transpose();
+    //     // -- Test de ACA pivotage partiel
+    //     timers.start("ACA_pivot_partiel");
+    //     ACA_decomposition aca_partial = partial_pivoted_cross_approximation(A, maxRank, 1e-8);
+    //     timers.end("ACA_pivot_partiel");
+    //     std::cout << "Préaffichage..." << std::endl;
 
-    // -- Erreurs
-    const Real erreurAbsolueACA = (A - A_aca).norm();
-    const Real erreurRelativeACA =
-        normeA > 0.0 ? erreurAbsolueACA / normeA : 0.0;
+    //     Matrice A_aca = aca.U * aca.V.transpose();
+    //     Matrice A_aca_partial = aca_partial.U * aca_partial.V.transpose();
 
-    const Real erreurAbsolueACAPartial = (A - A_aca_partial).norm();
-    const Real erreurRelativeACAPartial =
-        normeA > 0.0 ? erreurAbsolueACAPartial / normeA : 0.0;
+    //     // -- Erreurs
+    //     const Real erreurAbsolueACA = (A - A_aca).norm();
+    //     const Real erreurRelativeACA =
+    //         normeA > 0.0 ? erreurAbsolueACA / normeA : 0.0;
 
-    // -- Comparaison de mémoire SVD tronqué
-    const std::size_t originalBytes = static_cast<std::size_t>(A.size()) * sizeof(Complex);
+    //     const Real erreurAbsolueACAPartial = (A - A_aca_partial).norm();
+    //     const Real erreurRelativeACAPartial =
+    //         normeA > 0.0 ? erreurAbsolueACAPartial / normeA : 0.0;
 
-    const std::size_t truncatedBytes = static_cast<std::size_t>(U_r.size()) * sizeof(Complex) + static_cast<std::size_t>(sigma_r.size()) * sizeof(Real) + static_cast<std::size_t>(V_r.size()) * sizeof(Complex);
+    //     // -- Comparaison de mémoire SVD tronqué
+    //     const std::size_t originalBytes = static_cast<std::size_t>(A.size()) * sizeof(Complex);
 
-    const double originalMB = originalBytes / (1024.0 * 1024.0);
-    const double truncatedMB = truncatedBytes / (1024.0 * 1024.0);
+    //     const std::size_t truncatedBytes = static_cast<std::size_t>(U_r.size()) * sizeof(Complex) + static_cast<std::size_t>(sigma_r.size()) * sizeof(Real) + static_cast<std::size_t>(V_r.size()) * sizeof(Complex);
 
-    const double savedBytes = static_cast<double>(originalBytes) - truncatedBytes;
+    //     const double originalMB = originalBytes / (1024.0 * 1024.0);
+    //     const double truncatedMB = truncatedBytes / (1024.0 * 1024.0);
 
-    const double savedMB = savedBytes / (1024.0 * 1024.0);
+    //     const double savedBytes = static_cast<double>(originalBytes) - truncatedBytes;
 
-    const double savedPercent = originalBytes > 0 ? 100.0 * savedBytes / originalBytes : 0.0;
+    //     const double savedMB = savedBytes / (1024.0 * 1024.0);
 
-    std::cout << std::scientific << std::setprecision(6);
+    //     const double savedPercent = originalBytes > 0 ? 100.0 * savedBytes / originalBytes : 0.0;
 
-    // -- Comparaison de mémoire ACA
-    auto memoireACA = [](const ACA_decomposition &d) -> std::size_t
-    {
-        return static_cast<std::size_t>(
-                   d.U.size() + d.V.size()) *
-               sizeof(Complex);
-    };
+    //     std::cout << std::scientific << std::setprecision(6);
 
-    const std::size_t memoireACAComplet = memoireACA(aca);
-    const std::size_t memoireACAPartiel = memoireACA(aca_partial);
+    //     // -- Comparaison de mémoire ACA
+    //     auto memoireACA = [](const ACA_decomposition &d) -> std::size_t
+    //     {
+    //         return static_cast<std::size_t>(
+    //                    d.U.size() + d.V.size()) *
+    //                sizeof(Complex);
+    //     };
 
-    auto MiB = [](std::size_t bytes) -> double
-    {
-        return static_cast<double>(bytes) / (1024.0 * 1024.0);
-    };
+    //     const std::size_t memoireACAComplet = memoireACA(aca);
+    //     const std::size_t memoireACAPartiel = memoireACA(aca_partial);
 
-    auto tauxCompression = [&](std::size_t bytes) -> double
-    {
-        return bytes > 0
-                   ? 100.0 * (1.0 -
-                              static_cast<double>(bytes) /
-                                  static_cast<double>(originalBytes))
-                   : 0.0;
-    };
+    //     auto MiB = [](std::size_t bytes) -> double
+    //     {
+    //         return static_cast<double>(bytes) / (1024.0 * 1024.0);
+    //     };
 
-    std::cout << "\n========== ANALYSE SVD ==========\n";
-    std::cout << "Dimensions             : "
-              << A.rows() << " x " << A.cols() << '\n';
-    std::cout << "Rang demande            : " << maxRank << '\n';
-    std::cout << "Rang numerique estime   : " << rangReel << '\n';
-    std::cout << "Rang de troncature      : " << r << '\n';
-    std::cout << "Tolerance de rang       : " << tol << '\n';
-    std::cout << "Temps de calcul         : ";
-    timers.print("svd");
-    std::cout<< '\n';
+    //     auto tauxCompression = [&](std::size_t bytes) -> double
+    //     {
+    //         return bytes > 0
+    //                    ? 100.0 * (1.0 -
+    //                               static_cast<double>(bytes) /
+    //                                   static_cast<double>(originalBytes))
+    //                    : 0.0;
+    //     };
 
-    std::cout << "\n========== ERREUR ==========\n";
-    std::cout << "Norme de A              : " << normeA << '\n';
-    std::cout << "Norme de A_r            : " << A_r.norm() << '\n';
-    std::cout << "Erreur absolue          : " << erreurAbsolue << '\n';
-    std::cout << "Erreur relative         : " << erreurRelative << '\n';
-    std::cout << "================================\n";
+    //     std::cout << "\n========== ANALYSE SVD ==========\n";
+    //     std::cout << "Dimensions             : "
+    //               << A.rows() << " x " << A.cols() << '\n';
+    //     std::cout << "Rang demande            : " << maxRank << '\n';
+    //     std::cout << "Rang numerique estime   : " << rangReel << '\n';
+    //     std::cout << "Rang de troncature      : " << r << '\n';
+    //     std::cout << "Tolerance de rang       : " << tol << '\n';
+    //     std::cout << "Temps de calcul         : ";
+    //     timers.print("svd");
+    //     std::cout << '\n';
 
-    std::cout << "\n========== MEMOIRE SVD ==========\n";
-    std::cout << "Original matrix       : "
-              << originalMB << " MiB\n";
-    std::cout << "Truncated SVD factors : "
-              << truncatedMB << " MiB\n";
-    std::cout << "Memory saved          : "
-              << savedMB << " MiB\n";
-    std::cout << "Space reduction       : "
-              << savedPercent << " %\n";
-    std::cout << "====================================\n";
+    //     std::cout << "\n========== ERREUR ==========\n";
+    //     std::cout << "Norme de A              : " << normeA << '\n';
+    //     std::cout << "Norme de A_r            : " << A_r.norm() << '\n';
+    //     std::cout << "Erreur absolue          : " << erreurAbsolue << '\n';
+    //     std::cout << "Erreur relative         : " << erreurRelative << '\n';
+    //     std::cout << "================================\n";
 
-    std::cout << "\n========== ANALYSE ACA ==========\n";
+    //     std::cout << "\n========== MEMOIRE SVD ==========\n";
+    //     std::cout << "Original matrix       : "
+    //               << originalMB << " MiB\n";
+    //     std::cout << "Truncated SVD factors : "
+    //               << truncatedMB << " MiB\n";
+    //     std::cout << "Memory saved          : "
+    //               << savedMB << " MiB\n";
+    //     std::cout << "Space reduction       : "
+    //               << savedPercent << " %\n";
+    //     std::cout << "====================================\n";
 
-    std::cout << "\n--- ACA : pivotage complet ---\n";
-    std::cout << "Rang obtenu             : " << aca.rang << '\n';
-    std::cout << "Erreur absolue          : " << erreurAbsolueACA << '\n';
-    std::cout << "Erreur relative         : " << erreurRelativeACA << '\n';
-    std::cout << "Memoire des facteurs    : "
-              << MiB(memoireACAComplet) << " MiB\n";
-    std::cout << "Reduction memoire       : "
-              << tauxCompression(memoireACAComplet) << " %\n";
-    std::cout << "Temps de calcul         : ";
-    timers.print("ACA_pivot_complet");
-    std::cout<< '\n';
+    //     std::cout << "\n========== ANALYSE ACA ==========\n";
 
-    std::cout << "\n--- ACA : pivotage partiel ---\n";
-    std::cout << "Rang obtenu             : " << aca_partial.rang << '\n';
-    std::cout << "Erreur absolue          : "
-              << erreurAbsolueACAPartial << '\n';
-    std::cout << "Erreur relative         : "
-              << erreurRelativeACAPartial << '\n';
-    std::cout << "Memoire des facteurs    : "
-              << MiB(memoireACAPartiel) << " MiB\n";
-    std::cout << "Reduction memoire       : "
-              << tauxCompression(memoireACAPartiel) << " %\n";
+    //     std::cout << "\n--- ACA : pivotage complet ---\n";
+    //     std::cout << "Rang obtenu             : " << aca.rang << '\n';
+    //     std::cout << "Erreur absolue          : " << erreurAbsolueACA << '\n';
+    //     std::cout << "Erreur relative         : " << erreurRelativeACA << '\n';
+    //     std::cout << "Memoire des facteurs    : "
+    //               << MiB(memoireACAComplet) << " MiB\n";
+    //     std::cout << "Reduction memoire       : "
+    //               << tauxCompression(memoireACAComplet) << " %\n";
+    //     std::cout << "Temps de calcul         : ";
+    //     timers.print("ACA_pivot_complet");
+    //     std::cout << '\n';
 
-    std::cout << "Temps de calcul         : ";
-    timers.print("ACA_pivot_partiel");
-    std::cout<< '\n';
+    //     std::cout << "\n--- ACA : pivotage partiel ---\n";
+    //     std::cout << "Rang obtenu             : " << aca_partial.rang << '\n';
+    //     std::cout << "Erreur absolue          : "
+    //               << erreurAbsolueACAPartial << '\n';
+    //     std::cout << "Erreur relative         : "
+    //               << erreurRelativeACAPartial << '\n';
+    //     std::cout << "Memoire des facteurs    : "
+    //               << MiB(memoireACAPartiel) << " MiB\n";
+    //     std::cout << "Reduction memoire       : "
+    //               << tauxCompression(memoireACAPartiel) << " %\n";
 
-    std::cout << "=================================\n";
-}
+    //     std::cout << "Temps de calcul         : ";
+    //     timers.print("ACA_pivot_partiel");
+    //     std::cout << '\n';
+
+    //     std::cout << "=================================\n";
+    // }
+
+    const Index N_leafs = 100;
+    const double eta = 3.0;
+
+    Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
+                               { return construire_arbre_maillage(maillage, N_leafs); }, [&](const Arbre &arbre)
+                               { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters.csv"); });
+
+    std::vector<Index> permutation = run("Construction de la permutation", timers, "permutation",
+                                         [&]()
+                                         {
+                                             return construire_permutation(arbre_clusters);
+                                         });
+
+    std::vector<Index> permutation_inverse = run("Construction de la permutation inverse", timers, "permutation_inverse",
+                                                 [&]()
+                                                 {
+                                                     return construire_permutation_inverse(permutation);
+                                                 });
+
+    IntervallesClusters intervalles = run("Construction des intervalles des clusters", timers, "intervalles_clusters",
+                                          [&]()
+                                          {
+                                              return construire_intervalles_clusters(arbre_clusters);
+                                          });
+
+    ArbreBlocs arbre_blocs = run("Construction de l'arbre des blocs", timers, "arbre_blocs", [&]()
+                                 { return construire_arbre_blocs(arbre_clusters, eta); }, [&](const ArbreBlocs &arbre)
+                                 { ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
 
 #endif
 
