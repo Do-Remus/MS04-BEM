@@ -39,6 +39,25 @@ struct Noeud
 
 using Arbre = std::unique_ptr<Noeud>;
 
+enum class TypeBloc
+{
+    Interne,    // Possède quatre blocs fils
+    Admissible, // Bloc admissible : compression ACA possible
+    Dense       // Bloc non admissible : stockage dense
+};
+
+struct Bloc
+{
+    const Noeud *cluster_lignes;
+    const Noeud *cluster_colonnes;
+
+    TypeBloc type = TypeBloc::Interne;
+
+    std::unique_ptr<Bloc> fils[2][2];
+};
+
+using ArbreBlocs = std::unique_ptr<Bloc>;
+
 /* Classe Maillage */
 
 class Maillage : public vector<Segment>
@@ -62,5 +81,8 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage);
 Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100);
 
 void subdivision_arbre_recursive( Noeud &neoud, const Index N_leafs, std::vector<Point> &points);
+double distance(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b);
+
+bool sont_admissibles(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b, const double eta);
 
 #endif

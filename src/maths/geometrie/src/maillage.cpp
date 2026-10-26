@@ -301,3 +301,60 @@ void subdivision_arbre_recursive( Noeud &noeud, const Index N_leafs, std::vector
     subdivision_arbre_recursive(*noeud.fils_droit, N_leafs, points);
 
 }
+
+double distance(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b)
+{
+    double distance_x = std::max({0.0, boite_a.x_min - boite_b.x_max, boite_b.x_min - boite_b.x_max});
+    double distance_y = std::max({0.0, boite_a.y_min - boite_b.y_max, boite_b.y_min - boite_b.y_max});
+    return std::sqrt(distance_x * distance_x + distance_y * distance_y);
+}
+
+bool sont_admissibles(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b, const double eta)
+{
+    return std::min(boite_a.diametre, boite_b.diametre) <= eta * distance(boite_a, boite_b);
+}
+
+ArbreBlocs construire_bloc_recursif(const Noeud &tau, const Noeud &sigma, const double eta)
+{
+    // Création du bloc associé aux deux clusters.
+    auto bloc = std::make_unique<Bloc>();
+
+    bloc->cluster_lignes = &tau;
+    bloc->cluster_colonnes = &sigma;
+
+    // 1. Le bloc est admissible : c'est une feuille.
+    if (sont_admissibles(tau.boite, sigma.boite, eta))
+    {
+        bloc->type = TypeBloc::Admissible;
+        return bloc;
+    }
+
+    // 2. Le bloc n'est pas admissible et ne peut plus
+    // être subdivisé si l'un des clusters est une feuille.
+    if (tau.est_feuille() || sigma.est_feuille())
+    {
+        bloc->type = TypeBloc::Dense;
+        return bloc;
+    }
+
+    // 3. Le bloc n'est pas admissible :
+    // on le subdivise en quatre blocs fils.
+    bloc->type = TypeBloc::Interne;
+
+    bloc->fils[0][0] = construire_bloc_recursif(*tau.fils_gauche, *sigma.fils_gauche, eta);
+    bloc->fils[0][1] = construire_bloc_recursif(*tau.fils_gauche, *sigma.fils_droit, eta);
+    bloc->fils[1][0] = construire_bloc_recursif(*tau.fils_droit, *sigma.fils_gauche, eta);
+    bloc->fils[1][1] = construire_bloc_recursif(*tau.fils_droit, *sigma.fils_droit, eta);
+
+    return bloc;
+}
+
+ArbreBlocs construire_arbre_blocs(const Arbre &arbre_clusters, const double eta)
+{
+    if (!arbre_clusters)
+    {
+        return nullptr;
+    }
+
+    return construire_bloc_recursif(*arbre_clusters, *arbre_clusters, eta);
+}
