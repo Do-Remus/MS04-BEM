@@ -245,7 +245,6 @@ def visualiser_blocs():
         "interne": "gray",
         "admissible": "green",
         "dense": "red",
-        "vide": "blue",
     }
 
     types_inconnus = set(arbre["type"]) - set(couleurs)
@@ -266,10 +265,10 @@ def visualiser_blocs():
             arbre[colonne], errors="raise"
         )
 
-    if (arbre["i_fin"] < arbre["i_debut"]).any():
+    if (arbre["i_fin"] <= arbre["i_debut"]).any():
         raise ValueError("Un bloc possède un intervalle de lignes vide.")
 
-    if (arbre["j_fin"] < arbre["j_debut"]).any():
+    if (arbre["j_fin"] <= arbre["j_debut"]).any():
         raise ValueError("Un bloc possède un intervalle de colonnes vide.")
 
     if (arbre[colonnes_indices] < 0).any().any():

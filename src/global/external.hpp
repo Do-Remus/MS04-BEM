@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <unordered_map>
+#include <optional>
 
 // Maths
 #include <cmath>

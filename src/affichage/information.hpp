@@ -3,6 +3,7 @@
 
 #include "../global/commun.hpp"
 #include "../maths/commun.hpp"
+#include "../BEM/commun.hpp"
 
 template <typename T>
 void affichage_ligne(const std::string &nom, const T &valeur)
@@ -19,6 +20,8 @@ void affichage_parametres();
 
 void affichage_approximations();
 
+void affichage_erreur_relative_matrice(Real erreur);
+
 void affichage_maillage(const Point &centre, unsigned int nbSegments, const std::string &nomFichier);
 
 void affichage_erreur_relative_p(Real erreur);
@@ -26,5 +29,7 @@ void affichage_erreur_relative_p(Real erreur);
 void affichage_maillage_solution(unsigned int nbPointsSolution);
 
 void affichage_erreurs_solution(Real erreurL2, Real erreurLinf);
+
+void affichage_statistiques_matrice_H(const ArbreBlocs &arbre);
 
 #endif

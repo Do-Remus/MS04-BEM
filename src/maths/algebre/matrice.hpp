@@ -13,7 +13,7 @@ struct ACA_decomposition
 {
     Matrice U;
     Matrice V;
-    Eigen::Index rang = 0;
+    Index rang = 0;
 };
 
 // class Matrice
@@ -39,21 +39,21 @@ struct ACA_decomposition
 
 Matrice matrice_aleatoire(const unsigned int rang, const Index taille);
 
-ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Eigen::Index rang_max, const double tolerance);
+ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Index rang_max, const double tolerance);
 
-ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Eigen::Index rang_max, const double tolerance);
+ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Index rang_max, const double tolerance);
 
 inline Matrice vecteurs_vers_matrice(const std::vector<Vecteur> &vecteurs)
 {
     if (vecteurs.empty())
         return Matrice(0, 0);
 
-    const Eigen::Index n = vecteurs[0].size();
-    const Eigen::Index r = static_cast<Eigen::Index>(vecteurs.size());
+    const Index n = vecteurs[0].size();
+    const Index r = static_cast<Index>(vecteurs.size());
 
     Matrice M(n, r);
 
-    for (Eigen::Index k = 0; k < r; ++k)
+    for (Index k = 0; k < r; ++k)
     {
         if (vecteurs[k].size() != n)
             throw std::invalid_argument("Tailles de vecteurs incompatibles");
@@ -64,15 +64,15 @@ inline Matrice vecteurs_vers_matrice(const std::vector<Vecteur> &vecteurs)
     return M;
 }
 
-inline Eigen::Index indice_max_absolu(const Vecteur &v)
+inline std::optional<Index> indice_max_absolu(const Vecteur &v)
 {
     if (v.size() == 0)
-        return -1;
+        return std::nullopt;
 
-    Eigen::Index indice_max = -1;
+    std::optional<Index> indice_max = std::nullopt;
     double valeur_max = SEUIL_PIVOT;
 
-    for (Eigen::Index i = 0; i < v.size(); ++i)
+    for (Index i = 0; i < v.size(); ++i)
     {
         const double valeur = std::abs(v[i]);
 
@@ -86,17 +86,17 @@ inline Eigen::Index indice_max_absolu(const Vecteur &v)
     return indice_max;
 }
 
-inline Eigen::Index indice_max_absolu_non_utilise(const Vecteur &v, const std::vector<bool> &utilise)
+inline std::optional<Index> indice_max_absolu_non_utilise(const Vecteur &v, const std::vector<bool> &utilise)
 {
-    const Eigen::Index n = v.size();
+    const Index n = v.size();
 
-    if (static_cast<Eigen::Index>(utilise.size()) != n)
+    if (static_cast<Index>(utilise.size()) != n)
         throw std::invalid_argument("Tailles incompatibles");
 
-    Eigen::Index indice_max = -1;
+    std::optional<Index> indice_max = std::nullopt;
     double valeur_max = SEUIL_PIVOT;
 
-    for (Eigen::Index i = 0; i < n; ++i)
+    for (Index i = 0; i < n; ++i)
     {
         if (utilise[i])
             continue;
@@ -113,18 +113,18 @@ inline Eigen::Index indice_max_absolu_non_utilise(const Vecteur &v, const std::v
     return indice_max;
 }
 
-inline std::pair<Eigen::Index, Eigen::Index> indices_max_absolu(const Matrice &A)
+inline std::pair<std::optional<Index>, std::optional<Index>> indices_max_absolu(const Matrice &A)
 {
     if (A.rows() == 0 || A.cols() == 0)
-        return {-1, -1};
+        return {std::nullopt, std::nullopt};
 
-    Eigen::Index i_max = -1;
-    Eigen::Index j_max = -1;
+    std::optional<Index> i_max = std::nullopt;
+    std::optional<Index> j_max = std::nullopt;
     double valeur_max = SEUIL_PIVOT;
 
-    for (Eigen::Index i = 0; i < A.rows(); ++i)
+    for (Index i = 0; i < A.rows(); ++i)
     {
-        for (Eigen::Index j = 0; j < A.cols(); ++j)
+        for (Index j = 0; j < A.cols(); ++j)
         {
             const double valeur = std::abs(A(i, j));
 

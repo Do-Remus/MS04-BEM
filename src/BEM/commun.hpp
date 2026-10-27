@@ -4,6 +4,8 @@
 /* Sous modules*/
 
 #include "matrix_free/commun.hpp"
+#include "aca_based/commun.hpp"
+#include "hmat/commun.hpp"
 
 /* Général */
 

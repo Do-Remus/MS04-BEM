@@ -1,111 +1,98 @@
 #include "../operator.hpp"
 
-ACA_decomposition aca_bem(const std::vector<Eigen::Index> selection_i, const std::vector<Eigen::Index> selection_j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Eigen::Index rang_max, const double tolerance)
+void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y)
 {
-    // Index
-    const Eigen::Index m = static_cast<Eigen::Index>(selection_i.size());
-    const Eigen::Index n = static_cast<Eigen::Index>(selection_j.size());
-
-    // Structure de retour
-    ACA_decomposition aca;
-
-    // Le rang ne peut pas dépasser min(m,n)
-    const Eigen::Index rang_max_reel = std::min(rang_max, std::min(m, n));
-
-    // Cas limites
-    if (m == 0 || n == 0 || rang_max_reel <= 0)
+    // Aucun descendant appartenant à ce rang :
+    // inutile de parcourir ce sous-arbre.
+    if (bloc.nb_feuilles_rank_mpi == 0)
     {
-        aca.U = Matrice(m, 0);
-        aca.V = Matrice(n, 0);
-        aca.rang = 0;
-
-        return aca;
+        return;
     }
 
-    // Initialisation des matrices
-    vector<Vecteur> U;
-    U.reserve(rang_max_reel);
-
-    vector<Vecteur> V;
-    V.reserve(rang_max_reel);
-
-    std::vector<bool> ligne_utilisee(m, false);
-
-    // Boucle principale
-    Eigen::Index k = 0;
-    Eigen::Index i_pivot = 0;
-
-    // ||A_k||_F^2 et <A, A_k>_F
-    double norm_Frobenius_A_k_squared = 0.0;
-    double tolerance_squared = tolerance * tolerance;
-
-    while (k < rang_max_reel)
+    // Bloc interne : appliquer récursivement les quatre sous-blocs.
+    if (bloc.type == TypeBloc::Interne)
     {
-        // Calcul de la ligne i_pivot du résidu,
-        // sans construire toute la matrice résiduelle.
-        Vecteur ligne_residuelle = ligne_bem(selection_i[i_pivot], selection_j, maillage, quadrature_maillage);
-
-        for (Eigen::Index j = 0; j < k; ++j)
-            ligne_residuelle -= U[j][i_pivot] * V[j];
-
-        // Pivot maximal sur la ligne sélectionnée
-        Eigen::Index j_pivot = indice_max_absolu(ligne_residuelle);
-
-        // Pivot nul sur cette ligne, elle n'est pas utilisable
-        if (j_pivot < 0)
+        for (Index i = 0; i < 2; ++i)
         {
-            break;
+            for (Index j = 0; j < 2; ++j)
+            {
+                if (bloc.fils[i][j])
+                {
+                    appliquer_bloc(*bloc.fils[i][j], x, y);
+                }
+            }
         }
 
-        V.push_back(ligne_residuelle);
-
-        // Calcul de la colonne du résidu, normalisée
-        Vecteur colonne_residuelle = colonne_bem(selection_j[j_pivot], selection_i, maillage, quadrature_maillage);
-
-        for (Eigen::Index i = 0; i < k; ++i)
-            colonne_residuelle -= V[i][j_pivot] * U[i];
-
-        colonne_residuelle /= ligne_residuelle[j_pivot];
-
-        U.push_back(colonne_residuelle);
-
-        // Contribution de rang 1 : ||u_k v_k^T||_F^2
-        const double contribution_squared = colonne_residuelle.squaredNorm() * ligne_residuelle.squaredNorm();
-
-        // Mise a jour de ||A_k||_F^2
-        Complex cross_sum(0.0, 0.0);
-
-        for (Eigen::Index i = 0; i < k; ++i)
-            cross_sum += U[i].dot(colonne_residuelle) * V[i].dot(ligne_residuelle);
-
-        norm_Frobenius_A_k_squared += 2.0 * cross_sum.real() + contribution_squared;
-        norm_Frobenius_A_k_squared = std::max(0.0, norm_Frobenius_A_k_squared);
-
-        ++k;
-
-        // Critere de stagnation:
-        // ||u_k|| ||v_k|| <= tolerance * ||A_k||_F
-        if (contribution_squared <= tolerance_squared * norm_Frobenius_A_k_squared)
-        {
-            break;
-        }
-
-        // Marquer la ligne de pivot comme utilisee
-        ligne_utilisee[i_pivot] = true;
-
-        // Choisir la ligne suivante avec max |u[i]|
-        // parmi les lignes non encore utilisees.
-        i_pivot = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
-
-        // Toutes les lignes ont été utilisées
-        if (i_pivot < 0)
-            break;
+        return;
     }
 
-    // Conversion des facteurs en matrices
-    aca.U = vecteurs_vers_matrice(U);
-    aca.V = vecteurs_vers_matrice(V);
-    aca.rang = k;
+    // Une feuille ne contribue que sur son processus propriétaire.
+    if (bloc.proprietaire_mpi != mpi_rank)
+        return;
 
-    return aca;
+    const auto &indices_i = bloc.cluster_lignes->indices;
+    const auto &indices_j = bloc.cluster_colonnes->indices;
+
+    const Index m = indices_i.size();
+    const Index n = indices_j.size();
+
+    // Extraction du vecteur correspondant au cluster de colonnes.
+    Vecteur x_local(n);
+
+    for (Index j = 0; j < n; ++j)
+    {
+        x_local[j] = x[indices_j[j]];
+    }
+
+    Vecteur y_local(m);
+
+    if (bloc.type == TypeBloc::Dense)
+    {
+        y_local.noalias() = bloc.dense * x_local;
+    }
+    else if (bloc.type == TypeBloc::Admissible)
+    {
+        const Vecteur temporaire = bloc.V.transpose() * x_local;
+        y_local.noalias() = bloc.U * temporaire;
+    }
+    else
+    {
+        throw std::logic_error("Type de bloc inconnu.");
+    }
+
+    // Ajout de la contribution aux lignes globales.
+    for (Index i = 0; i < m; ++i)
+    {
+        y[indices_i[i]] += y_local[i];
+    }
+}
+
+Vecteur appliquer_H(const ArbreBlocs &arbre_blocs, const Vecteur &x)
+{
+    if (!arbre_blocs)
+    {
+        throw std::invalid_argument("Impossible d'appliquer une H-matrice vide.");
+    }
+
+    if (x.size() != static_cast<Eigen::Index>(arbre_blocs->cluster_colonnes->indices.size()))
+    {
+        throw std::invalid_argument("La dimension du vecteur x est incompatible.");
+    }
+
+    Vecteur y = Vecteur::Zero(x.size());
+
+    appliquer_bloc(*arbre_blocs, x, y);
+
+    // Combiner les contributions de tous les processus.
+    if (mpi_size > 1)
+    {
+        if (y.size() > std::numeric_limits<int>::max())
+        {
+            throw std::overflow_error("Le vecteur est trop grand pour MPI_Allreduce.");
+        }
+
+        MPI_Allreduce(MPI_IN_PLACE, y.data(), static_cast<int>(y.size()), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+    }
+
+    return y;
 }

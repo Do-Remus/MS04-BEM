@@ -116,3 +116,27 @@ Real calculer_erreur_relative_p(const Maillage &maillage, const Vecteur &vect_p_
 
     return std::sqrt(sommeErreur / sommeAnalytique);
 }
+Real calculer_erreur_relative_matrice(const Matrice &A, const Vecteur &vecteur_x, const Vecteur &vecteur_Hx)
+{
+    const Index N = static_cast<Index>(A.rows());
+
+    const Vecteur vecteur_Ax = A * vecteur_x;
+    const Vecteur difference = vecteur_Ax - vecteur_Hx;
+
+    Real sommeErreurLocale = 0.0;
+    Real sommeReferenceLocale = 0.0;
+
+    for (Index i = mpi_rank; i < N; i += mpi_size)
+    {
+        sommeErreurLocale += std::norm(difference[i]);
+        sommeReferenceLocale += std::norm(vecteur_Ax[i]);
+    }
+
+    Real sommeErreur = 0.0;
+    Real sommeReference = 0.0;
+
+    MPI_Allreduce(&sommeErreurLocale, &sommeErreur, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&sommeReferenceLocale, &sommeReference, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    return std::sqrt(sommeErreur / std::max(sommeReference, 1e-30));
+}

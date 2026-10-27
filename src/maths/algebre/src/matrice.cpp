@@ -16,11 +16,11 @@ Matrice matrice_aleatoire(const unsigned int rang, const Index taille)
     return U * V;
 }
 
-ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Eigen::Index rang_max, const double tolerance)
+ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Index rang_max, const double tolerance)
 {
     // Index
-    const Eigen::Index m = A.rows();
-    const Eigen::Index n = A.cols();
+    const Index m = A.rows();
+    const Index n = A.cols();
 
     // Structure de retour
     ACA_decomposition aca;
@@ -39,7 +39,7 @@ ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Eigen
     }
 
     // Le rang ne peut pas dépasser min(m,n)
-    const Eigen::Index rang_max_reel = std::min(rang_max, std::min(m, n));
+    const Index rang_max_reel = std::min(rang_max, std::min(m, n));
 
     // Initialisation des matrices
     Matrice R_k = A;
@@ -51,15 +51,21 @@ ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Eigen
     V.reserve(rang_max_reel);
 
     // Boucle principale
-    Eigen::Index k = 0;
+    Index k = 0;
 
     while (k < rang_max_reel && R_k.norm() > tolerance * norm_A)
     {
         // Trouver le pivot (valeur maximale en valeur absolue )
-        const auto [i_pivot, j_pivot] = indices_max_absolu(R_k);
+        const auto [i_pivot_opt, j_pivot_opt] = indices_max_absolu(R_k);
 
         // Aucun pivot non nul : le résidu est nul
-        if (i_pivot < 0 || std::abs(R_k(i_pivot, j_pivot)) == 0.0)
+        if (!i_pivot_opt || !j_pivot_opt)
+            break;
+
+        Index i_pivot = *i_pivot_opt;
+        Index j_pivot = *j_pivot_opt;
+
+        if (std::abs(R_k(i_pivot, j_pivot)) == 0.0)
             break;
 
         // Mise à jour des vecteurs
@@ -80,17 +86,17 @@ ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Eigen
     return aca;
 }
 
-ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Eigen::Index rang_max, const double tolerance)
+ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Index rang_max, const double tolerance)
 {
     // Index
-    const Eigen::Index m = A.rows();
-    const Eigen::Index n = A.cols();
+    const Index m = A.rows();
+    const Index n = A.cols();
 
     // Structure de retour
     ACA_decomposition aca;
 
     // Le rang ne peut pas dépasser min(m,n)
-    const Eigen::Index rang_max_reel = std::min(rang_max, std::min(m, n));
+    const Index rang_max_reel = std::min(rang_max, std::min(m, n));
 
     // Cas limites
     if (m == 0 || n == 0 || rang_max_reel <= 0)
@@ -112,8 +118,8 @@ ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Ei
     std::vector<bool> ligne_utilisee(m, false);
 
     // Boucle principale
-    Eigen::Index k = 0;
-    Eigen::Index i_pivot = 0;
+    Index k = 0;
+    Index i_pivot = 0;
 
     // ||A_k||_F^2 et <A, A_k>_F
     double norm_Frobenius_A_k_squared = 0.0;
@@ -125,24 +131,24 @@ ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Ei
         // sans construire toute la matrice résiduelle.
         Vecteur ligne_residuelle = A.row(i_pivot).transpose();
 
-        for (Eigen::Index j = 0; j < k; ++j)
+        for (Index j = 0; j < k; ++j)
             ligne_residuelle -= U[j][i_pivot] * V[j];
 
         // Pivot maximal sur la ligne sélectionnée
-        Eigen::Index j_pivot = indice_max_absolu(ligne_residuelle);
+        std::optional<Index> j_pivot_opt = indice_max_absolu(ligne_residuelle);
 
         // Pivot nul sur cette ligne, elle n'est pas utilisable
-        if (j_pivot < 0)
-        {
+        if (!j_pivot_opt)
             break;
-        }
+
+        Index j_pivot = *j_pivot_opt;
 
         V.push_back(ligne_residuelle);
 
         // Calcul de la colonne du résidu, normalisée
         Vecteur colonne_residuelle = A.col(j_pivot);
 
-        for (Eigen::Index i = 0; i < k; ++i)
+        for (Index i = 0; i < k; ++i)
             colonne_residuelle -= V[i][j_pivot] * U[i];
 
         colonne_residuelle /= ligne_residuelle[j_pivot];
@@ -155,7 +161,7 @@ ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Ei
         // Mise a jour de ||A_k||_F^2
         Complex cross_sum(0.0, 0.0);
 
-        for (Eigen::Index i = 0; i < k; ++i)
+        for (Index i = 0; i < k; ++i)
             cross_sum += U[i].dot(colonne_residuelle) * V[i].dot(ligne_residuelle);
 
         norm_Frobenius_A_k_squared += 2.0 * cross_sum.real() + contribution_squared;
@@ -175,11 +181,13 @@ ACA_decomposition partial_pivoted_cross_approximation(const Matrice &A, const Ei
 
         // Choisir la ligne suivante avec max |u[i]|
         // parmi les lignes non encore utilisees.
-        i_pivot = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
+        std::optional<Index> i_pivot_opt = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
 
         // Toutes les lignes ont été utilisées
-        if (i_pivot < 0)
+        if (!i_pivot_opt)
             break;
+
+        i_pivot = *i_pivot_opt;
     }
 
     // Conversion des facteurs en matrices

@@ -168,6 +168,7 @@ int main(int argc, char **argv)
     /* -------------------- */
 
     Timers timers;
+    timers.start("programme");
 
     // Matrice A = matrice_aleatoire(maxRank, N);
     Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
@@ -177,11 +178,12 @@ int main(int argc, char **argv)
                                 affichage_maillage(Point(0, 0), maillage.size(), "outputs/cercle_maillage.txt");
                             });
 
-    // const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
-    //                                                                [&]()
-    //                                                                {
-    //                                                                    return get_quadrature_maillage(maillage, get_legendre_data(ordre));
-    //                                                                });
+    const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
+                                                                   [&]()
+                                                                   {
+                                                                       return get_quadrature_maillage(maillage, get_legendre_data(ordre));
+                                                                   });
+
     // const Eigen::Index N = maillage.size();
     // const Eigen::Index maxRank = N;
     // // const Eigen::Index rankTroncature = maxRank;
@@ -361,6 +363,9 @@ int main(int argc, char **argv)
 
     const Index N_leafs = 100;
     const double eta = 3.0;
+    const Index rang_max = 20;
+    const double tolerance = 1e-4;
+    const double alpha = 1.0;
 
     Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
                                { return construire_arbre_maillage(maillage, N_leafs); }, [&](const Arbre &arbre)
@@ -385,8 +390,52 @@ int main(int argc, char **argv)
                                           });
 
     ArbreBlocs arbre_blocs = run("Construction de l'arbre des blocs", timers, "arbre_blocs", [&]()
-                                 { return construire_arbre_blocs(arbre_clusters, eta); }, [&](const ArbreBlocs &arbre)
+                                 { return construire_arbre_blocs(arbre_clusters, eta, alpha); }, [&](const ArbreBlocs &arbre)
                                  { ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
+
+    run("Remplissage de la matrice H", timers, "remplissage_matrice", [&]()
+        { remplir_blocs(*arbre_blocs, maillage, quadrature_maillage, rang_max, tolerance); }, [&]()
+        { affichage_statistiques_matrice_H(arbre_blocs); });
+
+    constexpr int NB_TESTS = 100;
+    const Eigen::Index N = static_cast<Eigen::Index>(arbre_clusters->indices.size());
+
+    std::vector<Vecteur> vecteurs_test;
+    vecteurs_test.reserve(NB_TESTS);
+
+    for (int i = 0; i < NB_TESTS; ++i)
+        vecteurs_test.push_back(Vecteur::Random(N));
+
+    std::vector<Vecteur> resultats;
+    resultats.reserve(NB_TESTS);
+
+    run("10 produits Hx", timers, "produit Hx", [&]()
+        {
+    for (int i = 0; i < NB_TESTS; ++i)
+        resultats.push_back(appliquer_H(arbre_blocs, vecteurs_test[i])); });
+
+    // Matrice A = run("Construction de la matrice BEM dense", timers, "matrice_bem_dense",
+    //                 [&]()
+    //                 {
+    //                     return get_matrice_bem(maillage, quadrature_maillage);
+    //                 });
+
+    // Vecteur x = Vecteur::Ones(A.cols());
+
+    // Vecteur Ax = run("Calcul Ax", timers, "produit Ax", [&]()
+    //                  { return A * x; });
+
+    // Vecteur Hx = run("Calcul Hx", timers, "produit Hx", [&]()
+    //                  { return appliquer_H(arbre_blocs, x); });
+
+    // cout << "Erreur ACA: " << (Ax - Hx).norm() / std::max(Ax.norm(), 1e-30);
+
+    // -- End time --
+
+    timers.end("programme");
+
+    if (mpi_rank == 0)
+        timers.print_all();
 
 #endif
 

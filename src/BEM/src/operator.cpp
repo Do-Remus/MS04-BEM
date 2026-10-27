@@ -30,13 +30,13 @@ Matrice get_matrice_bem(const Maillage &maillage, const std::vector<QuadratureSe
     return A;
 }
 
-Vecteur ligne_bem(const Eigen::Index i, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+Vecteur ligne_bem(const Index i, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
-    const Eigen::Index N = static_cast<Eigen::Index>(maillage.size());
+    const Index N = static_cast<Index>(maillage.size());
 
     Vecteur ligne(N);
 
-    for (Eigen::Index j = 0; j < N; ++j)
+    for (Index j = 0; j < N; ++j)
     {
         ligne[j] = matrice_bem(i, j, maillage, quadrature_maillage);
     }
@@ -44,13 +44,13 @@ Vecteur ligne_bem(const Eigen::Index i, const Maillage &maillage, const std::vec
     return ligne;
 }
 
-Vecteur colonne_bem(const Eigen::Index j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+Vecteur colonne_bem(const Index j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
-    const Eigen::Index N = static_cast<Eigen::Index>(maillage.size());
+    const Index N = static_cast<Index>(maillage.size());
 
     Vecteur colonne(N);
 
-    for (Eigen::Index i = 0; i < N; ++i)
+    for (Index i = 0; i < N; ++i)
     {
         colonne[i] = matrice_bem(i, j, maillage, quadrature_maillage);
     }
@@ -58,45 +58,49 @@ Vecteur colonne_bem(const Eigen::Index j, const Maillage &maillage, const std::v
     return colonne;
 }
 
-Vecteur ligne_bem(const Eigen::Index i, const std::vector<Eigen::Index> selection_j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+Vecteur ligne_bem(const Index i, const std::vector<Index> &selection_j, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
-    const Eigen::Index N = static_cast<Eigen::Index>(selection_j.size());
+    const Index n = static_cast<Index>(selection_j.size());
 
-    Vecteur ligne(N);
+    Vecteur ligne(n);
 
-    for (const Eigen::Index j : selection_j)
+    for (Index j_local = 0; j_local < n; ++j_local)
     {
-        ligne[j] = matrice_bem(i, j, maillage, quadrature_maillage);
+        const Index j_global = selection_j[j_local];
+
+        ligne[j_local] = matrice_bem(i, j_global, maillage, quadrature_maillage);
     }
 
     return ligne;
 }
 
-Vecteur colonne_bem(const Eigen::Index j, const std::vector<Eigen::Index> selection_i, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
+Vecteur colonne_bem(const Index j, const std::vector<Index> &selection_i, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage)
 {
-    const Eigen::Index N = static_cast<Eigen::Index>(selection_i.size());
+    const Index m = static_cast<Index>(selection_i.size());
 
-    Vecteur colonne(N);
+    Vecteur colonne(m);
 
-    for (const Eigen::Index i : selection_i)
+    for (Index i_local = 0; i_local < m; ++i_local)
     {
-        colonne[i] = matrice_bem(i, j, maillage, quadrature_maillage);
+        const Index i_global = selection_i[i_local];
+
+        colonne[i_local] = matrice_bem(i_global, j, maillage, quadrature_maillage);
     }
 
     return colonne;
 }
 
-ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Eigen::Index rang_max, const double tolerance)
+ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Index rang_max, const double tolerance)
 {
     // Index
-    const Eigen::Index m = static_cast<Eigen::Index>(maillage.size());
-    const Eigen::Index n = m;
+    const Index m = static_cast<Index>(maillage.size());
+    const Index n = m;
 
     // Structure de retour
     ACA_decomposition aca;
 
     // Le rang ne peut pas dépasser min(m,n)
-    const Eigen::Index rang_max_reel = std::min(rang_max, std::min(m, n));
+    const Index rang_max_reel = std::min(rang_max, std::min(m, n));
 
     // Cas limites
     if (m == 0 || n == 0 || rang_max_reel <= 0)
@@ -118,8 +122,8 @@ ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<Quadrature
     std::vector<bool> ligne_utilisee(m, false);
 
     // Boucle principale
-    Eigen::Index k = 0;
-    Eigen::Index i_pivot = 0;
+    Index k = 0;
+    Index i_pivot = 0;
 
     // ||A_k||_F^2 et <A, A_k>_F
     double norm_Frobenius_A_k_squared = 0.0;
@@ -131,24 +135,26 @@ ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<Quadrature
         // sans construire toute la matrice résiduelle.
         Vecteur ligne_residuelle = ligne_bem(i_pivot, maillage, quadrature_maillage);
 
-        for (Eigen::Index j = 0; j < k; ++j)
+        for (Index j = 0; j < k; ++j)
             ligne_residuelle -= U[j][i_pivot] * V[j];
 
         // Pivot maximal sur la ligne sélectionnée
-        Eigen::Index j_pivot = indice_max_absolu(ligne_residuelle);
+        std::optional<Index> j_pivot_opt = indice_max_absolu(ligne_residuelle);
 
         // Pivot nul sur cette ligne, elle n'est pas utilisable
-        if (j_pivot < 0)
+        if (!j_pivot_opt)
         {
             break;
         }
+
+        Index j_pivot = *j_pivot_opt;
 
         V.push_back(ligne_residuelle);
 
         // Calcul de la colonne du résidu, normalisée
         Vecteur colonne_residuelle = colonne_bem(j_pivot, maillage, quadrature_maillage);
 
-        for (Eigen::Index i = 0; i < k; ++i)
+        for (Index i = 0; i < k; ++i)
             colonne_residuelle -= V[i][j_pivot] * U[i];
 
         colonne_residuelle /= ligne_residuelle[j_pivot];
@@ -161,7 +167,7 @@ ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<Quadrature
         // Mise a jour de ||A_k||_F^2
         Complex cross_sum(0.0, 0.0);
 
-        for (Eigen::Index i = 0; i < k; ++i)
+        for (Index i = 0; i < k; ++i)
             cross_sum += U[i].dot(colonne_residuelle) * V[i].dot(ligne_residuelle);
 
         norm_Frobenius_A_k_squared += 2.0 * cross_sum.real() + contribution_squared;
@@ -181,11 +187,13 @@ ACA_decomposition aca_bem(const Maillage &maillage, const std::vector<Quadrature
 
         // Choisir la ligne suivante avec max |u[i]|
         // parmi les lignes non encore utilisees.
-        i_pivot = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
+        std::optional<Index> i_pivot_opt = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
 
         // Toutes les lignes ont été utilisées
-        if (i_pivot < 0)
+        if (!i_pivot_opt)
             break;
+
+        i_pivot = *i_pivot_opt;
     }
 
     // Conversion des facteurs en matrices
