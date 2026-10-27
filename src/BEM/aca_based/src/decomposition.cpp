@@ -100,7 +100,7 @@ ACA_decomposition aca_bem(const std::vector<Index> selection_i, const std::vecto
         std::optional<Index> i_pivot_opt = indice_max_absolu_non_utilise(colonne_residuelle, ligne_utilisee);
 
         // Toutes les lignes ont été utilisées
-        if (i_pivot < 0)
+        if (!i_pivot_opt)
             break;
 
         i_pivot = *i_pivot_opt;

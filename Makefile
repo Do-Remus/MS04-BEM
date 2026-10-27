@@ -14,7 +14,7 @@ endif
 
 # Compiler flags
 #CXXFLAGS = -O3 -g -march=native -fopt-info-vec-missed -fopt-info-vec-optimized -std=c++17 -DNDEBUG
-CXXFLAGS = -O3 -march=native  -std=c++17 -DNDEBUG
+CXXFLAGS = -O3 -march=native -std=c++17 -DNDEBUG
 CXXFLAGS += $(addprefix -I,$(EIGEN_DIRS))
 
 # Output directory

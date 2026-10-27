@@ -8,14 +8,15 @@ Real L = 4.0;
 Real pasMaillage = 0.001;
 Real pasSolution = 0.1;
 Index N_leaves = 100;
-double parametre_admissibilite = 3.0;
-double facteur_admissibilite = 1.0;
+Real parametre_admissibilite = 3.0;
+Real facteur_admissibilite = 1.0;
 Index rang_max = 20;
-double toleranceAca = 1e-4;
+Real toleranceAca = 1e-4;
 unsigned int idxTroncature = 25;
 unsigned int ordre = 4;
 unsigned int maxIterGradConj = 1000;
 Real tolGradConj = 1e-8;
+unsigned int restartGradConj = 30;
 
 /* Déclaration des fonctions globales */
 
@@ -222,6 +223,19 @@ void get_config(const string &filename)
             {
                 if (rank == 0)
                     cout << "La valeur de toleranceAca doit-être strictement positive.";
+                exit(-1);
+            }
+        }
+
+        if (nom == "restartGradConj")
+        {
+            restartGradConj = atoi(valeur.c_str());
+            if (!(restartGradConj > 0))
+            {
+                if (rank == 0)
+                {
+                    cout << "La valeur de restartGradConj doit-être strictement positive.";
+                }
                 exit(-1);
             }
         }

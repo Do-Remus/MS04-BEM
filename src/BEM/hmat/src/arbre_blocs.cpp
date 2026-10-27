@@ -13,20 +13,37 @@ ArbreBlocs construire_bloc_recursif(const Noeud &tau, const Noeud &sigma, const 
     bloc->cluster_lignes = &tau;
     bloc->cluster_colonnes = &sigma;
 
+    // Un bloc est diagonal si ses deux clusters sont le même nœud.
+    bloc->est_diagonal = (&tau == &sigma);
+
     // 0. Cluster vide trouvé
     if (tau.indices.empty() || sigma.indices.empty())
         throw std::logic_error("Un cluster vide a été rencontré dans l'arbre des blocs.");
 
-    // 1. Le bloc est admissible : c'est une feuille.
+    // 1. Le bloc est admissible : c'est une feuille. (ne peut fondamentalement pas être diagonal)
     if (sont_admissibles(tau.boite, sigma.boite, eta))
     {
         bloc->type = TypeBloc::Admissible;
+
+        const double m = static_cast<double>(tau.indices.size());
+        const double n = static_cast<double>(sigma.indices.size());
+
+        bloc->poids = alpha * (m + n);
+
+        return bloc;
     }
     // 2. Le bloc n'est pas admissible et ne peut plus
     // être subdivisé si l'un des clusters est une feuille.
     else if (tau.est_feuille() || sigma.est_feuille())
     {
         bloc->type = TypeBloc::Dense;
+
+        const double m = static_cast<double>(tau.indices.size());
+        const double n = static_cast<double>(sigma.indices.size());
+
+        bloc->poids = m * n;
+
+        return bloc;
     }
     // 3. Le bloc n'est pas admissible :
     // on le subdivise en quatre blocs fils.
@@ -36,22 +53,12 @@ ArbreBlocs construire_bloc_recursif(const Noeud &tau, const Noeud &sigma, const 
 
         bloc->fils[0][0] = construire_bloc_recursif(*tau.fils_gauche, *sigma.fils_gauche, eta, alpha);
         bloc->fils[0][1] = construire_bloc_recursif(*tau.fils_gauche, *sigma.fils_droit, eta, alpha);
-        bloc->fils[1][0] = construire_bloc_recursif(*tau.fils_droit, *sigma.fils_gauche, eta, alpha);
         bloc->fils[1][1] = construire_bloc_recursif(*tau.fils_droit, *sigma.fils_droit, eta, alpha);
+        if (!bloc->est_diagonal)
+            bloc->fils[1][0] = construire_bloc_recursif(*tau.fils_droit, *sigma.fils_gauche, eta, alpha);
 
         return bloc;
     }
-
-    // 4. Calcul du poids de cette feuille.
-    const double m = static_cast<double>(tau.indices.size());
-    const double n = static_cast<double>(sigma.indices.size());
-
-    if (bloc->type == TypeBloc::Dense)
-        bloc->poids = m * n;
-    else
-        bloc->poids = alpha * (m + n);
-
-    return bloc;
 }
 
 void collecter_feuilles(Bloc &bloc, std::vector<Bloc *> &feuilles)
@@ -66,7 +73,7 @@ void collecter_feuilles(Bloc &bloc, std::vector<Bloc *> &feuilles)
     {
         for (auto &enfant : ligne)
         {
-            if (enfant)
+            if (enfant) // Pour un bloc diagonal fils[1][0] == nullptr et donc ne sera pas exploré
                 collecter_feuilles(*enfant, feuilles);
         }
     }
@@ -152,7 +159,8 @@ void remplir_blocs(Bloc &bloc, const Maillage &maillage, const std::vector<Quadr
         {
             for (auto &enfant : ligne)
             {
-                remplir_blocs(*enfant, maillage, quadrature_maillage, rang_max, tolerance);
+                if (enfant) // Pour un bloc diagonal fils[1][0] == nullptr et donc ne sera pas exploré
+                    remplir_blocs(*enfant, maillage, quadrature_maillage, rang_max, tolerance);
             }
         }
 
@@ -170,16 +178,36 @@ void remplir_blocs(Bloc &bloc, const Maillage &maillage, const std::vector<Quadr
     // --------------------------------------------------
     if (bloc.type == TypeBloc::Dense)
     {
-        const Eigen::Index m = static_cast<Eigen::Index>(indices_lignes.size());
-        const Eigen::Index n = static_cast<Eigen::Index>(indices_colonnes.size());
+        const Index m = indices_lignes.size();
+        const Index n = indices_colonnes.size();
 
         bloc.dense.resize(m, n);
 
-        for (Eigen::Index i = 0; i < m; ++i)
+        if (bloc.est_diagonal)
         {
-            for (Eigen::Index j = 0; j < n; ++j)
+            // Le bloc est carré : calcul de la moitié supérieure.
+            for (Index i = 0; i < m; ++i)
             {
-                bloc.dense(i, j) = matrice_bem(indices_lignes[static_cast<Index>(i)], indices_colonnes[static_cast<Index>(j)], maillage, quadrature_maillage);
+                for (Index j = i; j < n; ++j)
+                {
+                    const Complex aij = matrice_bem(indices_lignes[i], indices_colonnes[j], maillage, quadrature_maillage);
+
+                    bloc.dense(i, j) = aij;
+
+                    if (i != j)
+                        bloc.dense(j, i) = aij;
+                }
+            }
+        }
+        else
+        {
+            // Bloc non diagonal : remplissage classique.
+            for (Eigen::Index i = 0; i < m; ++i)
+            {
+                for (Eigen::Index j = 0; j < n; ++j)
+                {
+                    bloc.dense(i, j) = matrice_bem(indices_lignes[i], indices_colonnes[j], maillage, quadrature_maillage);
+                }
             }
         }
 
@@ -226,7 +254,7 @@ void ecrire_arbre_blocs(const ArbreBlocs &arbre, const std::string &fichier, con
     if (!out)
         throw std::runtime_error("Impossible d'ouvrir " + fichier);
 
-    out << "id,parent,niveau,type,m,n,"
+    out << "id,parent,niveau,type,est_diagonal,m,n,"
            "i_debut,i_fin,j_debut,j_fin,"
            "x_min_l,x_max_l,y_min_l,y_max_l,"
            "x_min_c,x_max_c,y_min_c,y_max_c\n";
@@ -259,15 +287,14 @@ void ecrire_arbre_blocs(const ArbreBlocs &arbre, const std::string &fichier, con
         const auto &l = bloc.cluster_lignes->boite;
         const auto &c = bloc.cluster_colonnes->boite;
 
-        const auto [i_debut, i_fin] =
-            intervalles.at(bloc.cluster_lignes);
-        const auto [j_debut, j_fin] =
-            intervalles.at(bloc.cluster_colonnes);
+        const auto [i_debut, i_fin] = intervalles.at(bloc.cluster_lignes);
+        const auto [j_debut, j_fin] = intervalles.at(bloc.cluster_colonnes);
 
         out << id << ','
             << parent_id << ','
             << niveau << ','
             << nom_type(bloc.type) << ','
+            << (bloc.est_diagonal ? 1 : 0) << ','
             << bloc.cluster_lignes->indices.size() << ','
             << bloc.cluster_colonnes->indices.size() << ','
             << i_debut << ','
@@ -288,8 +315,7 @@ void ecrire_arbre_blocs(const ArbreBlocs &arbre, const std::string &fichier, con
             for (const auto &enfant : ligne)
             {
                 if (enfant)
-                    self(self, *enfant,
-                         static_cast<long long>(id), niveau + 1);
+                    self(self, *enfant, static_cast<long long>(id), niveau + 1);
             }
         }
     };
@@ -319,11 +345,8 @@ void compter_blocs_locaux(const Bloc &bloc, const int rang, StatistiquesBlocs &s
 
     ++stats.feuilles;
 
-    const std::uint64_t m =
-        static_cast<std::uint64_t>(bloc.cluster_lignes->indices.size());
-
-    const std::uint64_t n =
-        static_cast<std::uint64_t>(bloc.cluster_colonnes->indices.size());
+    const std::uint64_t m = static_cast<std::uint64_t>(bloc.cluster_lignes->indices.size());
+    const std::uint64_t n = static_cast<std::uint64_t>(bloc.cluster_colonnes->indices.size());
 
     if (bloc.type == TypeBloc::Dense)
     {
@@ -334,8 +357,7 @@ void compter_blocs_locaux(const Bloc &bloc, const int rang, StatistiquesBlocs &s
     {
         ++stats.admissibles;
 
-        const std::uint64_t r =
-            static_cast<std::uint64_t>(bloc.U.cols());
+        const std::uint64_t r = static_cast<std::uint64_t>(bloc.U.cols());
 
         stats.coefficients_aca += r * (m + n);
     }

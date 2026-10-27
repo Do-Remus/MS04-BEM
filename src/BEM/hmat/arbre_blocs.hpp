@@ -27,6 +27,9 @@ struct Bloc
 
     double poids = 0.0;
 
+    // Le bloc est-il sur la diagonal ?
+    bool est_diagonal = false;
+
     // Pour le stockage de la matrice
     Matrice dense;
     Matrice U;

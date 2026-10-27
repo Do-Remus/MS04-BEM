@@ -10,162 +10,284 @@
  * Frontière 2D d'un narval
  * ============================================================
  *
- * La géométrie est définie par une spline de Catmull-Rom
- * centripète fermée.
+ * Géométrie construite avec des courbes de Bézier cubiques.
+ * Narval orienté vers la gauche.
  *
- * Le maillage final est construit directement sur la spline.
+ * - Corps arrondi et fuselé
+ * - Défense longue et fine
+ * - Queue bilobée
+ * - Contour fermé et lisse
  *
+ * Le contour est rééchantillonné uniformément en longueur d'arc.
  * ============================================================
  */
-inline Maillage maillage_narval(const double echelle = 1.0, const double pas = 0.008, const bool centrer = true)
+inline Maillage maillage_narval(
+    const double echelle = 1.0,
+    const double pas = 0.008,
+    const bool centrer = true)
 {
-    /* === Points de contrôle === */
-    vector<Point> controle = {
-        Point(-1.00, 0.00),
-        Point(-0.85, 0.45),
-        Point(-0.45, 0.65),
-        Point(0.00, 0.55),
-        Point(0.45, 0.70),
-        Point(0.85, 0.40),
-        Point(1.00, 0.00),
-        Point(0.85, -0.40),
-        Point(0.45, -0.70),
-        Point(0.00, -0.55),
-        Point(-0.45, -0.65),
-        Point(-0.85, -0.45)};
-
-    /* === Vérification des paramètres === */
-    if (echelle <= 0.0 || pas <= 0.0 || controle.size() < 4)
+    if (!std::isfinite(echelle) ||
+        !std::isfinite(pas) ||
+        echelle <= 0.0 ||
+        pas <= 0.0)
     {
         return Maillage();
     }
 
-    /* === Spline Catmull-Rom === */
-    auto catmullRom = [](const Point &P0, const Point &P1, const Point &P2, const Point &P3, const Real t) -> Point
+    // --------------------------------------------------------
+    // 1. Outils géométriques
+    // --------------------------------------------------------
+    auto bezier = [](const Point &P0,
+                     const Point &P1,
+                     const Point &P2,
+                     const Point &P3,
+                     const Real t) -> Point
     {
+        const Real s = 1.0 - t;
+        const Real s2 = s * s;
         const Real t2 = t * t;
-        const Real t3 = t2 * t;
 
-        const Real c0 = -0.5 * t3 + t2 - 0.5 * t;
-        const Real c1 = 1.5 * t3 - 2.5 * t2 + 1.0;
-        const Real c2 = -1.5 * t3 + 2.0 * t2 + 0.5 * t;
-        const Real c3 = 0.5 * t3 - 0.5 * t2;
+        const Real b0 = s2 * s;
+        const Real b1 = 3.0 * s2 * t;
+        const Real b2 = 3.0 * s * t2;
+        const Real b3 = t2 * t;
 
-        return Point(c0 * P0.x + c1 * P1.x + c2 * P2.x + c3 * P3.x,
-                     c0 * P0.y + c1 * P1.y + c2 * P2.y + c3 * P3.y);
+        return Point(
+            b0 * P0.x + b1 * P1.x + b2 * P2.x + b3 * P3.x,
+            b0 * P0.y + b1 * P1.y + b2 * P2.y + b3 * P3.y);
     };
 
-    /* === Construction de la courbe fine === */
-    const unsigned int nbControle = controle.size();
-    const unsigned int nParSegment = 1000;
+    // --------------------------------------------------------
+    // 2. Construction du contour dans le sens antihoraire
+    // --------------------------------------------------------
+    //
+    // Chaque courbe est définie par 4 points de Bézier.
+    // La fin d'une courbe est le début de la suivante.
+    //
+    vector<Point> contour;
+    const unsigned int echantillons = 300;
 
-    vector<Point> pointsFins;
-
-    pointsFins.reserve(nbControle * nParSegment);
-
-    for (unsigned int i = 0; i < nbControle; ++i)
+    auto ajouter_bezier = [&](const Point &P0,
+                              const Point &P1,
+                              const Point &P2,
+                              const Point &P3)
     {
-        const unsigned int i0 = (i + nbControle - 1) % nbControle;
-        const unsigned int i1 = i;
-        const unsigned int i2 = (i + 1) % nbControle;
-        const unsigned int i3 = (i + 2) % nbControle;
-
-        for (unsigned int j = 0; j < nParSegment; ++j)
+        for (unsigned int i = 0; i < echantillons; ++i)
         {
-            const Real t = static_cast<Real>(j) / static_cast<Real>(nParSegment);
+            const Real t =
+                static_cast<Real>(i) /
+                static_cast<Real>(echantillons);
 
-            pointsFins.push_back(catmullRom(controle[i0], controle[i1], controle[i2], controle[i3], t));
+            contour.push_back(bezier(P0, P1, P2, P3, t));
         }
-    }
+    };
 
-    /* === Mise à l'échelle === */
-    for (Point &P : pointsFins)
+    /*
+     * Le contour commence à la pointe de la défense.
+     *
+     * Coordonnées :
+     * x négatif = avant du narval
+     * x positif = arrière et queue
+     */
+
+    // A. Défense : bord supérieur, de la pointe vers la tête
+    ajouter_bezier(
+        Point(-2.20, 0.00),
+        Point(-1.75, 0.005),
+        Point(-1.15, 0.035),
+        Point(-0.70, 0.075));
+
+    // B. Front et dos
+    ajouter_bezier(
+        Point(-0.70, 0.11),
+        Point(-0.60, 0.31),
+        Point(-0.30, 0.43),
+        Point(0.08, 0.43));
+
+    // C. Dos vers l'arrière du corps
+    ajouter_bezier(
+        Point(0.08, 0.43),
+        Point(0.55, 0.43),
+        Point(0.95, 0.24),
+        Point(1.23, 0.12));
+
+    // D. Transition vers le lobe supérieur de la queue
+    ajouter_bezier(
+        Point(1.23, 0.12),
+        Point(1.34, 0.10),
+        Point(1.38, 0.24),
+        Point(1.54, 0.34));
+
+    // E. Extrémité arrondie du lobe supérieur
+    ajouter_bezier(
+        Point(1.54, 0.34),
+        Point(1.58, 0.24),
+        Point(1.51, 0.08),
+        Point(1.41, 0.015));
+
+    // F. Encoche centrale de la queue
+    ajouter_bezier(
+        Point(1.41, 0.015),
+        Point(1.37, 0.00),
+        Point(1.37, -0.015),
+        Point(1.41, -0.035));
+
+    // G. Bord extérieur du lobe inférieur
+    ajouter_bezier(
+        Point(1.41, -0.035),
+        Point(1.52, -0.12),
+        Point(1.59, -0.27),
+        Point(1.54, -0.34));
+
+    // H. Retour de la queue vers le ventre
+    ajouter_bezier(
+        Point(1.54, -0.34),
+        Point(1.38, -0.25),
+        Point(1.33, -0.11),
+        Point(1.22, -0.12));
+
+    // I. Ventre du corps
+    ajouter_bezier(
+        Point(1.22, -0.12),
+        Point(0.92, -0.27),
+        Point(0.50, -0.40),
+        Point(0.08, -0.40));
+
+    // J. Ventre et menton
+    ajouter_bezier(
+        Point(0.08, -0.40),
+        Point(-0.28, -0.40),
+        Point(-0.56, -0.29),
+        Point(-0.70, -0.11));
+
+    // K. Défense : bord inférieur vers la pointe
+    ajouter_bezier(
+        Point(-0.70, -0.075),
+        Point(-1.15, -0.035),
+        Point(-1.75, -0.005),
+        Point(-2.20, 0.00));
+
+    // --------------------------------------------------------
+    // 3. Mise à l'échelle
+    // --------------------------------------------------------
+    for (Point &P : contour)
     {
         P.x *= echelle;
         P.y *= echelle;
     }
 
-    /* === Centrage horizontal === */
+    // --------------------------------------------------------
+    // 4. Centrage de la boîte englobante
+    // --------------------------------------------------------
     if (centrer)
     {
-        Real xmin = pointsFins[0].x;
-        Real xmax = pointsFins[0].x;
+        Real xmin = contour[0].x;
+        Real xmax = contour[0].x;
+        Real ymin = contour[0].y;
+        Real ymax = contour[0].y;
 
-        for (const Point &P : pointsFins)
+        for (const Point &P : contour)
         {
             xmin = std::min(xmin, P.x);
             xmax = std::max(xmax, P.x);
+            ymin = std::min(ymin, P.y);
+            ymax = std::max(ymax, P.y);
         }
 
-        const Real centreX = 0.5 * (xmin + xmax);
+        const Real cx = 0.5 * (xmin + xmax);
+        const Real cy = 0.5 * (ymin + ymax);
 
-        for (Point &P : pointsFins)
+        for (Point &P : contour)
         {
-            P.x -= centreX;
+            P.x -= cx;
+            P.y -= cy;
         }
     }
 
-    /* === Longueur de la courbe === */
-    const unsigned int M = pointsFins.size();
+    // --------------------------------------------------------
+    // 5. Longueurs cumulées du contour fermé
+    // --------------------------------------------------------
+    const unsigned int M =
+        static_cast<unsigned int>(contour.size());
 
-    Real longueur = 0.0;
+    if (M < 3)
+    {
+        return Maillage();
+    }
 
     vector<Real> longueurs(M);
+    vector<Real> cumul(M + 1, 0.0);
 
     for (unsigned int i = 0; i < M; ++i)
     {
         const unsigned int j = (i + 1) % M;
 
-        longueurs[i] = (pointsFins[i] - pointsFins[j]).norm();
+        const Real dx = contour[j].x - contour[i].x;
+        const Real dy = contour[j].y - contour[i].y;
 
-        longueur += longueurs[i];
+        longueurs[i] = std::sqrt(dx * dx + dy * dy);
+        cumul[i + 1] = cumul[i] + longueurs[i];
     }
 
-    if (longueur <= PRECISION_ZERO_DOUBLE)
+    const Real longueurTotale = cumul[M];
+
+    if (!std::isfinite(longueurTotale) ||
+        longueurTotale <= PRECISION_ZERO_DOUBLE)
     {
         return Maillage();
     }
 
-    /* === Nombre de segments === */
-    unsigned int N = static_cast<unsigned int>(std::round(longueur / pas));
+    // --------------------------------------------------------
+    // 6. Nombre de segments du maillage final
+    // --------------------------------------------------------
+    const Real nombreReel = longueurTotale / pas;
 
-    if (N < 3)
+    if (!std::isfinite(nombreReel) ||
+        nombreReel > static_cast<Real>(
+                         std::numeric_limits<unsigned int>::max()))
     {
-        N = 3;
+        return Maillage();
     }
 
-    const Real h = longueur / static_cast<Real>(N);
+    unsigned int N = static_cast<unsigned int>(
+        std::round(nombreReel));
 
-    /* === Rééchantillonnage en longueur d'arc === */
+    N = std::max(3u, N);
+
+    const Real h = longueurTotale / static_cast<Real>(N);
+
+    // --------------------------------------------------------
+    // 7. Rééchantillonnage uniforme en longueur d'arc
+    // --------------------------------------------------------
     vector<Point> points;
     points.reserve(N);
 
     unsigned int j = 0;
-    Real cumul = 0.0;
 
     for (unsigned int i = 0; i < N; ++i)
     {
         const Real cible = static_cast<Real>(i) * h;
 
-        while (j < M - 1 && cumul + longueurs[j] < cible)
+        while (j + 1 < M && cumul[j + 1] < cible)
         {
-            cumul += longueurs[j];
             ++j;
         }
 
         const unsigned int j2 = (j + 1) % M;
-
-        const Real longueurSegment = longueurs[j];
+        const Real L = longueurs[j];
 
         Real t = 0.0;
 
-        if (longueurSegment > PRECISION_ZERO_DOUBLE)
+        if (L > PRECISION_ZERO_DOUBLE)
         {
-            t = (cible - cumul) / longueurSegment;
+            t = (cible - cumul[j]) / L;
         }
 
-        points.emplace_back(pointsFins[j].x + t * (pointsFins[j2].x - pointsFins[j].x),
-                            pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
+        t = std::max(0.0, std::min(1.0, t));
+
+        points.emplace_back(
+            contour[j].x + t * (contour[j2].x - contour[j].x),
+            contour[j].y + t * (contour[j2].y - contour[j].y));
     }
 
     return Maillage(points);

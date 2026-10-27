@@ -114,8 +114,12 @@ Real calculer_erreur_relative_p(const Maillage &maillage, const Vecteur &vect_p_
     MPI_Allreduce(&sommeErreurLocale, &sommeErreur, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(&sommeAnalytiqueLocale, &sommeAnalytique, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
+    if (sommeAnalytique <= 0.0)
+        return std::numeric_limits<Real>::quiet_NaN();
+
     return std::sqrt(sommeErreur / sommeAnalytique);
 }
+
 Real calculer_erreur_relative_matrice(const Matrice &A, const Vecteur &vecteur_x, const Vecteur &vecteur_Hx)
 {
     const Index N = static_cast<Index>(A.rows());

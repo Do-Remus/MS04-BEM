@@ -59,6 +59,29 @@ extern Index green_cache_n_fine;
 extern Index green_cache_size;
 
 // Green cached
+// au plus proche
+// inline Complex green_cached(const Point &p1, const Point &p2)
+// {
+//     const Real dx = p1.x - p2.x;
+//     const Real dy = p1.y - p2.y;
+
+//     const Real distance = std::sqrt(dx * dx + dy * dy);
+
+//     Index index;
+
+//     if (distance < green_cache_cutoff)
+//     {
+//         index = static_cast<Index>(distance * green_cache_step_fine_inv + Real(0.5));
+//     }
+//     else
+//     {
+//         index = green_cache_n_fine + static_cast<Index>((distance - green_cache_cutoff) * green_cache_step_large_inv + Real(0.5));
+//     }
+
+//     return green_cache[index];
+// }
+
+// interpolation linéaire (beaucoup mieux)
 inline Complex green_cached(const Point &p1, const Point &p2)
 {
     const Real dx = p1.x - p2.x;
@@ -67,17 +90,27 @@ inline Complex green_cached(const Point &p1, const Point &p2)
     const Real distance = std::sqrt(dx * dx + dy * dy);
 
     Index index;
+    Real alpha;
 
     if (distance < green_cache_cutoff)
     {
-        index = static_cast<Index>(distance / green_cache_step_fine + 0.5);
+        const Real position = distance * green_cache_step_fine_inv;
+
+        index = static_cast<Index>(position);
+        alpha = position - static_cast<Real>(index);
     }
     else
     {
-        index = green_cache_n_fine + static_cast<Index>((distance - green_cache_cutoff) / green_cache_step_large + 0.5);
+        const Real position =
+            (distance - green_cache_cutoff) * green_cache_step_large_inv;
+
+        index = green_cache_n_fine + static_cast<Index>(position);
+
+        alpha = position - static_cast<Real>(static_cast<Index>(position));
     }
 
-    return green_cache[index];
+    // Interpolation linéaire entre les deux valeurs voisines.
+    return (Real(1) - alpha) * green_cache[index] + alpha * green_cache[index + 1];
 }
 
 // Version vectorisée

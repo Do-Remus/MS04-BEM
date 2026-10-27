@@ -12,14 +12,15 @@ extern Real L;
 extern Real pasMaillage;
 extern Real pasSolution;
 extern Index N_leaves;
-extern double parametre_admissibilite;
-extern double facteur_admissibilite;
+extern Real parametre_admissibilite;
+extern Real facteur_admissibilite;
 extern Index rang_max;
-extern double toleranceAca;
+extern Real toleranceAca;
 extern unsigned int idxTroncature;
 extern unsigned int ordre;
 extern unsigned int maxIterGradConj;
 extern Real tolGradConj;
+extern unsigned int restartGradConj;
 
 // -- Fonctions --
 

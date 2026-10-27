@@ -9,6 +9,8 @@ void affichage_approximations()
 {
     affichage_ligne("Indice de troncature N", idxTroncature);
     affichage_ligne("Ordre de quadrature", ordre);
+    affichage_ligne("Rang maximal ACA", rang_max);
+    affichage_ligne("Tolerance ACA", toleranceAca);
     affichage_ligne("Pas large du cache", green_cache_step_large);
     affichage_ligne("Pas fin du cache", green_cache_step_fine);
     affichage_ligne("Cutoff du cache", green_cache_cutoff);

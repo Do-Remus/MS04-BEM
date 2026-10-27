@@ -89,7 +89,7 @@ Maillage::Maillage(const vector<Point> &points)
         this->push_back(Segment(points[i], points[i + 1]));
     }
 
-    this->push_back(Segment(points[points.size()], points[0]));
+    this->push_back(Segment(points[points.size() - 1], points[0]));
 }
 
 /* Fonctions associées à la class */

@@ -17,28 +17,37 @@ void initialiser_green_cache()
     // -- Paramètres du cache --
 
     const double lambda = 2.0 * pi / k;
-    const double distance_max = L * std::sqrt(2.0);
-    double step_old = 0.1 * pasMaillage / k;
-    std::size_t N_old = static_cast<std::size_t>(distance_max / step_old);
+    const Real distance_max = L * std::sqrt(Real(2.0));
 
-    double beta = 0.05; // multiplicateur old précision près de 0
-    double alpha = 0.1; // multiplicateur de lambda (zone cache fin)
+    // Paramètres initiaux de la grille
+    const Real step_old = Real(0.1) * pasMaillage / k;
+    const Index N_old = static_cast<Index>(distance_max / step_old);
 
+    const Real beta = Real(0.05);
+    const Real alpha = Real(0.1);
+
+    // Pas fin
     green_cache_step_fine = beta * step_old;
-    green_cache_step_fine_inv = 1 / green_cache_step_fine;
+    green_cache_step_fine_inv = Real(1.0) / green_cache_step_fine;
 
-    green_cache_cutoff = alpha * lambda;
+    // Nombre d'intervalles fins
+    const Real cutoff_initial = alpha * lambda;
 
-    green_cache_step_large = (distance_max - green_cache_cutoff) / (N_old - green_cache_cutoff / green_cache_step_fine);
-    green_cache_step_large_inv = 1 / green_cache_step_large;
+    green_cache_n_fine = static_cast<Index>(cutoff_initial / green_cache_step_fine + Real(0.5));
+
+    // Cutoff effectif : exactement sur la grille fine
+    green_cache_cutoff = static_cast<Real>(green_cache_n_fine) * green_cache_step_fine;
+
+    // Pas large : les deux grilles partagent exactement le cutoff
+    const Index n_large = (N_old > green_cache_n_fine) ? N_old - green_cache_n_fine : Index(1);
+
+    green_cache_step_large = (distance_max - green_cache_cutoff) / static_cast<Real>(n_large);
+
+    green_cache_step_large_inv = Real(1.0) / green_cache_step_large;
 
     delta = green_cache_step_fine;
 
-    // -- Nombre de cases dans chaque zone --
-
-    green_cache_n_fine = static_cast<std::size_t>(green_cache_cutoff / green_cache_step_fine + 0.5);
-    std::size_t n_large = static_cast<std::size_t>((distance_max - green_cache_cutoff) / green_cache_step_large + 0.5);
-
+    // Taille : indices 0 à n_fine+n_large inclus
     green_cache_size = green_cache_n_fine + n_large + 1;
 
     // -- Mémoire partagée MPI --
@@ -78,22 +87,22 @@ void initialiser_green_cache()
 
         for (std::size_t index = 0; index < green_cache_size; ++index)
         {
-            double distance;
+            Real distance;
 
             if (index <= green_cache_n_fine)
             {
                 // Zone fine
-                distance = index * green_cache_step_fine;
+                distance = static_cast<Real>(index) * green_cache_step_fine;
             }
             else
             {
                 // Zone grossière
-                distance = green_cache_cutoff + (index - green_cache_n_fine) * green_cache_step_large;
+                distance = green_cache_cutoff + static_cast<Real>(index - green_cache_n_fine) * green_cache_step_large;
             }
 
             if (distance == 0.0)
             {
-                green_cache[index] = 0.0;
+                green_cache[index] = Complex(0.0, 0.0);
             }
             else
             {

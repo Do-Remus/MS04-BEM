@@ -15,7 +15,7 @@ from matplotlib import colormaps
 # Configuration
 # ============================================================
 
-FICHIER_MAILLAGE = "outputs/cercle_maillage.txt"
+FICHIER_MAILLAGE = "outputs/maillage.txt"
 FICHIER_CLUSTERS = "outputs/arbre_clusters.csv"
 FICHIER_BLOCS = "outputs/arbre_blocs.csv"
 
@@ -220,7 +220,10 @@ def visualiser_blocs():
         },
     )
 
-    # Normalisation des types.
+    # --------------------------------------------------------
+    # 1. Normalisation des types
+    # --------------------------------------------------------
+
     arbre["type"] = (
         arbre["type"].astype(str).str.strip().str.lower()
     )
@@ -251,11 +254,13 @@ def visualiser_blocs():
 
     if types_inconnus:
         raise ValueError(
-            f"Types de blocs inconnus : {sorted(types_inconnus)}.\n"
-            f"Types acceptés : {sorted(couleurs)}"
+            f"Types de blocs inconnus : {sorted(types_inconnus)}"
         )
 
-    # Vérification des intervalles.
+    # --------------------------------------------------------
+    # 2. Vérification des indices
+    # --------------------------------------------------------
+
     colonnes_indices = [
         "i_debut", "i_fin", "j_debut", "j_fin"
     ]
@@ -265,73 +270,263 @@ def visualiser_blocs():
             arbre[colonne], errors="raise"
         )
 
-    if (arbre["i_fin"] <= arbre["i_debut"]).any():
-        raise ValueError("Un bloc possède un intervalle de lignes vide.")
+        if not (arbre[colonne] % 1 == 0).all():
+            raise ValueError(
+                f"Les indices de {colonne} doivent être entiers."
+            )
 
-    if (arbre["j_fin"] <= arbre["j_debut"]).any():
-        raise ValueError("Un bloc possède un intervalle de colonnes vide.")
+        arbre[colonne] = arbre[colonne].astype(int)
 
     if (arbre[colonnes_indices] < 0).any().any():
-        raise ValueError("Les indices des blocs doivent être positifs ou nuls.")
+        raise ValueError("Indices négatifs détectés.")
 
-    niveau_max = int(arbre["niveau"].max())
-    niveaux = sorted(arbre["niveau"].astype(int).unique())
+    if (arbre["i_fin"] <= arbre["i_debut"]).any():
+        raise ValueError("Intervalle de lignes vide détecté.")
+
+    if (arbre["j_fin"] <= arbre["j_debut"]).any():
+        raise ValueError("Intervalle de colonnes vide détecté.")
+
+    arbre["niveau"] = pd.to_numeric(
+        arbre["niveau"], errors="raise"
+    ).astype(int)
+
+    # --------------------------------------------------------
+    # 3. Lecture de est_diagonal
+    # --------------------------------------------------------
+
+    def convertir_booleen(valeur):
+        if isinstance(valeur, bool):
+            return valeur
+
+        if pd.isna(valeur):
+            raise ValueError("Valeur est_diagonal vide.")
+
+        valeur = str(valeur).strip().lower()
+
+        if valeur in {"true", "1", "oui", "yes"}:
+            return True
+
+        if valeur in {"false", "0", "non", "no"}:
+            return False
+
+        raise ValueError(
+            f"Valeur est_diagonal non reconnue : {valeur!r}"
+        )
+
+    if "est_diagonal" in arbre.columns:
+        arbre["est_diagonal"] = (
+            arbre["est_diagonal"].map(convertir_booleen)
+        )
+    else:
+        arbre["est_diagonal"] = (
+            (arbre["i_debut"] == arbre["j_debut"])
+            & (arbre["i_fin"] == arbre["j_fin"])
+        )
+        print(
+            "Colonne est_diagonal absente : déduction "
+            "depuis les intervalles.",
+            flush=True,
+        )
+
+    # Vérification de cohérence entre le booléen et les intervalles.
+    diagonal_intervalles = (
+        (arbre["i_debut"] == arbre["j_debut"])
+        & (arbre["i_fin"] == arbre["j_fin"])
+    )
+
+    incoherents = arbre[
+        arbre["est_diagonal"] != diagonal_intervalles
+    ]
+
+    if not incoherents.empty:
+        print(
+            f"Attention : {len(incoherents)} nœud(s) ont un "
+            "est_diagonal incompatible avec leurs intervalles.",
+            flush=True,
+        )
+
+    # --------------------------------------------------------
+    # 4. Préparation de l'affichage
+    # --------------------------------------------------------
+
+    niveaux = sorted(arbre["niveau"].unique())
+    niveau_max = max(niveaux)
 
     N_lignes = int(arbre["i_fin"].max())
     N_colonnes = int(arbre["j_fin"].max())
 
     fig, ax = plt.subplots(figsize=(10, 9))
 
+    # Hypothèse : les nœuds de type "interne" sont subdivisés,
+    # tandis que les blocs admissibles et denses sont terminaux.
+    feuilles = arbre[
+        arbre["type"].isin(["admissible", "dense"])
+    ]
+
+    internes = arbre[arbre["type"] == "interne"]
+
+    def dessiner_contour(i0, i1, j0, j1, couleur,
+                         largeur=0.7, style="-"):
+        ax.add_patch(Rectangle(
+            (j0, i0),
+            j1 - j0,
+            i1 - i0,
+            fill=False,
+            edgecolor=couleur,
+            linewidth=largeur,
+            linestyle=style,
+        ))
+
+    def dessiner_feuille(bloc, miroir=False):
+        i0 = int(bloc["i_debut"])
+        i1 = int(bloc["i_fin"])
+        j0 = int(bloc["j_debut"])
+        j1 = int(bloc["j_fin"])
+
+        if miroir:
+            # Transposition des indices du bloc.
+            i0, i1, j0, j1 = j0, j1, i0, i1
+
+        couleur = couleurs[bloc["type"]]
+
+        ax.add_patch(Rectangle(
+            (j0, i0),
+            j1 - j0,
+            i1 - i0,
+            facecolor=couleur,
+            edgecolor=couleur if miroir else "black",
+            linewidth=0.6,
+            alpha=0.13 if miroir else 0.75,
+            hatch="//" if miroir else None,
+        ))
+
+    # --------------------------------------------------------
+    # 5. Animation
+    # --------------------------------------------------------
+
     def mise_a_jour(niveau_courant):
         ax.clear()
 
         visibles = arbre[arbre["niveau"] <= niveau_courant]
 
-        for _, bloc in visibles.iterrows():
-            i0 = bloc["i_debut"]
-            i1 = bloc["i_fin"]
-            j0 = bloc["j_debut"]
-            j1 = bloc["j_fin"]
+        feuilles_visibles = feuilles[
+            feuilles["niveau"] <= niveau_courant
+        ]
 
-            type_bloc = bloc["type"]
+        internes_visibles = internes[
+            internes["niveau"] <= niveau_courant
+        ]
 
-            ax.add_patch(Rectangle(
-                (j0, i0),
-                j1 - j0,
-                i1 - i0,
-                facecolor=couleurs[type_bloc],
-                edgecolor="black",
-                linewidth=0.6,
-                alpha=0.45,
-            ))
+        # 1) Blocs terminaux stockés.
+        for _, bloc in feuilles_visibles.iterrows():
+            dessiner_feuille(bloc)
+
+        # 2) Miroirs uniquement des blocs terminaux non diagonaux.
+        for _, bloc in feuilles_visibles.iterrows():
+            if bool(bloc["est_diagonal"]):
+                continue
+
+            dessiner_feuille(bloc, miroir=True)
+
+        # 3) Contours des nœuds internes, dessinés en dernier.
+        for _, bloc in internes_visibles.iterrows():
+            dessiner_contour(
+                int(bloc["i_debut"]),
+                int(bloc["i_fin"]),
+                int(bloc["j_debut"]),
+                int(bloc["j_fin"]),
+                couleur="black",
+                largeur=0.55,
+            )
+        
+        # 4) Contours bleus de tous les nœuds diagonaux visibles,
+        # y compris les nœuds internes.
+        diagonaux_bleus = arbre[
+            arbre["est_diagonal"]
+            & (
+                (arbre["niveau"] == niveau_courant)
+                | (
+                    (arbre["niveau"] < niveau_courant)
+                    & arbre["type"].isin(["admissible", "dense"])
+                )
+            )
+        ]
+
+        for _, bloc in diagonaux_bleus.iterrows():
+            dessiner_contour(
+                int(bloc["i_debut"]),
+                int(bloc["i_fin"]),
+                int(bloc["j_debut"]),
+                int(bloc["j_fin"]),
+                couleur="blue",
+                largeur=1.6,
+            )
+
+        nb_feuilles = len(feuilles_visibles)
+        nb_admissibles = int(
+            (feuilles_visibles["type"] == "admissible").sum()
+        )
+        nb_denses = int(
+            (feuilles_visibles["type"] == "dense").sum()
+        )
+        nb_diagonaux = int(
+            visibles["est_diagonal"].sum()
+        )
 
         ax.set_xlim(0, N_colonnes)
         ax.set_ylim(N_lignes, 0)
-        ax.set_aspect("auto")
+        ax.set_aspect("equal", adjustable="box")
 
         ax.set_xlabel("Indices des colonnes")
         ax.set_ylabel("Indices des lignes")
+
         ax.set_title(
-            f"Arbre des blocs — niveau {niveau_courant}"
+            f"Arbre des blocs symétrique — niveau {niveau_courant}\n"
+            f"{nb_feuilles} bloc(s) terminal(aux) visible(s) "
+            f"({nb_admissibles} admissibles, {nb_denses} denses)\n"
+            f"{nb_diagonaux} nœud(s) diagonal(aux) visible(s)"
         )
-        ax.grid(False)
 
         legendes = [
             Rectangle(
                 (0, 0), 1, 1,
-                facecolor=couleurs[type_bloc],
+                facecolor=couleurs["admissible"],
                 edgecolor="black",
-                alpha=0.45,
-                label=nom,
-            )
-            for nom, type_bloc in [
-                ("Interne", "interne"),
-                ("Admissible", "admissible"),
-                ("Dense", "dense"),
-            ]
+                alpha=0.75,
+                label="Bloc admissible stocké",
+            ),
+            Rectangle(
+                (0, 0), 1, 1,
+                facecolor=couleurs["dense"],
+                edgecolor="black",
+                alpha=0.75,
+                label="Bloc dense stocké",
+            ),
+            Rectangle(
+                (0, 0), 1, 1,
+                fill=False,
+                edgecolor="black",
+                label="Nœud interne",
+            ),
+            Rectangle(
+                (0, 0), 1, 1,
+                fill=False,
+                edgecolor="blue",
+                linewidth=1.6,
+                label="Bloc diagonal",
+            ),
+            Rectangle(
+                (0, 0), 1, 1,
+                facecolor="gray",
+                edgecolor="gray",
+                hatch="//",
+                alpha=0.13,
+                label="Miroir déduit par symétrie",
+            ),
         ]
 
         ax.legend(handles=legendes, loc="upper right")
+        ax.grid(False)
 
     animation = FuncAnimation(
         fig,

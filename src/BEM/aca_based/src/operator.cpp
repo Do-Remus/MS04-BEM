@@ -9,7 +9,9 @@ void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y)
         return;
     }
 
-    // Bloc interne : appliquer récursivement les quatre sous-blocs.
+    // --------------------------------------------------
+    // 1. Bloc interne : parcourir les enfants existants.
+    // --------------------------------------------------
     if (bloc.type == TypeBloc::Interne)
     {
         for (Index i = 0; i < 2; ++i)
@@ -26,7 +28,9 @@ void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y)
         return;
     }
 
-    // Une feuille ne contribue que sur son processus propriétaire.
+    // --------------------------------------------------
+    // 2. Une feuille ne travaille que sur son rang MPI.
+    // --------------------------------------------------
     if (bloc.proprietaire_mpi != mpi_rank)
         return;
 
@@ -36,24 +40,26 @@ void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y)
     const Index m = indices_i.size();
     const Index n = indices_j.size();
 
-    // Extraction du vecteur correspondant au cluster de colonnes.
-    Vecteur x_local(n);
+    // --------------------------------------------------
+    // 3. Contribution directe : y_I += B * x_J.
+    // --------------------------------------------------
+
+    // Extraction du vecteur global.
+    Vecteur x_j(n);
 
     for (Index j = 0; j < n; ++j)
-    {
-        x_local[j] = x[indices_j[j]];
-    }
+        x_j[j] = x[indices_j[j]];
 
-    Vecteur y_local(m);
+    Vecteur y_i(m);
 
     if (bloc.type == TypeBloc::Dense)
     {
-        y_local.noalias() = bloc.dense * x_local;
+        y_i.noalias() = bloc.dense * x_j;
     }
     else if (bloc.type == TypeBloc::Admissible)
     {
-        const Vecteur temporaire = bloc.V.transpose() * x_local;
-        y_local.noalias() = bloc.U * temporaire;
+        const Vecteur temporaire = bloc.V.transpose() * x_j;
+        y_i.noalias() = bloc.U * temporaire;
     }
     else
     {
@@ -62,8 +68,40 @@ void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y)
 
     // Ajout de la contribution aux lignes globales.
     for (Index i = 0; i < m; ++i)
+        y[indices_i[i]] += y_i[i];
+
+    // --------------------------------------------------
+    // 4. Contribution transposée :
+    //    y_J += B^T * x_I.
+    //
+    //    Elle est nécessaire pour les blocs non diagonaux
+    //    dont la branche symétrique n'a pas été construite.
+    // --------------------------------------------------
+
+    if (!bloc.est_diagonal)
     {
-        y[indices_i[i]] += y_local[i];
+        // Extraction du vecteur global.
+        Vecteur x_i(m);
+
+        for (Index i = 0; i < m; ++i)
+            x_i[i] = x[indices_i[i]];
+
+        Vecteur y_j(n);
+
+        if (bloc.type == TypeBloc::Dense)
+        {
+            y_j.noalias() = bloc.dense.transpose() * x_i;
+        }
+        else // TypeBloc::Admissible
+        {
+            const Vecteur temporaire =
+                bloc.U.transpose() * x_i;
+
+            y_j.noalias() = bloc.V * temporaire;
+        }
+
+        for (Index j = 0; j < n; ++j)
+            y[indices_j[j]] += y_j[static_cast<Eigen::Index>(j)];
     }
 }
 

@@ -5,7 +5,7 @@
 
 #include "vecteur.hpp"
 
-constexpr double SEUIL_PIVOT = 1e-15;
+constexpr double SEUIL_PIVOT = 1e-20;
 
 using Matrice = Eigen::MatrixXcd;
 

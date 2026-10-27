@@ -46,8 +46,8 @@ int main(int argc, char **argv)
     Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
                             [&](const Maillage &maillage)
                             {
-                                maillage.export_maillage("outputs/cercle_maillage.txt");
-                                affichage_maillage(Point(0, 0), maillage.size(), "outputs/cercle_maillage.txt");
+                                maillage.export_maillage("outputs/maillage.txt");
+                                affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt");
                             });
 
     // Maillage du Narval
@@ -58,10 +58,8 @@ int main(int argc, char **argv)
     //                               pasMaillage, // pas
     //                               true         // centrer
     //                           ); }, [&](const Maillage &maillage)
-    //                         {
-    //                             maillage.export_maillage("outputs/narval_maillage.txt");
-
-    //                             affichage_maillage(Point(0, 0), maillage.size(), "outputs/narval_maillage.txt"
+    //                         { maillage.export_maillage("outputs/maillage.txt");
+    //                           affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt"
     //                         ); });
 
     // Maillage du mur acoustique
@@ -75,10 +73,8 @@ int main(int argc, char **argv)
     //                               pasMaillage, // pas
     //                               true         // centrer
     //                           ); }, [&](const Maillage &maillage)
-    //                         {
-    //                             maillage.export_maillage("outputs/mur_acoustique_maillage.txt");
-
-    //                             affichage_maillage(Point(0, 0), maillage.size(), "outputs/mur_acoustique_maillage.txt"); });
+    //                         { maillage.export_maillage("outputs/maillage.txt");
+    //                           affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt"); });
 
     // Maillage de la balle de golf
 
@@ -90,10 +86,8 @@ int main(int argc, char **argv)
     //                               0.8,        // remplissage
     //                               pasMaillage // pas
     //                           ); }, [&](const Maillage &maillage)
-    //                         {
-    //                             maillage.export_maillage("outputs/balle_de_golf_maillage.txt");
-
-    //                             affichage_maillage(Point(0, 0), maillage.size(), "outputs/balle_de_golf_maillage.txt"); });
+    //                         { maillage.export_maillage("outputs/maillage.txt");
+    //                           affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt"); });
 
     /* === Calcul de la quadrature de Legendre === */
 
@@ -129,7 +123,7 @@ int main(int argc, char **argv)
     //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
     //                                            });
 
-    /* === Calcul b de la FV de l'équation intégrale === */
+        /* === Calcul b de la FV de l'équation intégrale === */
 
     Vecteur vect_b = run("Calcul du second membre de la FV", timers, "b",
                          [&]()
@@ -139,39 +133,39 @@ int main(int argc, char **argv)
 
     /* === Inversion du système Ap = b (méthode itérative) === */
 
-    Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
-                                [&]()
-                                {
-                                    OperateurH H(arbre_blocs, vect_b.size());
-
-                                    Eigen::GMRES<OperateurH, Eigen::IdentityPreconditioner> solveur;
-
-                                    solveur.setTolerance(tolGradConj);
-                                    solveur.setMaxIterations(maxIterGradConj);
-                                    solveur.set_restart(30);
-
-                                    solveur.compute(H);
-                                    Vecteur p = solveur.solve(vect_b);
-
-                                    if (mpi_rank == 0)
-                                    {
-                                        std::cout << "GMRES - iterations : "
-                                                  << solveur.iterations() << '\n';
-                                        std::cout << "GMRES - erreur estimee : "
-                                                  << solveur.error() << '\n';
-                                    }
-
-                                    if (solveur.info() != Eigen::Success)
-                                        throw std::runtime_error("GMRES n'a pas atteint la tolerance demandee.");
-
-                                    return p;
-                                });
-
     // Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
     //                             [&]()
     //                             {
-    //                                 return COCG(maillage, vect_b, quadrature_maillage, quadrature_simd, tolGradConj, maxIterGradConj);
+    //                                 OperateurH H(arbre_blocs, vect_b.size());
+
+    //                                 Eigen::GMRES<OperateurH, Eigen::IdentityPreconditioner> solveur;
+
+    //                                 solveur.setTolerance(tolGradConj);
+    //                                 solveur.setMaxIterations(maxIterGradConj);
+    //                                 solveur.set_restart(restartGradConj);
+
+    //                                 solveur.compute(H);
+    //                                 Vecteur p = solveur.solve(vect_b);
+
+    //                                 if (mpi_rank == 0)
+    //                                 {
+    //                                     std::cout << "    GMRES - iterations : "
+    //                                               << solveur.iterations() << '\n';
+    //                                     std::cout << "    GMRES - erreur estimee : "
+    //                                               << solveur.error() << '\n';
+    //                                 }
+
+    //                                 if (solveur.info() != Eigen::Success)
+    //                                     throw std::runtime_error("GMRES n'a pas atteint la tolerance demandee.");
+
+    //                                 return p;
     //                             });
+
+    Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
+                                [&]()
+                                {
+                                    return COCG(maillage, vect_b, quadrature_maillage, arbre_blocs, tolGradConj, maxIterGradConj, false);
+                                });
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
 

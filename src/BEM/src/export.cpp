@@ -2,7 +2,7 @@
 
 void ecrire_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached, const ErreursSolution &erreurs)
 {
-    const string filename = string("outputs/cercle_u") +
+    const string filename = string("outputs/u") +
                             "_k" + std::to_string(k) +
                             "_R" + std::to_string(rayon) +
                             "_L" + std::to_string(L) +

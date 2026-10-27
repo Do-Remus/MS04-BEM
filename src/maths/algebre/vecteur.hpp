@@ -29,4 +29,5 @@ using Vecteur = Eigen::VectorXcd;
 // Vecteur generateur_aleatoire_vecteur(const int taille);
 
 Complex produitBilineaire(const Vecteur &x, const Vecteur &y);
+
 #endif
