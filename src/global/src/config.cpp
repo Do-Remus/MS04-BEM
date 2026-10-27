@@ -7,6 +7,11 @@ Real rayon = 1.0;
 Real L = 4.0;
 Real pasMaillage = 0.001;
 Real pasSolution = 0.1;
+Index N_leaves = 100;
+double parametre_admissibilite = 3.0;
+double facteur_admissibilite = 1.0;
+Index rang_max = 20;
+double toleranceAca = 1e-4;
 unsigned int idxTroncature = 25;
 unsigned int ordre = 4;
 unsigned int maxIterGradConj = 1000;
@@ -162,6 +167,61 @@ void get_config(const string &filename)
                 {
                     cout << "La valeur de tolGradConj doit-être strictement positive.";
                 }
+                exit(-1);
+            }
+        }
+
+        if (nom == "N_leaves")
+        {
+            N_leaves = static_cast<Index>(atoi(valeur.c_str()));
+            if (N_leaves == 0)
+            {
+                if (rank == 0)
+                    cout << "La valeur de N_leaves doit-être strictement positive.";
+                exit(-1);
+            }
+        }
+
+        if (nom == "parametre_admissibilite")
+        {
+            parametre_admissibilite = atof(valeur.c_str());
+            if (!(parametre_admissibilite > 0))
+            {
+                if (rank == 0)
+                    cout << "La valeur de parametre_admissibilite doit-être strictement positive.";
+                exit(-1);
+            }
+        }
+
+        if (nom == "facteur_admissibilite")
+        {
+            facteur_admissibilite = atof(valeur.c_str());
+            if (!(facteur_admissibilite > 0))
+            {
+                if (rank == 0)
+                    cout << "La valeur de facteur_admissibilite doit-être strictement positive.";
+                exit(-1);
+            }
+        }
+
+        if (nom == "rang_max")
+        {
+            rang_max = static_cast<Index>(atoi(valeur.c_str()));
+            if (rang_max == 0)
+            {
+                if (rank == 0)
+                    cout << "La valeur de rang_max doit-être strictement positive.";
+                exit(-1);
+            }
+        }
+
+        if (nom == "toleranceAca")
+        {
+            toleranceAca = atof(valeur.c_str());
+            if (!(toleranceAca > 0))
+            {
+                if (rank == 0)
+                    cout << "La valeur de toleranceAca doit-être strictement positive.";
                 exit(-1);
             }
         }

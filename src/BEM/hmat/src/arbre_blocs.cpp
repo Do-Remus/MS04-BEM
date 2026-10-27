@@ -207,6 +207,15 @@ void remplir_blocs(Bloc &bloc, const Maillage &maillage, const std::vector<Quadr
         return;
     }
 
+    std::cerr
+        << "[Erreur] Type de bloc inconnu"
+        << " | type = " << static_cast<int>(bloc.type)
+        << " | rang MPI = " << mpi_rank
+        << " | feuilles locales = " << bloc.nb_feuilles_rank_mpi
+        << " | taille lignes = " << bloc.cluster_lignes->indices.size()
+        << " | taille colonnes = " << bloc.cluster_colonnes->indices.size()
+        << '\n';
+
     throw std::logic_error("Type de bloc inconnu.");
 }
 

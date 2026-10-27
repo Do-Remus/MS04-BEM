@@ -17,6 +17,9 @@
 #include <boost/math/special_functions/bessel.hpp>
 #include <boost/math/special_functions/legendre.hpp>
 #include <Eigen/Dense>
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
+#include <unsupported/Eigen/IterativeSolvers>
 
 // Parallel work
 #include <mpi.h>

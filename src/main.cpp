@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     const string config = "config.txt";
     get_config(config);
 
-#define TESTS_CODE // FINAL_CODE or TESTS_CODE
+#define FINAL_CODE // FINAL_CODE or TESTS_CODE
 
 #ifdef FINAL_CODE
     /* ------------------------- */
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
         affichage_parametres();
     }
 
-    /* === Initialisation cache de green === */
+    // /* === Initialisation cache de green === */
 
     run("Initialisation de Green", timers, "green_cache", initialiser_green_cache, affichage_approximations);
 
@@ -103,13 +103,31 @@ int main(int argc, char **argv)
                                                                        return get_quadrature_maillage(maillage, get_legendre_data(ordre));
                                                                    });
 
+    /* === Construction de l'arbre de clusters === */
+
+    Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
+                               { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
+                               { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters.csv"); });
+
+    /* === Construction de l'arbre de blocs H-matrice === */
+
+    ArbreBlocs arbre_blocs = run("Construction de l'arbre de blocs", timers, "arbre_blocs", [&]()
+                                 {
+                                     ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters, parametre_admissibilite, facteur_admissibilite);
+                                     remplir_blocs(*arbre, maillage, quadrature_maillage, rang_max, toleranceAca);
+                                     return arbre; }, [&](const ArbreBlocs &arbre)
+                                 { 
+                                    IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters);
+                                    affichage_statistiques_matrice_H(arbre); 
+                                    ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
+
     /* === Réorganisation de la quadrature pour le SIMD === */
 
-    const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
-                                               [&]()
-                                               {
-                                                   return construire_quadrature_SIMD(maillage, quadrature_maillage);
-                                               });
+    // const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
+    //                                            [&]()
+    //                                            {
+    //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
+    //                                            });
 
     /* === Calcul b de la FV de l'équation intégrale === */
 
@@ -124,8 +142,36 @@ int main(int argc, char **argv)
     Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
                                 [&]()
                                 {
-                                    return COCG(maillage, vect_b, quadrature_maillage, quadrature_simd, tolGradConj, maxIterGradConj);
+                                    OperateurH H(arbre_blocs, vect_b.size());
+
+                                    Eigen::GMRES<OperateurH, Eigen::IdentityPreconditioner> solveur;
+
+                                    solveur.setTolerance(tolGradConj);
+                                    solveur.setMaxIterations(maxIterGradConj);
+                                    solveur.set_restart(30);
+
+                                    solveur.compute(H);
+                                    Vecteur p = solveur.solve(vect_b);
+
+                                    if (mpi_rank == 0)
+                                    {
+                                        std::cout << "GMRES - iterations : "
+                                                  << solveur.iterations() << '\n';
+                                        std::cout << "GMRES - erreur estimee : "
+                                                  << solveur.error() << '\n';
+                                    }
+
+                                    if (solveur.info() != Eigen::Success)
+                                        throw std::runtime_error("GMRES n'a pas atteint la tolerance demandee.");
+
+                                    return p;
                                 });
+
+    // Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
+    //                             [&]()
+    //                             {
+    //                                 return COCG(maillage, vect_b, quadrature_maillage, quadrature_simd, tolGradConj, maxIterGradConj);
+    //                             });
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
 
@@ -361,14 +407,8 @@ int main(int argc, char **argv)
     //     std::cout << "=================================\n";
     // }
 
-    const Index N_leafs = 100;
-    const double eta = 3.0;
-    const Index rang_max = 20;
-    const double tolerance = 1e-4;
-    const double alpha = 1.0;
-
     Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
-                               { return construire_arbre_maillage(maillage, N_leafs); }, [&](const Arbre &arbre)
+                               { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
                                { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters.csv"); });
 
     std::vector<Index> permutation = run("Construction de la permutation", timers, "permutation",
@@ -390,11 +430,11 @@ int main(int argc, char **argv)
                                           });
 
     ArbreBlocs arbre_blocs = run("Construction de l'arbre des blocs", timers, "arbre_blocs", [&]()
-                                 { return construire_arbre_blocs(arbre_clusters, eta, alpha); }, [&](const ArbreBlocs &arbre)
+                                 { return construire_arbre_blocs(arbre_clusters, parametre_admissibilite, facteur_admissibilite); }, [&](const ArbreBlocs &arbre)
                                  { ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
 
     run("Remplissage de la matrice H", timers, "remplissage_matrice", [&]()
-        { remplir_blocs(*arbre_blocs, maillage, quadrature_maillage, rang_max, tolerance); }, [&]()
+        { remplir_blocs(*arbre_blocs, maillage, quadrature_maillage, rang_max, toleranceAca); }, [&]()
         { affichage_statistiques_matrice_H(arbre_blocs); });
 
     constexpr int NB_TESTS = 100;
