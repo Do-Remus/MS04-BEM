@@ -5,4 +5,4 @@ outputs_archive/*
 code_archive/*
 bin/*
 .vscode
-perf.
+perf.*
