@@ -97,6 +97,14 @@ int main(int argc, char **argv)
                                                                        return get_quadrature_maillage(maillage, get_legendre_data(ordre));
                                                                    });
 
+    /* === Réorganisation de la quadrature pour le SIMD === */
+
+    // const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
+    //                                            [&]()
+    //                                            {
+    //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
+    //                                            });
+
     /* === Construction de l'arbre de clusters === */
 
     Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
@@ -114,14 +122,6 @@ int main(int argc, char **argv)
                                     IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters);
                                     affichage_statistiques_matrice_H(arbre); 
                                     ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
-
-    /* === Réorganisation de la quadrature pour le SIMD === */
-
-    // const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
-    //                                            [&]()
-    //                                            {
-    //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
-    //                                            });
 
     /* === Calcul b de la FV de l'équation intégrale === */
 

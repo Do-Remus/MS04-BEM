@@ -15,29 +15,36 @@ ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSoluti
     std::vector<Real> erreurs_local(nbPointsLocaux, 0.0);
 
     Real sommeErreurLocale = 0.0;
+    Real sommeAnalytiqueLocale = 0.0;
     Real erreurMaxLocale = 0.0;
 
     // Calcul des solutions analytiques et des erreurs locales
     for (Index i = 0; i < nbPointsLocaux; i++)
     {
         const Index j = indiceDebut + i;
-
         const Point &Pj = pointsSolution[j];
         const Complex uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
+
+        const Complex difference = u_cached[j] - uExact;
+
         const Real erreur = erreur_relative(u_cached[j], uExact);
 
         u_analytique_local[i] = uExact;
         erreurs_local[i] = erreur;
 
-        sommeErreurLocale += erreur * erreur;
+        sommeErreurLocale += std::norm(difference);
+        sommeAnalytiqueLocale += std::norm(uExact);
+
         erreurMaxLocale = std::max(erreurMaxLocale, erreur);
     }
 
     // Réduction des erreurs L2 et maximale sur le processus 0
     Real sommeErreur = 0.0;
+    Real sommeAnalytique = 0.0;
     Real erreurMax = 0.0;
 
     MPI_Reduce(&sommeErreurLocale, &sommeErreur, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&sommeAnalytiqueLocale, &sommeAnalytique, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&erreurMaxLocale, &erreurMax, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     // Préparation du rassemblement des résultats sur le processus 0
@@ -85,7 +92,15 @@ ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSoluti
     // Calcul et stockage des erreurs globales sur le processus 0
     if (mpi_rank == 0)
     {
-        result.erreurL2 = std::sqrt(sommeErreur / static_cast<Real>(nbPoints));
+        if (sommeAnalytique > 0.0)
+        {
+            result.erreurL2 = std::sqrt(sommeErreur / sommeAnalytique);
+        }
+        else
+        {
+            result.erreurL2 = std::numeric_limits<Real>::quiet_NaN();
+        }
+
         result.erreurMax = erreurMax;
     }
 
