@@ -81,11 +81,14 @@ void affichage_statistiques_matrice_H(const ArbreBlocs &arbre)
 
     Statistiques stats;
 
-    std::function<void(const Bloc &)> parcourir = [&](const Bloc &bloc)
+    // Parcours de tous les blocs effectivement présents dans l'arbre.
+    std::function<void(const Bloc &)> parcourir =
+        [&](const Bloc &bloc)
     {
         switch (bloc.type)
         {
         case TypeBloc::Interne:
+        {
             ++stats.nb_blocs_internes;
 
             for (const auto &ligne : bloc.fils)
@@ -96,13 +99,19 @@ void affichage_statistiques_matrice_H(const ArbreBlocs &arbre)
                         parcourir(*fils);
                 }
             }
+
             break;
+        }
 
         case TypeBloc::Dense:
+        {
             ++stats.nb_blocs_denses;
+
             stats.coefficients_denses +=
                 static_cast<std::size_t>(bloc.dense.size());
+
             break;
+        }
 
         case TypeBloc::Admissible:
         {
@@ -127,32 +136,104 @@ void affichage_statistiques_matrice_H(const ArbreBlocs &arbre)
 
     parcourir(*arbre);
 
-    const std::size_t N = arbre->cluster_lignes ? arbre->cluster_lignes->indices.size() : 0;
+    // Dimensions de la matrice : lignes x colonnes.
+    const std::size_t M =
+        arbre->cluster_lignes
+            ? arbre->cluster_lignes->indices.size()
+            : 0;
 
-    const std::size_t coefficients_H = stats.coefficients_denses + stats.coefficients_UV;
-    const long double coefficients_denses_complets = static_cast<long double>(N) * N;
-    const long double octets_par_coefficient = sizeof(Matrice::Scalar);
-    const long double memoire_H = coefficients_H * octets_par_coefficient;
-    const long double memoire_dense = coefficients_denses_complets * octets_par_coefficient;
-    const double memoire_H_MiB = static_cast<double>(memoire_H / (1024.0L * 1024.0L));
-    const double memoire_dense_MiB = static_cast<double>(memoire_dense / (1024.0L * 1024.0L));
-    const double pourcentage_stockage = coefficients_denses_complets > 0 ? 100.0 * static_cast<double>(coefficients_H) / static_cast<double>(coefficients_denses_complets) : 0.0;
-    const double rang_moyen = stats.nb_blocs_admissibles > 0 ? static_cast<double>(stats.somme_rangs) / static_cast<double>(stats.nb_blocs_admissibles) : 0.0;
+    const std::size_t N =
+        arbre->cluster_colonnes
+            ? arbre->cluster_colonnes->indices.size()
+            : 0;
 
-    affichage_ligne("Taille de la matrice", std::to_string(N) + " x " + std::to_string(N));
+    // Nombre de coefficients stockés dans la H-matrice.
+    const std::size_t coefficients_H =
+        stats.coefficients_denses + stats.coefficients_UV;
 
-    affichage_ligne("Blocs internes", stats.nb_blocs_internes);
-    affichage_ligne("Blocs admissibles", stats.nb_blocs_admissibles);
-    affichage_ligne("Blocs denses", stats.nb_blocs_denses);
+    // Nombre de coefficients d'une matrice dense de mêmes dimensions.
+    const long double coefficients_denses_complets =
+        static_cast<long double>(M) *
+        static_cast<long double>(N);
 
-    affichage_ligne("Coefs denses", stats.coefficients_denses);
-    affichage_ligne("Coefs U/V", stats.coefficients_UV);
-    affichage_ligne("Coefs stockes", coefficients_H);
+    const long double octets_par_coefficient =
+        sizeof(Matrice::Scalar);
 
-    affichage_ligne("Rang maximal ACA", stats.rang_maximal);
-    affichage_ligne("Rang moyen ACA", std::to_string(rang_moyen));
+    const long double memoire_H =
+        static_cast<long double>(coefficients_H) *
+        octets_par_coefficient;
 
-    affichage_ligne("Taux de stockage", std::to_string(pourcentage_stockage) + " %");
-    affichage_ligne("Memoire estimee matrice H", std::to_string(memoire_H_MiB) + " MiB");
-    affichage_ligne("Memoire matrice dense", std::to_string(memoire_dense_MiB) + " MiB");
+    const long double memoire_dense =
+        coefficients_denses_complets *
+        octets_par_coefficient;
+
+    const double memoire_H_MiB =
+        static_cast<double>(
+            memoire_H / (1024.0L * 1024.0L));
+
+    const double memoire_dense_MiB =
+        static_cast<double>(
+            memoire_dense / (1024.0L * 1024.0L));
+
+    const double pourcentage_stockage =
+        coefficients_denses_complets > 0.0L
+            ? 100.0 *
+                  static_cast<double>(coefficients_H) /
+                  static_cast<double>(coefficients_denses_complets)
+            : 0.0;
+
+    const double rang_moyen =
+        stats.nb_blocs_admissibles > 0
+            ? static_cast<double>(stats.somme_rangs) /
+                  static_cast<double>(stats.nb_blocs_admissibles)
+            : 0.0;
+
+    // Affichage.
+    affichage_ligne(
+        "Taille de la matrice",
+        std::to_string(M) + " x " + std::to_string(N));
+
+    affichage_ligne(
+        "Blocs internes",
+        stats.nb_blocs_internes);
+
+    affichage_ligne(
+        "Blocs admissibles",
+        stats.nb_blocs_admissibles);
+
+    affichage_ligne(
+        "Blocs denses",
+        stats.nb_blocs_denses);
+
+    affichage_ligne(
+        "Coefs denses",
+        stats.coefficients_denses);
+
+    affichage_ligne(
+        "Coefs U/V",
+        stats.coefficients_UV);
+
+    affichage_ligne(
+        "Coefs stockes",
+        coefficients_H);
+
+    affichage_ligne(
+        "Rang maximal ACA",
+        stats.rang_maximal);
+
+    affichage_ligne(
+        "Rang moyen ACA",
+        std::to_string(rang_moyen));
+
+    affichage_ligne(
+        "Taux de stockage",
+        std::to_string(pourcentage_stockage) + " %");
+
+    affichage_ligne(
+        "Memoire estimee matrice H",
+        std::to_string(memoire_H_MiB) + " MiB");
+
+    affichage_ligne(
+        "Memoire matrice dense",
+        std::to_string(memoire_dense_MiB) + " MiB");
 }

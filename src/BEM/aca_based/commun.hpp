@@ -3,6 +3,7 @@
 
 #include "decomposition.hpp"
 #include "operator.hpp"
+#include "reconstruction.hpp"
 #include "COCG.hpp"
 
 #endif

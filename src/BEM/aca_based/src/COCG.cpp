@@ -4,7 +4,7 @@ Vecteur produit_H_preconditionne(const Vecteur &x, const Vecteur &S, const Arbre
 {
     const Vecteur Sx = S.cwiseProduct(x);
 
-    const Vecteur HSx = appliquer_H(arbre_blocs, Sx);
+    const Vecteur HSx = appliquer_H(arbre_blocs, Sx, true);
 
     const Vecteur y = S.cwiseProduct(HSx);
 

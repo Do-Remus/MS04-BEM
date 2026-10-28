@@ -232,3 +232,23 @@ std::vector<Point> construire_maillage_solution(const Maillage &maillage)
     }
     return pointsSolution;
 }
+
+void export_maillage_solution(const std::vector<Point> &pointsSolution, const std::string &fichier)
+{
+    std::ofstream out(fichier);
+
+    if (!out)
+        throw std::runtime_error(
+            "Impossible d'ouvrir " + fichier);
+
+    out << std::setprecision(17);
+
+    // Nombre de points
+    out << pointsSolution.size() << '\n';
+
+    // Coordonnées des points
+    for (const Point &P : pointsSolution)
+    {
+        out << P.x << ' ' << P.y << '\n';
+    }
+}

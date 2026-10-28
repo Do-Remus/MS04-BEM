@@ -43,6 +43,8 @@ double distance(const BoiteEnglobante &boite_a, const BoiteEnglobante &boite_b);
 
 void subdivision_arbre_recursive(Noeud &neoud, const Index N_leafs, const std::vector<Point> &points);
 
+Arbre construire_arbre(const std::vector<Point> &points, const Index N_leafs);
+
 Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs = 100);
 
 std::vector<Index> construire_permutation(const Arbre &arbre);

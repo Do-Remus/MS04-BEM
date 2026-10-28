@@ -105,23 +105,23 @@ int main(int argc, char **argv)
     //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
     //                                            });
 
-    /* === Construction de l'arbre de clusters === */
+    /* === Construction de l'arbre de clusters du maillage === */
 
-    Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
-                               { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
-                               { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters.csv"); });
+    Arbre arbre_clusters_maillage = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
+                                        { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
+                                        { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters_BEM.csv"); });
 
     /* === Construction de l'arbre de blocs H-matrice === */
 
-    ArbreBlocs arbre_blocs = run("Construction de l'arbre de blocs", timers, "arbre_blocs", [&]()
-                                 {
-                                     ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters, parametre_admissibilite, facteur_admissibilite);
-                                     remplir_blocs(*arbre, maillage, quadrature_maillage, rang_max, toleranceAca);
+    ArbreBlocs arbre_blocs_BEM = run("Construction de l'arbre de blocs", timers, "arbre_blocs_H", [&]()
+                                     {
+                                     ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters_maillage, parametre_admissibilite, facteur_admissibilite, true);
+                                     remplir_blocs_bem(*arbre, maillage, quadrature_maillage, rang_max, toleranceAca);
                                      return arbre; }, [&](const ArbreBlocs &arbre)
-                                 { 
-                                    IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters);
+                                     { 
+                                    IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters_maillage);
                                     affichage_statistiques_matrice_H(arbre); 
-                                    ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
+                                    ecrire_arbre_blocs(arbre, "outputs/arbre_blocs_BEM.csv", intervalles, intervalles, true); });
 
     /* === Calcul b de la FV de l'équation intégrale === */
 
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
                                 [&]()
                                 {
-                                    return COCG(maillage, vect_b, quadrature_maillage, arbre_blocs, tolGradConj, maxIterGradConj, false);
+                                    return COCG(maillage, vect_b, quadrature_maillage, arbre_blocs_BEM, tolGradConj, maxIterGradConj, true);
                                 });
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
@@ -149,12 +149,32 @@ int main(int argc, char **argv)
 
     const std::vector<Point> pointsSolution = run("Maillage pour la solution", timers, "maillage_solution", [&]()
                                                   { return construire_maillage_solution(maillage); }, [&](const std::vector<Point> &pointsSolution)
-                                                  { affichage_maillage_solution(pointsSolution.size()); });
+                                                  { if (mpi_rank == 0)
+                                                        export_maillage_solution(pointsSolution, "outputs/maillage_solution.txt");
+                                                    affichage_maillage_solution(pointsSolution.size()); });
+
+    /* === Construction de l'arbre de clusters des points de solution === */
+
+    Arbre arbre_clusters_solution = run("Construction de l'arbre de clusters de la solution", timers, "arbre_clusters_solution", [&]()
+                                        { return construire_arbre(pointsSolution, N_leaves); }, [&](const Arbre &arbre)
+                                        { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters_solution.csv"); });
+
+    /* === Construction de l'arbre de blocs H-matrice de reconstruction === */
+
+    ArbreBlocs arbre_blocs_solution = run("Construction de l'arbre de blocs de reconstruction", timers, "arbre_blocs_solution", [&]()
+                                          { ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters_solution, arbre_clusters_maillage, parametre_admissibilite, facteur_admissibilite, false);
+                                            remplir_blocs_solution(*arbre, pointsSolution, quadrature_maillage, rang_max, toleranceAca);
+                                            return arbre; }, [&](const ArbreBlocs &arbre)
+                                          {
+                                            const IntervallesClusters intervalles_lignes = construire_intervalles_clusters(arbre_clusters_solution);
+                                            const IntervallesClusters intervalles_colonnes = construire_intervalles_clusters(arbre_clusters_maillage);
+                                            affichage_statistiques_matrice_H(arbre);
+                                            ecrire_arbre_blocs(arbre, "outputs/arbre_blocs_solution.csv", intervalles_lignes, intervalles_colonnes, false); });
 
     /* === Reconstruction finale === */
 
     const Vecteur u_cached = run("Reconstruction de la solution", timers, "reconstruction", [&]()
-                                 { return reconstruire_solution(pointsSolution, maillage, quadrature_maillage, vect_p_cached); });
+                                 { return appliquer_H(arbre_blocs_solution, vect_p_cached, false); });
 
     /* === Validation de la solution  === */
 

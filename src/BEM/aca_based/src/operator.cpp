@@ -1,136 +1,107 @@
 #include "../operator.hpp"
 
-void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y)
+void remplir_blocs_bem(Bloc &bloc, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Index rang_max, const double tolerance)
 {
-    // Aucun descendant appartenant à ce rang :
-    // inutile de parcourir ce sous-arbre.
+    // Aucun calcul à effectuer si ce sous-arbre ne contient
+    // aucune feuille appartenant au rang MPI courant.
     if (bloc.nb_feuilles_rank_mpi == 0)
     {
         return;
     }
 
     // --------------------------------------------------
-    // 1. Bloc interne : parcourir les enfants existants.
+    // 1. Bloc interne : remplir récursivement les fils.
     // --------------------------------------------------
     if (bloc.type == TypeBloc::Interne)
     {
-        for (Index i = 0; i < 2; ++i)
+        for (auto &ligne : bloc.fils)
         {
-            for (Index j = 0; j < 2; ++j)
+            for (auto &enfant : ligne)
             {
-                if (bloc.fils[i][j])
-                {
-                    appliquer_bloc(*bloc.fils[i][j], x, y);
-                }
+                if (enfant) // Pour un bloc diagonal fils[1][0] == nullptr et donc ne sera pas exploré
+                    remplir_blocs_bem(*enfant, maillage, quadrature_maillage, rang_max, tolerance);
             }
         }
 
         return;
     }
 
-    // --------------------------------------------------
-    // 2. Une feuille ne travaille que sur son rang MPI.
-    // --------------------------------------------------
-    if (bloc.proprietaire_mpi != mpi_rank)
-        return;
-
-    const auto &indices_i = bloc.cluster_lignes->indices;
-    const auto &indices_j = bloc.cluster_colonnes->indices;
-
-    const Index m = indices_i.size();
-    const Index n = indices_j.size();
+    // À ce stade, le bloc est une feuille appartenant
+    // nécessairement au rang MPI courant.
+    // Récupérer les indices des clusters associés au bloc.
+    const auto &indices_lignes = bloc.cluster_lignes->indices;
+    const auto &indices_colonnes = bloc.cluster_colonnes->indices;
 
     // --------------------------------------------------
-    // 3. Contribution directe : y_I += B * x_J.
+    // 2. Bloc dense : calculer et stocker les coefficients.
     // --------------------------------------------------
-
-    // Extraction du vecteur global.
-    Vecteur x_j(n);
-
-    for (Index j = 0; j < n; ++j)
-        x_j[j] = x[indices_j[j]];
-
-    Vecteur y_i(m);
-
     if (bloc.type == TypeBloc::Dense)
     {
-        y_i.noalias() = bloc.dense * x_j;
-    }
-    else if (bloc.type == TypeBloc::Admissible)
-    {
-        const Vecteur temporaire = bloc.V.transpose() * x_j;
-        y_i.noalias() = bloc.U * temporaire;
-    }
-    else
-    {
-        throw std::logic_error("Type de bloc inconnu.");
-    }
+        const Index m = indices_lignes.size();
+        const Index n = indices_colonnes.size();
 
-    // Ajout de la contribution aux lignes globales.
-    for (Index i = 0; i < m; ++i)
-        y[indices_i[i]] += y_i[i];
+        bloc.dense.resize(m, n);
+
+        if (bloc.est_diagonal)
+        {
+            // Le bloc est carré : calcul de la moitié supérieure.
+            for (Index i = 0; i < m; ++i)
+            {
+                for (Index j = i; j < n; ++j)
+                {
+                    const Complex aij = matrice_bem(indices_lignes[i], indices_colonnes[j], maillage, quadrature_maillage);
+
+                    bloc.dense(i, j) = aij;
+
+                    if (i != j)
+                        bloc.dense(j, i) = aij;
+                }
+            }
+        }
+        else
+        {
+            // Bloc non diagonal : remplissage classique.
+            for (Eigen::Index i = 0; i < m; ++i)
+            {
+                for (Eigen::Index j = 0; j < n; ++j)
+                {
+                    bloc.dense(i, j) = matrice_bem(indices_lignes[i], indices_colonnes[j], maillage, quadrature_maillage);
+                }
+            }
+        }
+
+        // Aucun facteur ACA n'est nécessaire pour ce bloc.
+        bloc.U.resize(0, 0);
+        bloc.V.resize(0, 0);
+
+        return;
+    }
 
     // --------------------------------------------------
-    // 4. Contribution transposée :
-    //    y_J += B^T * x_I.
-    //
-    //    Elle est nécessaire pour les blocs non diagonaux
-    //    dont la branche symétrique n'a pas été construite.
+    // 3. Bloc admissible : calculer l'approximation ACA.
     // --------------------------------------------------
-
-    if (!bloc.est_diagonal)
+    if (bloc.type == TypeBloc::Admissible)
     {
-        // Extraction du vecteur global.
-        Vecteur x_i(m);
+        auto resultat = aca_bem(indices_lignes, indices_colonnes, maillage, quadrature_maillage, rang_max, tolerance);
 
-        for (Index i = 0; i < m; ++i)
-            x_i[i] = x[indices_i[i]];
+        // Transférer les facteurs ACA dans le bloc.
+        bloc.U = std::move(resultat.U);
+        bloc.V = std::move(resultat.V);
 
-        Vecteur y_j(n);
+        // Ce bloc ne stocke pas sa matrice dense.
+        bloc.dense.resize(0, 0);
 
-        if (bloc.type == TypeBloc::Dense)
-        {
-            y_j.noalias() = bloc.dense.transpose() * x_i;
-        }
-        else // TypeBloc::Admissible
-        {
-            const Vecteur temporaire =
-                bloc.U.transpose() * x_i;
-
-            y_j.noalias() = bloc.V * temporaire;
-        }
-
-        for (Index j = 0; j < n; ++j)
-            y[indices_j[j]] += y_j[static_cast<Eigen::Index>(j)];
-    }
-}
-
-Vecteur appliquer_H(const ArbreBlocs &arbre_blocs, const Vecteur &x)
-{
-    if (!arbre_blocs)
-    {
-        throw std::invalid_argument("Impossible d'appliquer une H-matrice vide.");
+        return;
     }
 
-    if (x.size() != static_cast<Eigen::Index>(arbre_blocs->cluster_colonnes->indices.size()))
-    {
-        throw std::invalid_argument("La dimension du vecteur x est incompatible.");
-    }
+    std::cerr
+        << "[Erreur] Type de bloc inconnu"
+        << " | type = " << static_cast<int>(bloc.type)
+        << " | rang MPI = " << mpi_rank
+        << " | feuilles locales = " << bloc.nb_feuilles_rank_mpi
+        << " | taille lignes = " << bloc.cluster_lignes->indices.size()
+        << " | taille colonnes = " << bloc.cluster_colonnes->indices.size()
+        << '\n';
 
-    Vecteur y = Vecteur::Zero(x.size());
-
-    appliquer_bloc(*arbre_blocs, x, y);
-
-    // Combiner les contributions de tous les processus.
-    if (mpi_size > 1)
-    {
-        if (y.size() > std::numeric_limits<int>::max())
-        {
-            throw std::overflow_error("Le vecteur est trop grand pour MPI_Allreduce.");
-        }
-
-        MPI_Allreduce(MPI_IN_PLACE, y.data(), static_cast<int>(y.size()), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
-    }
-
-    return y;
+    throw std::logic_error("Type de bloc inconnu.");
 }

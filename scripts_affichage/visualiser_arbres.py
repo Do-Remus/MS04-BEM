@@ -15,10 +15,6 @@ from matplotlib import colormaps
 # Configuration
 # ============================================================
 
-FICHIER_MAILLAGE = "outputs/maillage.txt"
-FICHIER_CLUSTERS = "outputs/arbre_clusters.csv"
-FICHIER_BLOCS = "outputs/arbre_blocs.csv"
-
 DOSSIER_SORTIE = "outputs"
 FPS = 1
 
@@ -59,6 +55,60 @@ def lire_milieux_segments(fichier):
         "y": 0.5 * (segments["y1"] + segments["y2"]),
     })
 
+def lire_points(fichier):
+    """
+    Lit un fichier contenant directement les coordonnées x y.
+    La première ligne peut contenir le nombre de points.
+    """
+    if not os.path.isfile(fichier):
+        raise FileNotFoundError(
+            f"Fichier de maillage introuvable : {fichier}"
+        )
+
+    with open(fichier, "r") as f:
+        premiere_ligne = f.readline().strip()
+
+    # Détecte le format :
+    # N
+    # x1 y1
+    # ...
+    try:
+        nombre_points = int(premiere_ligne)
+        a_un_compteur = True
+    except ValueError:
+        a_un_compteur = False
+
+    if a_un_compteur:
+        points = pd.read_csv(
+            fichier,
+            sep=r"\s+",
+            header=None,
+            skiprows=1,
+            names=["x", "y"],
+        )
+
+        if len(points) != nombre_points:
+            raise ValueError(
+                f"Le fichier annonce {nombre_points} points, "
+                f"mais en contient {len(points)}."
+            )
+    else:
+        points = pd.read_csv(
+            fichier,
+            sep=r"\s+",
+            header=None,
+            names=["x", "y"],
+        )
+
+    if points.empty:
+        raise ValueError(f"Le maillage {fichier} est vide.")
+
+    if points.isna().any().any():
+        raise ValueError(
+            f"Le fichier {fichier} contient des lignes invalides."
+        )
+
+    return points
 
 def lire_csv(fichier, colonnes_requises):
     """Lit un CSV et vérifie les colonnes nécessaires."""
@@ -88,11 +138,21 @@ def lire_csv(fichier, colonnes_requises):
 # 1. Visualisation spatiale de l'arbre de clusters
 # ============================================================
 
-def visualiser_clusters():
+def visualiser_clusters(FICHIER_MAILLAGE, FICHIER_CLUSTERS, type_maillage="segments"):
     print("Lecture du maillage et de l'arbre de clusters...",
           flush=True)
 
-    points = lire_milieux_segments(FICHIER_MAILLAGE)
+    if type_maillage == "segments":
+        points = lire_milieux_segments(FICHIER_MAILLAGE)
+
+    elif type_maillage == "points":
+        points = lire_points(FICHIER_MAILLAGE)
+
+    else:
+        raise ValueError(
+            f"Type de maillage inconnu : {type_maillage}. "
+            "Valeurs possibles : 'segments' ou 'points'."
+        )
 
     arbre = lire_csv(
         FICHIER_CLUSTERS,
@@ -135,9 +195,9 @@ def visualiser_clusters():
         ax.scatter(
             x, y,
             s=12,
-            color="black",
+            color="0.75",
             label="Milieux des segments",
-            zorder=5,
+            zorder=1,
         )
 
         visibles = arbre[arbre["niveau"] <= niveau_courant]
@@ -146,7 +206,7 @@ def visualiser_clusters():
             niveau = int(noeud["niveau"])
 
             couleur = colormaps["viridis"](
-                niveau / max(niveau_max, 1)
+                0.1 + 0.65 * niveau / max(niveau_max, 1)
             )
 
             largeur = noeud["x_max"] - noeud["x_min"]
@@ -159,6 +219,7 @@ def visualiser_clusters():
                 fill=False,
                 edgecolor=couleur,
                 linewidth=1.4,
+                zorder=3,
             ))
 
         nb = len(arbre[arbre["niveau"] == niveau_courant])
@@ -184,13 +245,19 @@ def visualiser_clusters():
         blit=False,
     )
 
+    nom_fichier = os.path.splitext(
+        os.path.basename(FICHIER_CLUSTERS)
+    )[0]
+
     chemin_gif = os.path.join(
-        DOSSIER_SORTIE, "arbre_clusters_spatial.gif"
-    )
-    chemin_png = os.path.join(
-        DOSSIER_SORTIE, "arbre_clusters_spatial.png"
+        DOSSIER_SORTIE,
+        f"{nom_fichier}.gif"
     )
 
+    chemin_png = os.path.join(
+        DOSSIER_SORTIE,
+        f"{nom_fichier}.png"
+    )
     animation.save(
         chemin_gif,
         writer=PillowWriter(fps=FPS),
@@ -208,7 +275,7 @@ def visualiser_clusters():
 # 2. Visualisation de l'arbre des blocs
 # ============================================================
 
-def visualiser_blocs():
+def visualiser_blocs(FICHIER_BLOCS):
     print("Lecture de l'arbre des blocs...", flush=True)
 
     arbre = lire_csv(
@@ -217,6 +284,7 @@ def visualiser_blocs():
             "niveau", "type",
             "i_debut", "i_fin",
             "j_debut", "j_fin",
+            "est_symetrique",
         },
     )
 
@@ -328,22 +396,58 @@ def visualiser_blocs():
             flush=True,
         )
 
-    # Vérification de cohérence entre le booléen et les intervalles.
+    # --------------------------------------------------------
+    # 3 bis. Lecture de est_symetrique
+    # --------------------------------------------------------
+
+    if "est_symetrique" not in arbre.columns:
+        raise ValueError(
+            "La colonne est_symetrique est absente du CSV."
+        )
+
+    arbre["est_symetrique"] = (
+        arbre["est_symetrique"].map(convertir_booleen)
+    )
+
+    valeurs_symetrie = arbre["est_symetrique"].unique()
+
+    if len(valeurs_symetrie) != 1:
+        raise ValueError(
+            "La colonne est_symetrique doit avoir la même valeur "
+            "pour tous les blocs."
+        )
+
+    est_symetrique = bool(valeurs_symetrie[0])
+
+
+    # Vérification de cohérence entre est_diagonal et les intervalles.
     diagonal_intervalles = (
         (arbre["i_debut"] == arbre["j_debut"])
         & (arbre["i_fin"] == arbre["j_fin"])
     )
 
-    incoherents = arbre[
-        arbre["est_diagonal"] != diagonal_intervalles
-    ]
+    if est_symetrique:
+        incoherents = arbre[
+            arbre["est_diagonal"] != diagonal_intervalles
+        ]
 
-    if not incoherents.empty:
-        print(
-            f"Attention : {len(incoherents)} nœud(s) ont un "
-            "est_diagonal incompatible avec leurs intervalles.",
-            flush=True,
-        )
+        if not incoherents.empty:
+            print(
+                f"Attention : {len(incoherents)} nœud(s) ont un "
+                "est_diagonal incompatible avec leurs intervalles.",
+                flush=True,
+            )
+    else:
+        # Pour deux arbres distincts, est_diagonal ne se déduit
+        # pas de l'égalité des intervalles.
+        nb_diagonaux = int(arbre["est_diagonal"].sum())
+
+        if nb_diagonaux > 0:
+            print(
+                "Attention : arbre non symétrique contenant "
+                f"{nb_diagonaux} nœud(s) marqué(s) diagonal(aux).",
+                flush=True,
+            )
 
     # --------------------------------------------------------
     # 4. Préparation de l'affichage
@@ -421,12 +525,13 @@ def visualiser_blocs():
         for _, bloc in feuilles_visibles.iterrows():
             dessiner_feuille(bloc)
 
-        # 2) Miroirs uniquement des blocs terminaux non diagonaux.
-        for _, bloc in feuilles_visibles.iterrows():
-            if bool(bloc["est_diagonal"]):
-                continue
+        # 2) Miroirs uniquement si la matrice est symétrique.
+        if est_symetrique:
+            for _, bloc in feuilles_visibles.iterrows():
+                if bool(bloc["est_diagonal"]):
+                    continue
 
-            dessiner_feuille(bloc, miroir=True)
+                dessiner_feuille(bloc, miroir=True)
 
         # 3) Contours des nœuds internes, dessinés en dernier.
         for _, bloc in internes_visibles.iterrows():
@@ -475,16 +580,22 @@ def visualiser_blocs():
 
         ax.set_xlim(0, N_colonnes)
         ax.set_ylim(N_lignes, 0)
-        ax.set_aspect("equal", adjustable="box")
+        ax.set_aspect("auto")
 
         ax.set_xlabel("Indices des colonnes")
         ax.set_ylabel("Indices des lignes")
 
+        nature_matrice = (
+            "symétrique"
+            if est_symetrique
+            else "non symétrique / rectangulaire"
+        )
+
         ax.set_title(
-            f"Arbre des blocs symétrique — niveau {niveau_courant}\n"
+            f"Arbre des blocs {nature_matrice} — niveau {niveau_courant}\n"
             f"{nb_feuilles} bloc(s) terminal(aux) visible(s) "
             f"({nb_admissibles} admissibles, {nb_denses} denses)\n"
-            f"{nb_diagonaux} nœud(s) diagonal(aux) visible(s)"
+            f"{nb_diagonaux} nœud(s) marqué(s) diagonal(aux)"
         )
 
         legendes = [
@@ -508,22 +619,29 @@ def visualiser_blocs():
                 edgecolor="black",
                 label="Nœud interne",
             ),
-            Rectangle(
-                (0, 0), 1, 1,
-                fill=False,
-                edgecolor="blue",
-                linewidth=1.6,
-                label="Bloc diagonal",
-            ),
-            Rectangle(
-                (0, 0), 1, 1,
-                facecolor="gray",
-                edgecolor="gray",
-                hatch="//",
-                alpha=0.13,
-                label="Miroir déduit par symétrie",
-            ),
         ]
+
+        if est_symetrique:
+            legendes.append(
+                Rectangle(
+                    (0, 0), 1, 1,
+                    fill=False,
+                    edgecolor="blue",
+                    linewidth=1.6,
+                    label="Bloc diagonal",
+                )
+            )
+
+            legendes.append(
+                Rectangle(
+                    (0, 0), 1, 1,
+                    facecolor="gray",
+                    edgecolor="gray",
+                    hatch="//",
+                    alpha=0.13,
+                    label="Miroir déduit par symétrie",
+                )
+            )
 
         ax.legend(handles=legendes, loc="upper right")
         ax.grid(False)
@@ -537,11 +655,18 @@ def visualiser_blocs():
         blit=False,
     )
 
+    nom_fichier = os.path.splitext(
+        os.path.basename(FICHIER_BLOCS)
+    )[0]
+
     chemin_gif = os.path.join(
-        DOSSIER_SORTIE, "arbre_blocs.gif"
+        DOSSIER_SORTIE,
+        f"{nom_fichier}.gif"
     )
+
     chemin_png = os.path.join(
-        DOSSIER_SORTIE, "arbre_blocs.png"
+        DOSSIER_SORTIE,
+        f"{nom_fichier}.png"
     )
 
     animation.save(
@@ -562,10 +687,16 @@ def visualiser_blocs():
 # ============================================================
 
 if __name__ == "__main__":
-    print("=== Visualisation spatiale des clusters ===", flush=True)
-    visualiser_clusters()
+    print("=== Visualisation spatiale des clusters BEM ===", flush=True)
+    visualiser_clusters("outputs/maillage.txt", "outputs/arbre_clusters_BEM.csv", type_maillage="segments")
 
-    print("\n=== Visualisation de l'arbre des blocs ===", flush=True)
-    visualiser_blocs()
+    print("\n=== Visualisation de l'arbre des blocs BEM ===", flush=True)
+    visualiser_blocs("outputs/arbre_blocs_BEM.csv")
+
+    print("=== Visualisation spatiale des clusters solution ===", flush=True)
+    visualiser_clusters("outputs/maillage_solution.txt", "outputs/arbre_clusters_solution.csv", type_maillage="points")
+
+    print("\n=== Visualisation de l'arbre des blocs solution ===", flush=True)
+    visualiser_blocs("outputs/arbre_blocs_solution.csv")
 
     print("\nToutes les visualisations sont terminées.", flush=True)

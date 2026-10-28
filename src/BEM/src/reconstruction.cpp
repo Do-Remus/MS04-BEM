@@ -26,3 +26,15 @@ Vecteur reconstruire_solution(const std::vector<Point> &pointsSolution, const Ma
 
     return u_cached;
 }
+
+Complex coefficient_reconstruction(const Index j, const Index i, const std::vector<Point> &pointsSolution, const std::vector<QuadratureSegment> &quadrature_maillage)
+{
+    const Point &P = pointsSolution[j];
+
+    return integ_simple(
+        [&P](const Point &Q)
+        {
+            return green_cached(P, Q);
+        },
+        quadrature_maillage[i]);
+}

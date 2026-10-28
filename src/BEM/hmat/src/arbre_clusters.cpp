@@ -95,14 +95,13 @@ void subdivision_arbre_recursive(Noeud &noeud, const Index N_leafs, const std::v
     subdivision_arbre_recursive(*noeud.fils_droit, N_leafs, points);
 }
 
-Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
+Arbre construire_arbre(const std::vector<Point> &points, const Index N_leafs)
 {
     Arbre arbre = std::make_unique<Noeud>();
     // -- Initialisation du 1er noeud --
 
     arbre->niveau = 0;
 
-    const std::vector<Point> &points = maillage.PointsMilieuMaillage();
     arbre->indices.resize(points.size());
 
     arbre->boite.x_min = std::numeric_limits<double>::infinity();
@@ -130,6 +129,13 @@ Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
     subdivision_arbre_recursive(*arbre, N_leafs, points);
 
     return arbre;
+}
+
+Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
+{
+    const std::vector<Point> &points = maillage.PointsMilieuMaillage();
+
+    return construire_arbre(points, N_leafs);
 }
 
 std::vector<Index> construire_permutation(const Arbre &arbre)

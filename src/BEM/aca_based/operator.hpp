@@ -5,9 +5,9 @@
 #include "../../maths/commun.hpp"
 
 #include "../hmat/commun.hpp"
+#include "../operator.hpp"
+#include "../aca_based/decomposition.hpp"
 
-void appliquer_bloc(const Bloc &bloc, const Vecteur &x, Vecteur &y);
-
-Vecteur appliquer_H(const ArbreBlocs &arbre_blocs, const Vecteur &x);
+void remplir_blocs_bem(Bloc &bloc, const Maillage &maillage, const std::vector<QuadratureSegment> &quadrature_maillage, const Index rang_max, const double tolerance);
 
 #endif
