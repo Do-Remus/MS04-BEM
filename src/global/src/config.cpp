@@ -12,11 +12,11 @@ Real parametre_admissibilite = 3.0;
 Real facteur_admissibilite = 1.0;
 Index rang_max = 20;
 Real toleranceAca = 1e-4;
+Real facteur_step_green = 0.01;
 unsigned int idxTroncature = 25;
 unsigned int ordre = 4;
 unsigned int maxIterGradConj = 1000;
 Real tolGradConj = 1e-8;
-unsigned int restartGradConj = 30;
 
 /* Déclaration des fonctions globales */
 
@@ -227,14 +227,14 @@ void get_config(const string &filename)
             }
         }
 
-        if (nom == "restartGradConj")
+        if (nom == "facteur_step_green")
         {
-            restartGradConj = atoi(valeur.c_str());
-            if (!(restartGradConj > 0))
+            facteur_step_green = atof(valeur.c_str());
+            if (!(facteur_step_green > 0))
             {
                 if (rank == 0)
                 {
-                    cout << "La valeur de restartGradConj doit-être strictement positive.";
+                    cout << "La valeur de facteur_step_green doit-être strictement positive.";
                 }
                 exit(-1);
             }

@@ -223,7 +223,7 @@ clean:
 	rm -rf $(PROFILE_DIR)
 
 clean_output:
-	rm -f ./outputs/*
+	rm -rf ./outputs/*
 
 clean_log:
 	rm -f ./log/*
@@ -231,7 +231,7 @@ clean_log:
 clean_all:
 	rm -f $(OBJS) $(TARGET)
 	rm -rf $(PROFILE_DIR)
-	rm -f ./outputs/*
+	rm -rf ./outputs/*
 	rm -f ./log/*
 
 

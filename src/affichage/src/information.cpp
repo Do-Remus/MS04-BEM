@@ -11,17 +11,12 @@ void affichage_approximations()
     affichage_ligne("Ordre de quadrature", ordre);
     affichage_ligne("Rang maximal ACA", rang_max);
     affichage_ligne("Tolerance ACA", toleranceAca);
-    affichage_ligne("Pas large du cache", green_cache_step_large);
-    affichage_ligne("Pas fin du cache", green_cache_step_fine);
-    affichage_ligne("Cutoff du cache", green_cache_cutoff);
+    affichage_ligne("Facteur du pas green", facteur_step_green);
+    affichage_ligne("Pas du cache de green", green_cache_step);
     affichage_ligne("Taille du cache", green_cache_size);
 
-    const Real memoire =
-        green_cache_size * sizeof(Complex) / (1024.0 * 1024.0);
-
-    affichage_ligne(
-        "Memoire cache Green",
-        std::to_string(memoire) + " MiB");
+    const Real memoire = green_cache_size * sizeof(Complex) / (1024.0 * 1024.0);
+    affichage_ligne("Memoire cache Green", std::to_string(memoire) + " MiB");
 }
 
 void affichage_erreur_relative_matrice(Real erreur)
@@ -150,9 +145,9 @@ void affichage_statistiques_matrice_H(const ArbreBlocs &arbre)
     affichage_ligne("Blocs admissibles", stats.nb_blocs_admissibles);
     affichage_ligne("Blocs denses", stats.nb_blocs_denses);
 
-    affichage_ligne("Coefficients denses stockes", stats.coefficients_denses);
-    affichage_ligne("Coefficients des facteurs U et V", stats.coefficients_UV);
-    affichage_ligne("Nombre total de coefficients stockes", coefficients_H);
+    affichage_ligne("Coefs denses", stats.coefficients_denses);
+    affichage_ligne("Coefs U/V", stats.coefficients_UV);
+    affichage_ligne("Coefs stockes", coefficients_H);
 
     affichage_ligne("Rang maximal ACA", stats.rang_maximal);
     affichage_ligne("Rang moyen ACA", std::to_string(rang_moyen));

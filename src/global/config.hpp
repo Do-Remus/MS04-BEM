@@ -16,11 +16,11 @@ extern Real parametre_admissibilite;
 extern Real facteur_admissibilite;
 extern Index rang_max;
 extern Real toleranceAca;
+extern Real facteur_step_green;
 extern unsigned int idxTroncature;
 extern unsigned int ordre;
 extern unsigned int maxIterGradConj;
 extern Real tolGradConj;
-extern unsigned int restartGradConj;
 
 // -- Fonctions --
 

@@ -324,12 +324,33 @@ inline Simd simd_load_complex_im(const Vecteur &x, const std::size_t j)
 #endif
 }
 
+inline Simd simd_index_to_real(const SimdIndex x)
+{
+#ifdef SIMD_AVX2
+    return _mm256_cvtepi32_pd(x);
+#elif defined(SIMD_AVX512)
+    return _mm512_cvtepi32_pd(x);
+#else
+    // Conversion des deux entiers 32 bits en doubles.
+    alignas(16) int32_t indices[2];
+    Real values[2];
+
+    vst1_s32(indices, x);
+
+    values[0] = static_cast<Real>(indices[0]);
+    values[1] = static_cast<Real>(indices[1]);
+
+    return vld1q_f64(values);
+#endif
+}
+
 // -----------------------------------------------------------------------------
 // Constants
 // -----------------------------------------------------------------------------
 
 inline const Simd SIMD_HALF = simd_set1(0.5);
-inline const SimdIndex SIMD_DEUX = simd_index_set1(2);
-inline const SimdIndex SIMD_UN = simd_index_set1(1);
+inline const Simd SIMD_UN = simd_set1(1.0);
+inline const SimdIndex SIMD_DEUX_ID = simd_index_set1(2);
+inline const SimdIndex SIMD_UN_ID = simd_index_set1(1);
 
 #endif

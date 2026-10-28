@@ -49,39 +49,15 @@ inline Complex green_reguliere(const Point &P1, const Point &P2)
 // Cache pour green
 extern Complex *green_cache;
 extern MPI_Win green_cache_win;
-extern Real green_cache_step_fine;
-extern Real green_cache_step_fine_inv;
-extern Real green_cache_step_large;
-extern Real green_cache_step_large_inv;
-extern Real green_cache_cutoff;
+
+extern Real green_cache_step;
+extern Real green_cache_step_inv;
+
 extern Real delta;
-extern Index green_cache_n_fine;
+
 extern Index green_cache_size;
 
-// Green cached
-// au plus proche
-// inline Complex green_cached(const Point &p1, const Point &p2)
-// {
-//     const Real dx = p1.x - p2.x;
-//     const Real dy = p1.y - p2.y;
-
-//     const Real distance = std::sqrt(dx * dx + dy * dy);
-
-//     Index index;
-
-//     if (distance < green_cache_cutoff)
-//     {
-//         index = static_cast<Index>(distance * green_cache_step_fine_inv + Real(0.5));
-//     }
-//     else
-//     {
-//         index = green_cache_n_fine + static_cast<Index>((distance - green_cache_cutoff) * green_cache_step_large_inv + Real(0.5));
-//     }
-
-//     return green_cache[index];
-// }
-
-// interpolation linéaire (beaucoup mieux)
+// Avec interpolation linéaire (beaucoup mieux)
 inline Complex green_cached(const Point &p1, const Point &p2)
 {
     const Real dx = p1.x - p2.x;
@@ -89,112 +65,79 @@ inline Complex green_cached(const Point &p1, const Point &p2)
 
     const Real distance = std::sqrt(dx * dx + dy * dy);
 
-    Index index;
-    Real alpha;
+    const Real position = distance * green_cache_step_inv;
 
-    if (distance < green_cache_cutoff)
+    Index index = static_cast<Index>(position);
+
+    // Protection contre un accès à index + 1 hors du tableau.
+    if (index >= green_cache_size - 1)
     {
-        const Real position = distance * green_cache_step_fine_inv;
-
-        index = static_cast<Index>(position);
-        alpha = position - static_cast<Real>(index);
-    }
-    else
-    {
-        const Real position =
-            (distance - green_cache_cutoff) * green_cache_step_large_inv;
-
-        index = green_cache_n_fine + static_cast<Index>(position);
-
-        alpha = position - static_cast<Real>(static_cast<Index>(position));
+        index = green_cache_size - 2;
     }
 
-    // Interpolation linéaire entre les deux valeurs voisines.
-    return (Real(1) - alpha) * green_cache[index] + alpha * green_cache[index + 1];
+    const Real alpha = position - static_cast<Real>(index);
+
+    return (Real(1.0) - alpha) * green_cache[index] + alpha * green_cache[index + 1];
 }
 
 // Version vectorisée
 struct GreenCacheSIMD
 {
-    Simd cutoff;
-    Simd fine;
-    Simd fine_inv;
-    Simd large;
-    Simd large_inv;
-    Simd n_fine;
+    Simd step;
+    Simd step_inv;
 };
 
 inline GreenCacheSIMD green_cache_simd;
 
 inline void green_cached_SIMD(const Simd Ax, const Simd Ay, const Simd Bx, const Simd By, Simd &G_re, Simd &G_im)
 {
-    /*
-     * Distances aux points sources.
-     */
+    // Distances entre les points.
     const Simd dx = simd_sub(Ax, Bx);
     const Simd dy = simd_sub(Ay, By);
+
     const Simd distance = simd_sqrt(simd_add(simd_mul(dx, dx), simd_mul(dy, dy)));
 
-    /*
-     * Indices dans la partie fine.
-     *
-     * Même formule que green_cached().
-     */
-    const Simd index_fine = simd_add(simd_mul(distance, green_cache_simd.fine_inv), SIMD_HALF);
+    // Position réelle dans le cache.
+    const Simd position = simd_mul(distance, green_cache_simd.step_inv);
 
-    /*
-     * Indices dans la partie grossière.
-     *
-     * Même formule que green_cached().
-     */
-    const Simd distance_large = simd_sub(distance, green_cache_simd.cutoff);
-    const Simd index_large = simd_add(green_cache_simd.n_fine, simd_add(simd_mul(distance_large, green_cache_simd.large_inv), SIMD_HALF));
+    // Indice inférieur : troncature, comme dans la version scalaire.
+    const SimdIndex index = simd_double_to_int(position);
 
-    /*
-     * Choix entre les deux parties du cache.
-     */
-    const SimdMask masque = simd_cmp_lt(distance, green_cache_simd.cutoff);
-    const Simd index_selectionne = simd_blend(index_large, index_fine, masque);
+    // Conversion de l'indice entier en SIMD réel.
+    // Prévoir un helper de conversion si ton abstraction SIMD ne le fournit pas.
+    const Simd index_real = simd_index_to_real(index);
 
-    /*
-     * Conversion des indices en entiers.
-     *
-     * Les indices sont positifs, donc la troncature
-     * correspond au static_cast<Index>() de
-     * green_cached().
-     */
-    const SimdIndex index = simd_double_to_int(index_selectionne);
+    // Coefficient d'interpolation.
+    const Simd alpha = simd_sub(position, index_real);
+    const Simd one_minus_alpha = simd_sub(SIMD_UN, alpha);
 
-    /*
-     * green_cache est un tableau de Complex :
-     *
-     *   green_cache[0] = {re0, im0}
-     *   green_cache[1] = {re1, im1}
-     *   ...
-     *
-     * Vu comme un tableau de double :
-     *
-     *   cache[2*i]     = real
-     *   cache[2*i + 1] = imag
-     */
-    const SimdIndex index_re = simd_index_mul(index, SIMD_DEUX);
-    const SimdIndex index_im = simd_index_add(index_re, SIMD_UN);
+    // Indices des deux valeurs à interpoler.
+    const SimdIndex index_next = simd_index_add(index, SIMD_UN_ID);
+
+    const SimdIndex index_re = simd_index_mul(index, SIMD_DEUX_ID);
+    const SimdIndex index_im = simd_index_add(index_re, SIMD_UN_ID);
+
+    const SimdIndex index_next_re = simd_index_mul(index_next, SIMD_DEUX_ID);
+    const SimdIndex index_next_im = simd_index_add(index_next_re, SIMD_UN_ID);
 
     const Real *cache = reinterpret_cast<const Real *>(green_cache);
 
-    /*
-     * Lecture SIMD des valeurs réelles et imaginaires.
-     */
-    G_re = simd_gather(cache, index_re);
-    G_im = simd_gather(cache, index_im);
-}
+    // Lecture des deux valeurs réelles et imaginaires.
+    const Simd re0 = simd_gather(cache, index_re);
+    const Simd im0 = simd_gather(cache, index_im);
+    const Simd re1 = simd_gather(cache, index_next_re);
+    const Simd im1 = simd_gather(cache, index_next_im);
 
+    // Interpolation linéaire.
+    G_re = simd_add(simd_mul(one_minus_alpha, re0), simd_mul(alpha, re1));
+    G_im = simd_add(simd_mul(one_minus_alpha, im0), simd_mul(alpha, im1));
+}
 // Partie reguliere de Green cached
 inline Complex green_reguliere_cached(const Point &P1, const Point &P2)
 {
     Real x = (P2 - P1).norm();
 
-    if (x < green_cache_step_fine)
+    if (x < green_cache_step)
     {
         return (I / Real(4.0)) - (Real(1.0) / (Real(2.0) * pi)) * (gamma_euler + log(k / 2));
     }
