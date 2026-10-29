@@ -63,6 +63,7 @@ idxTroncature=$(get_param "idxTroncature")
 ordre=$(get_param "ordre")
 maxIterGradConj=$(get_param "maxIterGradConj")
 tolGradConj=$(get_param "tolGradConj")
+maillage=$(get_param "maillage")
 
 # ------------------------------------------------------------
 # Conversion de la tolérance en notation scientifique
@@ -80,7 +81,7 @@ tol_log=${tol_log/e+/e}
 # Nom de base du run
 # ------------------------------------------------------------
 
-BASE="k${k}_R${rayon}_L${L}_hM${pasMaillage}_hS${pasSolution}_N${idxTroncature}_q${ordre}_tol${tol_log}_it${maxIterGradConj}_core${NCORES}"
+BASE="${maillage}_k${k}_R${rayon}_L${L}_hM${pasMaillage}_hS${pasSolution}_N${idxTroncature}_q${ordre}_tol${tol_log}_it${maxIterGradConj}_core${NCORES}"
 
 # ------------------------------------------------------------
 # Création du dossier log

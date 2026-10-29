@@ -90,7 +90,7 @@ def enregistrer_animation(x, y, u_cached, k, sortie, nb_frames, fps, contour):
     if not np.isfinite(vmax) or vmax == 0:
         vmax = 1.0
 
-    champ_initial = u_cached * np.exp(-1j * k * temps[0])
+    champ_initial = u_cached * np.exp(1j * k * temps[0])
     fig, axes = plt.subplots(1, 2, figsize=(13, 5.5), constrained_layout=True)
 
     re_plot = axes[0].tripcolor(
@@ -115,7 +115,7 @@ def enregistrer_animation(x, y, u_cached, k, sortie, nb_frames, fps, contour):
     titre = fig.suptitle("")
 
     def actualiser(indice):
-        champ = u_cached * np.exp(-1j * k * temps[indice])
+        champ = u_cached * np.exp(1j * k * temps[indice])
         re_plot.set_array(champ.real)
         im_plot.set_array(champ.imag)
         titre.set_text(f"Champ calculé dépendant du temps — t = {temps[indice]:.5g}")
