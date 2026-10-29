@@ -194,6 +194,8 @@ int main(int argc, char **argv)
     if (mpi_rank == 0)
         timers.print_all();
 
+    afficher_memoire();
+
     // -- liberation mémoire --
     MPI_Win_free(&green_cache_win);
 #endif

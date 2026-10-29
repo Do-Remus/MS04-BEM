@@ -1,7 +1,7 @@
 k = 10
 rayon = 1
 L = 10
-pasMaillage = 0.001
+pasMaillage = 0.0001
 pasSolution = 0.1
 N_leaves = 100
 parametre_admissibilite = 3.0
@@ -13,5 +13,5 @@ ordre = 4
 maxIterGradConj = 2000
 tolGradConj = 1e-8
 facteur_step_green = 0.04
-maillage = mur_acoustique
-affichageErreur = false
+maillage = cercle
+affichageErreur = true

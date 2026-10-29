@@ -20,7 +20,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
     /*
      * Calcul et construction du preconditionneur.
      */
-    Vecteur diagonale = diagonale_matrice_bem(maillage, quadrature_maillage);
+
     // Vecteur S(n, 1.0); // cas sans preconditionnement
     /* === Préconditionnement optionnel === */
 

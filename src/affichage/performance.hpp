@@ -38,4 +38,6 @@ public:
     void print_all(const std::string &title = "=== Temps ===") const;
 };
 
+void afficher_memoire(const std::string &title = "=== Mémoire ===");
+
 #endif

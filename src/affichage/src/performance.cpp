@@ -95,3 +95,26 @@ void Timers::print_all(const std::string &title) const
                   << std::endl;
     }
 }
+
+void afficher_memoire(const std::string &title)
+{
+    if (mpi_rank == 0)
+        std::cout << "\n"
+                  << title << std::endl;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    std::ifstream fichier("/proc/self/status");
+    std::string ligne;
+
+    while (std::getline(fichier, ligne))
+    {
+        if (ligne.rfind("VmRSS:", 0) == 0 ||
+            ligne.rfind("VmHWM:", 0) == 0)
+        {
+            std::cout << "    "
+                      << "[proc=" << mpi_rank << "] "
+                      << ligne << '\n';
+        }
+    }
+}
