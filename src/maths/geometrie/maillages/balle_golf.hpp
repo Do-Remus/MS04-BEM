@@ -141,7 +141,11 @@ inline Maillage maillage_balle_de_golf(const double rayon, const unsigned int nb
                             pointsFins[j].y + t * (pointsFins[j2].y - pointsFins[j].y));
     }
 
-    return Maillage(points);
+    Maillage maillage(points);
+
+    maillage.nom = "balle_golf";
+
+    return maillage;
 }
 
 #endif

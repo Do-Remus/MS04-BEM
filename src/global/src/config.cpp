@@ -17,6 +17,8 @@ unsigned int idxTroncature = 25;
 unsigned int ordre = 4;
 unsigned int maxIterGradConj = 1000;
 Real tolGradConj = 1e-8;
+std::string nom_maillage = "cercle";
+bool affichageErreur = true;
 
 /* Déclaration des fonctions globales */
 
@@ -233,9 +235,32 @@ void get_config(const string &filename)
             if (!(facteur_step_green > 0))
             {
                 if (rank == 0)
-                {
                     cout << "La valeur de facteur_step_green doit-être strictement positive.";
-                }
+                exit(-1);
+            }
+        }
+
+        if (nom == "maillage")
+        {
+            nom_maillage = valeur;
+            if (nom_maillage != "cercle" && nom_maillage != "narval" && nom_maillage != "balle_golf" && nom_maillage != "mur_acoustique")
+            {
+                if (rank == 0)
+                    cout << "Erreur : maillage doit valoir 'cercle', 'narval', 'balle_golf' ou 'mur_acoustique'. Valeur reçue : " << nom_maillage << endl;
+                exit(-1);
+            }
+        }
+
+        if (nom == "affichageErreur")
+        {
+            if (valeur == "true" || valeur == "1")
+                affichageErreur = true;
+            else if (valeur == "false" || valeur == "0")
+                affichageErreur = false;
+            else
+            {
+                if (rank == 0)
+                    cout << "Erreur : affichageErreur doit valoir 'true', 'false', '1' ou '0'. Valeur reçue : " << valeur << endl;
                 exit(-1);
             }
         }

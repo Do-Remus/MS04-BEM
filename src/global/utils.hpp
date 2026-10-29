@@ -6,4 +6,6 @@
 // retire la fon des lignes de texte
 string trim(const string &str);
 
+std::string formater_nombre(double valeur);
+
 #endif

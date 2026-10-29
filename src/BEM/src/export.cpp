@@ -1,24 +1,13 @@
 #include "../export.hpp"
 
-void ecrire_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached, const ErreursSolution &erreurs)
+void ecrire_solution(const std::vector<Point> &pointsSolution, const Vecteur &u_cached, const ErreursSolution &erreurs, const std::string &fichier)
 {
-    const string filename = string("outputs/u") +
-                            "_k" + std::to_string(k) +
-                            "_R" + std::to_string(rayon) +
-                            "_L" + std::to_string(L) +
-                            "_hM" + std::to_string(pasMaillage) +
-                            "_hS" + std::to_string(pasSolution) +
-                            "_d" + std::to_string(delta) +
-                            "_N" + std::to_string(idxTroncature) +
-                            "_q" + std::to_string(ordre) +
-                            ".txt";
-
-    std::ofstream file(filename);
+    std::ofstream file(fichier);
 
     if (!file.is_open())
     {
         std::cout << "ERROR: Le fichier "
-                  << filename
+                  << fichier
                   << " n'a pas pu être ouvert"
                   << std::endl;
 

@@ -21,6 +21,8 @@ extern unsigned int idxTroncature;
 extern unsigned int ordre;
 extern unsigned int maxIterGradConj;
 extern Real tolGradConj;
+extern std::string nom_maillage;
+extern bool affichageErreur;
 
 // -- Fonctions --
 

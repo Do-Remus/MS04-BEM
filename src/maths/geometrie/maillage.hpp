@@ -21,6 +21,8 @@ public:
 
     vector<Point> PointsMaillage() const;
     vector<Point> PointsMilieuMaillage() const;
+
+    string nom;
 };
 
 /* Fonctions associées à la classe */

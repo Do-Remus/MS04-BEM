@@ -13,6 +13,8 @@ inline Maillage maillage_cercle()
     Maillage maillage;
     maillage.ajoute_cercle(pasMaillage, cercle);
 
+    maillage.nom = "cercle";
+
     return maillage;
 }
 

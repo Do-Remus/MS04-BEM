@@ -17,6 +17,16 @@ int main(int argc, char **argv)
     const string config = "config.txt";
     get_config(config);
 
+    std::string end_output_folder = "_k" + formater_nombre(k) +
+                                    "_R" + formater_nombre(rayon) +
+                                    "_L" + formater_nombre(L) +
+                                    "_hM" + formater_nombre(pasMaillage) +
+                                    "_hS" + formater_nombre(pasSolution) +
+                                    "_d" + formater_nombre(delta) +
+                                    "_N" + std::to_string(idxTroncature) +
+                                    "_q" + std::to_string(ordre);
+    std::string output_folder;
+
 #define FINAL_CODE // FINAL_CODE or TESTS_CODE
 
 #ifdef FINAL_CODE
@@ -41,53 +51,45 @@ int main(int argc, char **argv)
 
     /* === Création Maillage === */
 
-    // Maillage du Cercle
-
-    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
-                            [&](const Maillage &maillage)
+    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", [&]() -> Maillage
                             {
-                                maillage.export_maillage("outputs/maillage.txt");
-                                affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt");
-                            });
+                            if (nom_maillage == "narval")
+                            {
+                                return maillage_narval(
+                                    1.0,         // echelle
+                                    pasMaillage, // pas
+                                    true         // centrer
+                                );
+                            }
+                            else if (nom_maillage == "mur_acoustique")
+                            {
+                                return maillage_mur_acoustique(
+                                    0.5,         // largeur
+                                    4.0,         // hauteur
+                                    8,           // nbPointes
+                                    0.6,         // profondeur
+                                    pasMaillage, // pas
+                                    true         // centrer
+                                );
+                            }
+                            else if (nom_maillage == "balle_golf")
+                            {
+                                return maillage_balle_de_golf(
+                                    rayon,
+                                    12,         // nbAlveoles
+                                    0.12,       // profondeur
+                                    0.8,        // remplissage
+                                    pasMaillage // pas
+                                );
+                            }
+                            return maillage_cercle(); }, [&](const Maillage &maillage)
+                            {
+                            const std::filesystem::path dossier_sortie = std::filesystem::path("outputs") / (maillage.nom + end_output_folder);
+                            std::filesystem::create_directories(dossier_sortie);
+                            output_folder = dossier_sortie.string();
 
-    // Maillage du Narval
-
-    // Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", [&]()
-    //                         { return maillage_narval(
-    //                               1.0,         // echelle
-    //                               pasMaillage, // pas
-    //                               true         // centrer
-    //                           ); }, [&](const Maillage &maillage)
-    //                         { maillage.export_maillage("outputs/maillage.txt");
-    //                           affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt"
-    //                         ); });
-
-    // Maillage du mur acoustique
-
-    // Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", [&]()
-    //                         { return maillage_mur_acoustique(
-    //                               0.5,         // largeur
-    //                               4.0,         // hauteur
-    //                               8,           // nbPointes
-    //                               0.6,         // profondeur
-    //                               pasMaillage, // pas
-    //                               true         // centrer
-    //                           ); }, [&](const Maillage &maillage)
-    //                         { maillage.export_maillage("outputs/maillage.txt");
-    //                           affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt"); });
-
-    // Maillage de la balle de golf
-
-    // Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", [&]()
-    //                         { return maillage_balle_de_golf(
-    //                               rayon,
-    //                               12,         // nbAlveoles
-    //                               0.12,       // profondeur
-    //                               0.8,        // remplissage
-    //                               pasMaillage // pas
-    //                           ); }, [&](const Maillage &maillage)
-    //                         { maillage.export_maillage("outputs/maillage.txt");
-    //                           affichage_maillage(Point(0, 0), maillage.size(), "outputs/maillage.txt"); });
+                            maillage.export_maillage((dossier_sortie / "maillage.txt").string());
+                            affichage_maillage(Point(0, 0), maillage.size(), (dossier_sortie / "maillage.txt").string()); });
 
     /* === Calcul de la quadrature de Legendre === */
 
@@ -109,7 +111,7 @@ int main(int argc, char **argv)
 
     Arbre arbre_clusters_maillage = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
                                         { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
-                                        { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters_BEM.csv"); });
+                                        { ecrire_arbre_clusters(arbre, output_folder + "/arbre_clusters_BEM.csv"); });
 
     /* === Construction de l'arbre de blocs H-matrice === */
 
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
                                      { 
                                     IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters_maillage);
                                     affichage_statistiques_matrice_H(arbre); 
-                                    ecrire_arbre_blocs(arbre, "outputs/arbre_blocs_BEM.csv", intervalles, intervalles, true); });
+                                    ecrire_arbre_blocs(arbre, output_folder + "/arbre_blocs_BEM.csv", intervalles, intervalles, true); });
 
     /* === Calcul b de la FV de l'équation intégrale === */
 
@@ -141,23 +143,24 @@ int main(int argc, char **argv)
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
 
-    run("Validation de p", timers, "erreur_p", [&]()
-        { return calculer_erreur_relative_p(maillage, vect_p_cached); }, [](const Real erreurP)
-        { affichage_erreur_relative_p(erreurP); });
+    if (affichageErreur)
+        run("Validation de p", timers, "erreur_p", [&]()
+            { return calculer_erreur_relative_p(maillage, vect_p_cached); }, [](const Real erreurP)
+            { affichage_erreur_relative_p(erreurP); });
 
     /* === Maillage pour la solution === */
 
     const std::vector<Point> pointsSolution = run("Maillage pour la solution", timers, "maillage_solution", [&]()
                                                   { return construire_maillage_solution(maillage); }, [&](const std::vector<Point> &pointsSolution)
                                                   { if (mpi_rank == 0)
-                                                        export_maillage_solution(pointsSolution, "outputs/maillage_solution.txt");
+                                                        export_maillage_solution(pointsSolution, output_folder + "/maillage_solution.txt");
                                                     affichage_maillage_solution(pointsSolution.size()); });
 
     /* === Construction de l'arbre de clusters des points de solution === */
 
     Arbre arbre_clusters_solution = run("Construction de l'arbre de clusters de la solution", timers, "arbre_clusters_solution", [&]()
                                         { return construire_arbre(pointsSolution, N_leaves); }, [&](const Arbre &arbre)
-                                        { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters_solution.csv"); });
+                                        { ecrire_arbre_clusters(arbre, output_folder + "/arbre_clusters_solution.csv"); });
 
     /* === Construction de l'arbre de blocs H-matrice de reconstruction === */
 
@@ -169,7 +172,7 @@ int main(int argc, char **argv)
                                             const IntervallesClusters intervalles_lignes = construire_intervalles_clusters(arbre_clusters_solution);
                                             const IntervallesClusters intervalles_colonnes = construire_intervalles_clusters(arbre_clusters_maillage);
                                             affichage_statistiques_matrice_H(arbre);
-                                            ecrire_arbre_blocs(arbre, "outputs/arbre_blocs_solution.csv", intervalles_lignes, intervalles_colonnes, false); });
+                                            ecrire_arbre_blocs(arbre, output_folder + "/arbre_blocs_solution.csv", intervalles_lignes, intervalles_colonnes, false); });
 
     /* === Reconstruction finale === */
 
@@ -180,8 +183,9 @@ int main(int argc, char **argv)
 
     run("Validation de la solution", timers, "erreurs_sol", [&]()
         { return calculer_erreurs_solution(pointsSolution, u_cached); }, [&](const ErreursSolution &erreurs)
-        { ecrire_solution(pointsSolution, u_cached, erreurs);
-          affichage_erreurs_solution(erreurs.erreurL2, erreurs.erreurMax); });
+        { ecrire_solution(pointsSolution, u_cached, erreurs,  output_folder + "/solution.txt");
+          if (affichageErreur)    
+            affichage_erreurs_solution(erreurs.erreurL2, erreurs.erreurMax); });
 
     // -- End time --
 

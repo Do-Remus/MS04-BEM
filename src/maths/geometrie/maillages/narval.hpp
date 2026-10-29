@@ -290,7 +290,11 @@ inline Maillage maillage_narval(
             contour[j].y + t * (contour[j2].y - contour[j].y));
     }
 
-    return Maillage(points);
+    Maillage maillage(points);
+
+    maillage.nom = "narval";
+
+    return maillage;
 }
 
 #endif

@@ -21,21 +21,25 @@ ErreursSolution calculer_erreurs_solution(const std::vector<Point> &pointsSoluti
     // Calcul des solutions analytiques et des erreurs locales
     for (Index i = 0; i < nbPointsLocaux; i++)
     {
-        const Index j = indiceDebut + i;
-        const Point &Pj = pointsSolution[j];
-        const Complex uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
+        if (affichageErreur)
+        {
+            const Index j = indiceDebut + i;
 
-        const Complex difference = u_cached[j] - uExact;
+            const Point &Pj = pointsSolution[j];
+            const Complex uExact = u_N_plus_analytique(Pj, rayon, idxTroncature);
 
-        const Real erreur = erreur_relative(u_cached[j], uExact);
+            const Complex difference = u_cached[j] - uExact;
 
-        u_analytique_local[i] = uExact;
-        erreurs_local[i] = erreur;
+            const Real erreur = erreur_relative(u_cached[j], uExact);
 
-        sommeErreurLocale += std::norm(difference);
-        sommeAnalytiqueLocale += std::norm(uExact);
+            u_analytique_local[i] = uExact;
+            erreurs_local[i] = erreur;
 
-        erreurMaxLocale = std::max(erreurMaxLocale, erreur);
+            sommeErreurLocale += std::norm(difference);
+            sommeAnalytiqueLocale += std::norm(uExact);
+
+            erreurMaxLocale = std::max(erreurMaxLocale, erreur);
+        }
     }
 
     // Réduction des erreurs L2 et maximale sur le processus 0

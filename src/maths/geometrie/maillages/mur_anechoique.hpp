@@ -147,7 +147,11 @@ inline Maillage maillage_mur_acoustique(const double largeur = 0.5, const double
                             S.P1.y + t * (S.P2.y - S.P1.y));
     }
 
-    return Maillage(points);
+    Maillage maillage(points);
+
+    maillage.nom = "mur_anechoique";
+
+    return maillage;
 }
 
 #endif
