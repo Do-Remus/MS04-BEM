@@ -83,6 +83,12 @@ def choisir_exports_solution():
         "uCached_Re.png": "Partie réelle de la solution calculée",
         "uCached_Im.png": "Partie imaginaire de la solution calculée",
         "uCached_Norm.png": "Norme de la solution calculée",
+        "uExactTot_Re.png": "Partie réelle du champ total exact",
+        "uExactTot_Im.png": "Partie imaginaire du champ total exact",
+        "uExactTot_Norm.png": "Norme du champ total exact",
+        "uCachedTot_Re.png": "Partie réelle du champ total calculé",
+        "uCachedTot_Im.png": "Partie imaginaire du champ total calculé",
+        "uCachedTot_Norm.png": "Norme du champ total calculé",
         "Erreur.png": "Erreur absolue",
         "animation": "Animation temporelle GIF",
     }

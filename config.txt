@@ -1,7 +1,7 @@
 k = 10
 rayon = 1
 L = 10
-pasMaillage = 0.0001
+pasMaillage = 0.001
 pasSolution = 0.1
 N_leaves = 100
 parametre_admissibilite = 3.0
