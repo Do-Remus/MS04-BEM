@@ -40,7 +40,9 @@ void initialiser_green_cache()
     MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shm_comm);
 
     int shm_rank;
+    int shm_size;
     MPI_Comm_rank(shm_comm, &shm_rank);
+    MPI_Comm_size(shm_comm, &shm_size);
 
     const MPI_Aint taille_locale = (shm_rank == 0) ? taille : 0;
 
@@ -59,28 +61,43 @@ void initialiser_green_cache()
         green_cache = static_cast<Complex *>(ptr);
     }
 
-    // -- Initialisation par le processus 0 --
+    // -- Remplissage parallèle du cache --
 
-    if (shm_rank == 0)
+    // Répartition équilibrée des indices entre les processus.
+    const Index n = green_cache_size;
+    const Index nb_processus = static_cast<Index>(shm_size);
+    const Index rang = static_cast<Index>(shm_rank);
+
+    const Index quotient = n / nb_processus;
+    const Index reste = n % nb_processus;
+
+    const Index debut = rang * quotient + std::min(rang, reste);
+    const Index nombre_indices = quotient + (rang < reste ? 1 : 0);
+    const Index fin = debut + nombre_indices;
+
+    for (Index index = debut; index < fin; ++index)
     {
-        for (Index index = 0; index < green_cache_size; ++index)
-        {
-            const Real distance = static_cast<Real>(index) * green_cache_step;
+        const Real distance =
+            static_cast<Real>(index) * green_cache_step;
 
-            if (distance == Real(0.0))
-            {
-                // Valeur artificielle : le noyau Green est singulier en r = 0.
-                green_cache[index] = Complex(0.0, 0.0);
-            }
-            else
-            {
-                green_cache[index] = (I / Real(4.0)) * hankel_n(k * distance, 0);
-            }
+        if (distance == Real(0.0))
+        {
+            // Valeur artificielle : le noyau Green est singulier en r = 0.
+            green_cache[index] = Complex(0.0, 0.0);
+        }
+        else
+        {
+            green_cache[index] =
+                (I / Real(4.0)) * hankel_n(k * distance, 0);
         }
     }
 
-    // Synchronisation entre les processus partageant la mémoire.
+    // -- Synchronisation de la mémoire partagée --
+
+    MPI_Win_sync(green_cache_win);
     MPI_Barrier(shm_comm);
+    MPI_Win_sync(green_cache_win);
+
     MPI_Comm_free(&shm_comm);
 
     // -- Paramètres SIMD --

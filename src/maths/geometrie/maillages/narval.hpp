@@ -1,5 +1,5 @@
-#ifndef NARVAL_HPP_INCLUDED
-#define NARVAL_HPP_INCLUDED
+#ifndef MAILLAGE_NARVAL_HPP_INCLUDED
+#define MAILLAGE_NARVAL_HPP_INCLUDED
 
 #include "../../../global/commun.hpp"
 

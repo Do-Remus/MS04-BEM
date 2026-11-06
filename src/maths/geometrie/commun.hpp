@@ -12,5 +12,7 @@
 #include "maillages/mur_anechoique.hpp"
 #include "maillages/narval.hpp"
 #include "maillages/cercle.hpp"
+#include "maillages/rectangle.hpp"
+#include "maillages/ellipse.hpp"
 
 #endif

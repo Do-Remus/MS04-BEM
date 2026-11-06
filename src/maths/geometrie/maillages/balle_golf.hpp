@@ -1,5 +1,5 @@
-#ifndef BALLE_GOLF_HPP_INCLUDED
-#define BALLE_GOLF_HPP_INCLUDED
+#ifndef MAILLAGE_BALLE_GOLF_HPP_INCLUDED
+#define MAILLAGE_BALLE_GOLF_HPP_INCLUDED
 
 #include "../../../global/commun.hpp"
 
