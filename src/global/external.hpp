@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <unordered_map>
 #include <optional>
+#include <memory>
+#include <limits>
 
 // Maths
 #include <cmath>
@@ -22,7 +24,6 @@
 
 #include <Eigen/SparseCore>
 #include <unsupported/Eigen/IterativeSolvers>
-
 
 #include <Eigen/SVD>
 #include <iomanip>

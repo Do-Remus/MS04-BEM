@@ -19,6 +19,7 @@ unsigned int maxIterGradConj = 1000;
 Real tolGradConj = 1e-8;
 std::string nom_maillage = "cercle";
 bool affichageErreur = true;
+unsigned int ordreFMM = 10;
 
 /* Déclaration des fonctions globales */
 
@@ -255,6 +256,17 @@ void get_config(const string &filename)
             {
                 if (rank == 0)
                     cout << "Erreur : affichageErreur doit valoir 'true', 'false', '1' ou '0'. Valeur reçue : " << valeur << endl;
+                exit(-1);
+            }
+        }
+
+        if (nom == "ordreFMM")
+        {
+            ordreFMM = static_cast<Index>(atoi(valeur.c_str()));
+            if (ordreFMM == 0)
+            {
+                if (rank == 0)
+                    cout << "La valeur de N_leaves doit-être strictement positive.";
                 exit(-1);
             }
         }

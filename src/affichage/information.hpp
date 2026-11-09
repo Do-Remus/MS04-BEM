@@ -32,4 +32,6 @@ void affichage_erreurs_solution(Real erreurL2, Real erreurLinf);
 
 void affichage_statistiques_matrice_H(const ArbreBlocs &arbre);
 
+void afficher_stats_FMM(const StructureFMM &fmm);
+
 #endif

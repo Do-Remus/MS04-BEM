@@ -6,7 +6,7 @@
 #include "../../maths/commun.hpp"
 
 #include "operator.hpp"
-#include "../operator.hpp"
+#include "../conditionners.hpp"
 
 Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<QuadratureSegment> &quadrature_maillage, const ArbreBlocs &arbre_blocs, Real tol, Index maxIter, bool utiliser_preconditionnement);
 

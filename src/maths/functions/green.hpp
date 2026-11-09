@@ -17,6 +17,51 @@ inline Complex hankel_n(const Real x, const int n)
     return {J, Y};
 }
 
+inline Complex bessel_J(const int n, const Real z)
+{
+    if (n >= 0)
+        return boost::math::cyl_bessel_j(n, z);
+
+    const int m = -n;
+    const Real signe = (m % 2 == 0) ? 1.0 : -1.0;
+
+    return signe * boost::math::cyl_bessel_j(m, z);
+}
+
+inline Complex hankel_H1(const int n, const Real z)
+{
+    if (z <= 0.0)
+        throw std::runtime_error("Argument nul dans hankel_H1");
+
+    Real J, Y;
+
+    if (n >= 0)
+    {
+        J = boost::math::cyl_bessel_j(n, z);
+        Y = boost::math::cyl_neumann(n, z);
+    }
+    else
+    {
+        const int m = -n;
+        const Real signe = (m % 2 == 0) ? 1.0 : -1.0;
+
+        J = signe * boost::math::cyl_bessel_j(m, z);
+        Y = signe * boost::math::cyl_neumann(m, z);
+    }
+
+    return Complex(J, Y);
+}
+
+inline Complex phase(const int n, const Real theta)
+{
+    return std::exp(Complex(0.0, n * theta));
+}
+
+inline Real angle_polaire(const Point &p, const Point &centre)
+{
+    return std::atan2(p.y - centre.y, p.x - centre.x);
+}
+
 /* === Fonction de green === */
 
 /* --- Version normale --- */

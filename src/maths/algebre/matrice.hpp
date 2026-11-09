@@ -9,6 +9,8 @@ constexpr double SEUIL_PIVOT = 1e-20;
 
 using Matrice = Eigen::MatrixXcd;
 
+using SparseMatrix = Eigen::SparseMatrix<Complex, Eigen::ColMajor, Eigen::Index>;
+
 struct ACA_decomposition
 {
     Matrice U;

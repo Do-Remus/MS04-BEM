@@ -6,6 +6,7 @@
 #include "matrix_free/commun.hpp"
 #include "aca_based/commun.hpp"
 #include "hmat/commun.hpp"
+#include "fmm/commun.hpp"
 
 /* Général */
 
@@ -14,5 +15,6 @@
 #include "erreurs.hpp"
 #include "export.hpp"
 #include "operator.hpp"
+#include "conditionners.hpp"
 
 #endif

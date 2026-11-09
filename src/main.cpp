@@ -27,7 +27,7 @@ int main(int argc, char **argv)
                                     "_q" + std::to_string(ordre);
     std::string output_folder;
 
-#define TESTS_CODE // FINAL_CODE or TESTS_CODE
+#define FINAL_CODE // FINAL_CODE or TESTS_CODE
 
 #ifdef FINAL_CODE
     /* ------------------------- */
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     // const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
     //                                            [&]()
     //                                            {
-    //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
+    //                                                return quadrature_SIMD(maillage, quadrature_maillage);
     //                                            });
 
     /* === Construction de l'arbre de clusters du maillage === */
@@ -165,15 +165,50 @@ int main(int argc, char **argv)
                              return calculer_second_membre(quadrature_maillage);
                          });
 
+    /* === Construction du préconditionneur par blocs diagonaux === */
+
+    AccesMatrice acces_A = [&](Eigen::Index i, Eigen::Index j) -> Complex
+    {
+        return matrice_bem(i, j, maillage, quadrature_maillage);
+    };
+
+    PreconditionneurBlocs preconditionneur_blocs = run("Construction preconditionneur blocs", timers, "preconditionnement", [&]()
+                                                       { return construire_inverses_blocs_diagonaux(arbre_blocs_BEM, maillage, quadrature_maillage); });
+
+    /* === Inversion du système Ap = b (GMRES préconditionné par blocs) === */
+
+    Vecteur vect_p_GMRES_BLOC = run("Resolution systeme GMRES blocs", timers, "resolution GMRES blocs", [&]()
+                                    {
+                                    ResultatGMRES resultat = resoudre_GMRES_BLOC(
+                                        arbre_blocs_BEM,
+                                        preconditionneur_blocs,
+                                        vect_b,
+                                        tolGradConj,
+                                        maxIterGradConj,
+                                        40,  // restart GMRES
+                                        true // matrice symétrique
+                                    );
+
+                                    if (mpi_rank == 0)
+                                    {
+                                        affichage_ligne("Itérations", resultat.iterations);
+                                        affichage_ligne("Erreur", resultat.erreur);
+                                        affichage_ligne("Info", resultat.info);
+                                    }
+
+                                    return resultat.solution; });
+
     /* === Inversion du système Ap = b (méthode itérative) === */
 
-    Vecteur vect_p_cached = run("Resolution systeme", timers, "resolution",
-                                [&]()
-                                {
-                                    return COCG(maillage, vect_b, quadrature_maillage, arbre_blocs_BEM, tolGradConj, maxIterGradConj, true);
-                                });
+    // Vecteur vect_p_COCG = run("Resolution systeme", timers, "resolution COCG",
+    //                           [&]()
+    //                           {
+    //                               return COCG(maillage, vect_b, quadrature_maillage, arbre_blocs_BEM, tolGradConj, maxIterGradConj, true);
+    //                           });
 
     /* === Erreur avec le vecteur de p sur les milieux des bords === */
+
+    Vecteur vect_p_cached = std::move(vect_p_GMRES_BLOC);
 
     if (affichageErreur)
         run("Validation de p", timers, "erreur_p", [&]()
@@ -239,8 +274,8 @@ int main(int argc, char **argv)
     /* -------------------- */
     /* -- Area for tests -- */
     /* -------------------- */
-    
-     Timers timers;
+
+    Timers timers;
     timers.start("programme");
 
     if (mpi_rank == 0)
@@ -329,9 +364,8 @@ int main(int argc, char **argv)
                                     affichage_statistiques_matrice_H(arbre); 
                                     ecrire_arbre_blocs(arbre, output_folder + "/arbre_blocs_BEM.csv", intervalles, intervalles, true); });
 
-                              
     std::ofstream f("svd_blocs_rank" + std::to_string(mpi_rank) + ".txt");
-    //construire_bloc_forcage_dense(*arbre_blocs_BEM, maillage.PointsMaillage(), quadrature_maillage, f, 1e-12);   
+    // construire_bloc_forcage_dense(*arbre_blocs_BEM, maillage.PointsMaillage(), quadrature_maillage, f, 1e-12);
     Matrice A_H = convertion_aca_dense(arbre_blocs_BEM);
 
     if (mpi_rank == 0)
@@ -342,12 +376,11 @@ int main(int argc, char **argv)
             for (Index j = 0; j < N; ++j)
                 A_ref(i, j) = matrice_bem(i, j, maillage, quadrature_maillage);
         const double erreur_rel = norme_frobenius(A_H - A_ref) / norme_frobenius(A_ref);
-        //diagnostic_blocs(*arbre_blocs_BEM, A_ref, true);
-        //std::cout << "asymetrie A_ref : " << (A_ref - A_ref.transpose()).norm() / A_ref.norm() << std::endl;
+        // diagnostic_blocs(*arbre_blocs_BEM, A_ref, true);
+        // std::cout << "asymetrie A_ref : " << (A_ref - A_ref.transpose()).norm() / A_ref.norm() << std::endl;
         std::cout << "Erreur relative H-matrice : " << erreur_rel << std::endl;
+    }
 
-    }   
-                               
     // const Eigen::Index N = maillage.size();
     // const Eigen::Index maxRank = N;
     // // const Eigen::Index rankTroncature = maxRank;

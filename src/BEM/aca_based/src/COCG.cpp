@@ -79,7 +79,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
             if (mpi_rank == 0)
             {
                 std::cerr
-                    << "  COCG : breakdown, "
+                    << "    COCG : breakdown, "
                     << "denominateur nul "
                     << "a l'iteration "
                     << iter
@@ -98,7 +98,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
             if (mpi_rank == 0)
             {
                 std::cerr
-                    << "  COCG : breakdown de rho "
+                    << "    COCG : breakdown de rho "
                     << "a l'iteration "
                     << iter
                     << std::endl;
@@ -125,7 +125,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
             if (mpi_rank == 0)
             {
                 std::cout
-                    << "  COCG converge en "
+                    << "    COCG converge en "
                     << iter + 1
                     << " iterations, "
                     << "résidu relatif = "

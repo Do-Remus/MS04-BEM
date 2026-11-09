@@ -23,6 +23,7 @@ extern unsigned int maxIterGradConj;
 extern Real tolGradConj;
 extern std::string nom_maillage;
 extern bool affichageErreur;
+extern unsigned int ordreFMM;
 
 // -- Fonctions --
 
