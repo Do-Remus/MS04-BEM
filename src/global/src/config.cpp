@@ -243,12 +243,6 @@ void get_config(const string &filename)
         if (nom == "maillage")
         {
             nom_maillage = valeur;
-            if (nom_maillage != "cercle" && nom_maillage != "narval" && nom_maillage != "balle_golf" && nom_maillage != "mur_acoustique")
-            {
-                if (rank == 0)
-                    cout << "Erreur : maillage doit valoir 'cercle', 'narval', 'balle_golf' ou 'mur_acoustique'. Valeur reçue : " << nom_maillage << endl;
-                exit(-1);
-            }
         }
 
         if (nom == "affichageErreur")

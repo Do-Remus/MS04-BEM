@@ -1,7 +1,8 @@
-#ifndef MUR_ACOUSTIQUE_HPP_INCLUDED
-#define MUR_ACOUSTIQUE_HPP_INCLUDED
+#ifndef MAILLAGE_MUR_ACOUSTIQUE_HPP_INCLUDED
+#define MAILLAGE_MUR_ACOUSTIQUE_HPP_INCLUDED
 
 #include "../../../global/commun.hpp"
+
 #include "../maillage.hpp"
 
 inline Maillage maillage_mur_acoustique(const double largeur = 0.5, const double hauteur = 4.0, const unsigned int nbPointes = 8, const double profondeur = 0.6, const double pas = 0.01, const bool centrer = true)

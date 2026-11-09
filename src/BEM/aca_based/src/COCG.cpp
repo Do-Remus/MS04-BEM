@@ -54,7 +54,7 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
     Vecteur r = b_preconditionne;
     Vecteur d = r;
 
-    const Real bnorm = b_preconditionne.norm();
+    const Real bnorm = b.norm();
 
     if (bnorm == 0.0)
         return y;
@@ -91,12 +91,34 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
             return S.cwiseProduct(y);
         }
 
+        // -- Test Beakdown --
+
+        if (std::abs(rho) < 1e-30)
+        {
+            if (mpi_rank == 0)
+            {
+                std::cerr
+                    << "  COCG : breakdown de rho "
+                    << "a l'iteration "
+                    << iter
+                    << std::endl;
+            }
+
+            Vecteur x = S.cwiseProduct(y);
+
+            return x;
+        }
+
+        // -- Mise à jour des variables --
+
         const Complex alpha = rho / denom;
 
         y += alpha * d;
         r -= alpha * Ad;
 
-        relativeResidual = r.norm() / bnorm;
+        relativeResidual = (r.cwiseQuotient(S)).norm() / bnorm;
+
+        // -- Test de tolérance --
 
         if (relativeResidual < tol)
         {
@@ -116,23 +138,9 @@ Vecteur COCG(const Maillage &maillage, const Vecteur &b, const std::vector<Quadr
             return x;
         }
 
+        // -- Mise àjour de fin de boucle --
+
         const Complex rhoNew = produitBilineaire(r, r);
-
-        if (std::abs(rho) < 1e-30)
-        {
-            if (mpi_rank == 0)
-            {
-                std::cerr
-                    << "  COCG : breakdown de rho "
-                    << "a l'iteration "
-                    << iter
-                    << std::endl;
-            }
-
-            Vecteur x = S.cwiseProduct(y);
-
-            return x;
-        }
 
         const Complex beta = rhoNew / rho;
 
