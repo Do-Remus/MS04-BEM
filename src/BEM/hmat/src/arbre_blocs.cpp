@@ -404,3 +404,5 @@ Vecteur appliquer_H(const ArbreBlocs &arbre_blocs, const Vecteur &x, const bool 
 
     return y;
 }
+
+

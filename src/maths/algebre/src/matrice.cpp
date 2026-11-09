@@ -16,6 +16,15 @@ Matrice matrice_aleatoire(const unsigned int rang, const Index taille)
     return U * V;
 }
 
+double norme_frobenius(const Matrice &A)
+{
+    double somme = 0.0;
+    for (Index j = 0; j < A.cols(); ++j)
+        for (Index i = 0; i < A.rows(); ++i)
+            somme += std::norm(A(i, j));
+    return std::sqrt(somme);
+}
+
 ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Index rang_max, const double tolerance)
 {
     // Index

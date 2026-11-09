@@ -3,5 +3,6 @@
 
 #include "arbre_clusters.hpp"
 #include "arbre_blocs.hpp"
+#include "convertisseur_arbre_dense.hpp"
 
 #endif

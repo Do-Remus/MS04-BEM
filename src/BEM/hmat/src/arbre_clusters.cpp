@@ -95,6 +95,82 @@ void subdivision_arbre_recursive(Noeud &noeud, const Index N_leafs, const std::v
     subdivision_arbre_recursive(*noeud.fils_droit, N_leafs, points);
 }
 
+
+static BoiteEnglobante boite_des_points(const std::vector<Index> &indices,
+                                        const std::vector<Point> &points)
+{
+    BoiteEnglobante b;
+    b.x_min = b.y_min =  std::numeric_limits<double>::infinity();
+    b.x_max = b.y_max = -std::numeric_limits<double>::infinity();
+    for (const Index i : indices)
+    {
+        b.x_min = std::min(b.x_min, points[i].x);
+        b.x_max = std::max(b.x_max, points[i].x);
+        b.y_min = std::min(b.y_min, points[i].y);
+        b.y_max = std::max(b.y_max, points[i].y);
+    }
+    b.calculer_diametre();
+    return b;
+}
+
+
+void subdivision_arbre_recursive_indices(Noeud &noeud, const Index N_leafs, const std::vector<Point> &points)
+{
+
+    if (noeud.indices.size() <= N_leafs)
+        return;
+
+    const double largeur = (noeud.boite.x_max - noeud.boite.x_min);
+    const double hauteur = (noeud.boite.y_max - noeud.boite.y_min);
+
+    // separation geometrique en 2 groupe divisée selon la plus longue direction
+    // trouver quelle est la direction choisie (x ou y) puis definir nouvelles boites englobantes definies comme les moities de la boite englobante du parent
+    const bool couper_x = (largeur >= hauteur);
+    const int milieu_indices = noeud.indices[noeud.indices.size()/2];
+
+
+    // indices temporaires
+    std::vector<Index> indices_droit;
+    std::vector<Index> indices_gauche;
+
+    indices_droit.reserve(noeud.indices.size()/2);
+    indices_gauche.reserve(noeud.indices.size()- noeud.indices.size()/2);
+
+    // iteration sur les points indexés dans le parent pour séparation sur les 2 fils
+    for (const Index i : noeud.indices)
+    {
+        if(i<milieu_indices){
+            indices_droit.push_back(i);
+        }else{
+            indices_gauche.push_back(i);
+        }
+    }
+
+    // La coupure est valide : créer les deux fils.
+    noeud.fils_droit = std::make_unique<Noeud>();
+    noeud.fils_gauche = std::make_unique<Noeud>();
+
+    Noeud &droit = *noeud.fils_droit;
+    Noeud &gauche = *noeud.fils_gauche;
+
+    droit.niveau = noeud.niveau + 1;
+    gauche.niveau = noeud.niveau + 1;
+
+    droit.indices = std::move(indices_droit);
+    gauche.indices = std::move(indices_gauche);
+
+    // Boîtes decoupées sur les indices issues de la coupure.
+    droit.boite  = boite_des_points(droit.indices, points);
+    gauche.boite = boite_des_points(gauche.indices, points);
+
+
+
+
+    subdivision_arbre_recursive_indices(droit, N_leafs, points);
+    subdivision_arbre_recursive_indices(gauche, N_leafs, points);
+}
+
+
 Arbre construire_arbre(const std::vector<Point> &points, const Index N_leafs)
 {
     Arbre arbre = std::make_unique<Noeud>();
@@ -131,11 +207,56 @@ Arbre construire_arbre(const std::vector<Point> &points, const Index N_leafs)
     return arbre;
 }
 
+Arbre construire_arbre_indices(const std::vector<Point> &points, const Index N_leafs)
+{
+    Arbre arbre = std::make_unique<Noeud>();
+    // -- Initialisation du 1er noeud --
+
+    arbre->niveau = 0;
+
+    arbre->indices.resize(points.size());
+
+    arbre->boite.x_min = std::numeric_limits<double>::infinity();
+    arbre->boite.x_max = -std::numeric_limits<double>::infinity();
+
+    arbre->boite.y_min = std::numeric_limits<double>::infinity();
+    arbre->boite.y_max = -std::numeric_limits<double>::infinity();
+
+    for (Index i = 0; i < points.size(); ++i)
+    {
+        arbre->indices[i] = i;
+
+        const Point &point = points[i];
+
+        arbre->boite.x_min = std::min(arbre->boite.x_min, point.x);
+        arbre->boite.x_max = std::max(arbre->boite.x_max, point.x);
+
+        arbre->boite.y_min = std::min(arbre->boite.y_min, point.y);
+        arbre->boite.y_max = std::max(arbre->boite.y_max, point.y);
+    }
+
+    arbre->boite.calculer_diametre();
+
+    // -- Construction récursive de l'arbre --
+    subdivision_arbre_recursive_indices(*arbre, N_leafs, points);
+
+    return arbre;
+}
+
+
 Arbre construire_arbre_maillage(const Maillage &maillage, const Index N_leafs)
 {
     const std::vector<Point> &points = maillage.PointsMilieuMaillage();
 
     return construire_arbre(points, N_leafs);
+}
+
+
+Arbre construire_arbre_maillage_indices(const Maillage &maillage, const Index N_leafs)
+{
+    const std::vector<Point> &points = maillage.PointsMilieuMaillage();
+
+    return construire_arbre_indices(points, N_leafs);
 }
 
 std::vector<Index> construire_permutation(const Arbre &arbre)

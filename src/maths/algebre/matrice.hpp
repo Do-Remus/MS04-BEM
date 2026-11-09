@@ -37,6 +37,8 @@ struct ACA_decomposition
 
 // ostream &operator<<(ostream &out, const Matrice &A);
 
+double norme_frobenius(const Matrice &A);
+
 Matrice matrice_aleatoire(const unsigned int rang, const Index taille);
 
 ACA_decomposition full_pivoted_cross_approximation(const Matrice &A, const Index rang_max, const double tolerance);

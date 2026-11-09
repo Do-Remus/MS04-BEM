@@ -27,7 +27,7 @@ int main(int argc, char **argv)
                                     "_q" + std::to_string(ordre);
     std::string output_folder;
 
-#define FINAL_CODE // FINAL_CODE or TESTS_CODE
+#define TESTS_CODE // FINAL_CODE or TESTS_CODE
 
 #ifdef FINAL_CODE
     /* ------------------------- */
@@ -204,17 +204,63 @@ int main(int argc, char **argv)
     /* -------------------- */
     /* -- Area for tests -- */
     /* -------------------- */
-
-    Timers timers;
+    
+     Timers timers;
     timers.start("programme");
 
-    // Matrice A = matrice_aleatoire(maxRank, N);
-    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", maillage_cercle,
-                            [&](const Maillage &maillage)
+    if (mpi_rank == 0)
+    {
+        std::cout << "\n=== Début du programme ===" << std::endl;
+        affichage_parametres();
+    }
+
+    // /* === Initialisation cache de green === */
+
+    run("Initialisation de Green", timers, "green_cache", initialiser_green_cache, affichage_approximations);
+
+    /* === Création Maillage === */
+
+    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", [&]() -> Maillage
                             {
-                                maillage.export_maillage("outputs/cercle_maillage.txt");
-                                affichage_maillage(Point(0, 0), maillage.size(), "outputs/cercle_maillage.txt");
-                            });
+                            if (nom_maillage == "narval")
+                            {
+                                return maillage_narval(
+                                    1.0,         // echelle
+                                    pasMaillage, // pas
+                                    true         // centrer
+                                );
+                            }
+                            else if (nom_maillage == "mur_acoustique")
+                            {
+                                return maillage_mur_acoustique(
+                                    0.5,         // largeur
+                                    4.0,         // hauteur
+                                    8,           // nbPointes
+                                    0.6,         // profondeur
+                                    pasMaillage, // pas
+                                    true         // centrer
+                                );
+                            }
+                            else if (nom_maillage == "balle_golf")
+                            {
+                                return maillage_balle_de_golf(
+                                    rayon,
+                                    12,         // nbAlveoles
+                                    0.12,       // profondeur
+                                    0.8,        // remplissage
+                                    pasMaillage // pas
+                                );
+                            }
+                            return maillage_cercle(); }, [&](const Maillage &maillage)
+                            {
+                            const std::filesystem::path dossier_sortie = std::filesystem::path("outputs") / (maillage.nom + end_output_folder);
+                            std::filesystem::create_directories(dossier_sortie);
+                            output_folder = dossier_sortie.string();
+
+                            maillage.export_maillage((dossier_sortie / "maillage.txt").string());
+                            affichage_maillage(Point(0, 0), maillage.size(), (dossier_sortie / "maillage.txt").string()); });
+
+    /* === Calcul de la quadrature de Legendre === */
 
     const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
                                                                    [&]()
@@ -222,6 +268,51 @@ int main(int argc, char **argv)
                                                                        return get_quadrature_maillage(maillage, get_legendre_data(ordre));
                                                                    });
 
+    /* === Réorganisation de la quadrature pour le SIMD === */
+
+    // const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
+    //                                            [&]()
+    //                                            {
+    //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
+    //                                            });
+
+    /* === Construction de l'arbre de clusters du maillage === */
+
+    Arbre arbre_clusters_maillage = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
+                                        { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
+                                        { ecrire_arbre_clusters(arbre, output_folder + "/arbre_clusters_BEM.csv"); });
+
+    /* === Construction de l'arbre de blocs H-matrice === */
+
+    ArbreBlocs arbre_blocs_BEM = run("Construction de l'arbre de blocs", timers, "arbre_blocs_H", [&]()
+                                     {
+                                     ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters_maillage, parametre_admissibilite, facteur_admissibilite, true);
+                                     remplir_blocs_bem(*arbre, maillage, quadrature_maillage, rang_max, toleranceAca);
+                                     return arbre; }, [&](const ArbreBlocs &arbre)
+                                     { 
+                                    IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters_maillage);
+                                    affichage_statistiques_matrice_H(arbre); 
+                                    ecrire_arbre_blocs(arbre, output_folder + "/arbre_blocs_BEM.csv", intervalles, intervalles, true); });
+
+                              
+    std::ofstream f("svd_blocs_rank" + std::to_string(mpi_rank) + ".txt");
+    //construire_bloc_forcage_dense(*arbre_blocs_BEM, maillage.PointsMaillage(), quadrature_maillage, f, 1e-12);   
+    Matrice A_H = convertion_aca_dense(arbre_blocs_BEM);
+
+    if (mpi_rank == 0)
+    {
+        const Index N = A_H.rows();
+        Matrice A_ref(N, N);
+        for (Index i = 0; i < N; ++i)
+            for (Index j = 0; j < N; ++j)
+                A_ref(i, j) = matrice_bem(i, j, maillage, quadrature_maillage);
+        const double erreur_rel = norme_frobenius(A_H - A_ref) / norme_frobenius(A_ref);
+        //diagnostic_blocs(*arbre_blocs_BEM, A_ref, true);
+        //std::cout << "asymetrie A_ref : " << (A_ref - A_ref.transpose()).norm() / A_ref.norm() << std::endl;
+        std::cout << "Erreur relative H-matrice : " << erreur_rel << std::endl;
+
+    }   
+                               
     // const Eigen::Index N = maillage.size();
     // const Eigen::Index maxRank = N;
     // // const Eigen::Index rankTroncature = maxRank;
@@ -399,52 +490,26 @@ int main(int argc, char **argv)
     //     std::cout << "=================================\n";
     // }
 
-    Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
-                               { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
-                               { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters.csv"); });
+   
+    //std::ofstream f(output_folder +"/svd_blocs_rank" + std::to_string(mpi_rank) + ".txt");
 
-    std::vector<Index> permutation = run("Construction de la permutation", timers, "permutation",
-                                         [&]()
-                                         {
-                                             return construire_permutation(arbre_clusters);
-                                         });
+    //construire_bloc_forcage_dense(*arbre_blocs_BEM, maillage.PointsMaillage(), quadrature_maillage, f, 1e-12);                               
+    // constexpr int NB_TESTS = 100;
+    // const Eigen::Index N = static_cast<Eigen::Index>(arbre_clusters->indices.size());
 
-    std::vector<Index> permutation_inverse = run("Construction de la permutation inverse", timers, "permutation_inverse",
-                                                 [&]()
-                                                 {
-                                                     return construire_permutation_inverse(permutation);
-                                                 });
+    // std::vector<Vecteur> vecteurs_test;
+    // vecteurs_test.reserve(NB_TESTS);
 
-    IntervallesClusters intervalles = run("Construction des intervalles des clusters", timers, "intervalles_clusters",
-                                          [&]()
-                                          {
-                                              return construire_intervalles_clusters(arbre_clusters);
-                                          });
+    // for (int i = 0; i < NB_TESTS; ++i)
+    //     vecteurs_test.push_back(Vecteur::Random(N));
 
-    ArbreBlocs arbre_blocs = run("Construction de l'arbre des blocs", timers, "arbre_blocs", [&]()
-                                 { return construire_arbre_blocs(arbre_clusters, parametre_admissibilite, facteur_admissibilite); }, [&](const ArbreBlocs &arbre)
-                                 { ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
+    // std::vector<Vecteur> resultats;
+    // resultats.reserve(NB_TESTS);
 
-    run("Remplissage de la matrice H", timers, "remplissage_matrice", [&]()
-        { remplir_blocs(*arbre_blocs, maillage, quadrature_maillage, rang_max, toleranceAca); }, [&]()
-        { affichage_statistiques_matrice_H(arbre_blocs); });
-
-    constexpr int NB_TESTS = 100;
-    const Eigen::Index N = static_cast<Eigen::Index>(arbre_clusters->indices.size());
-
-    std::vector<Vecteur> vecteurs_test;
-    vecteurs_test.reserve(NB_TESTS);
-
-    for (int i = 0; i < NB_TESTS; ++i)
-        vecteurs_test.push_back(Vecteur::Random(N));
-
-    std::vector<Vecteur> resultats;
-    resultats.reserve(NB_TESTS);
-
-    run("10 produits Hx", timers, "produit Hx", [&]()
-        {
-    for (int i = 0; i < NB_TESTS; ++i)
-        resultats.push_back(appliquer_H(arbre_blocs, vecteurs_test[i])); });
+    // run("10 produits Hx", timers, "produit Hx", [&]()
+    //     {
+    // for (int i = 0; i < NB_TESTS; ++i)
+    //     resultats.push_back(appliquer_H(arbre_blocs, vecteurs_test[i])); });
 
     // Matrice A = run("Construction de la matrice BEM dense", timers, "matrice_bem_dense",
     //                 [&]()

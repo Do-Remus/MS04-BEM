@@ -113,3 +113,21 @@ def visualiser_clusters(
     print(f"Animation créée : {chemin_gif}")
     print(f"Image créée : {chemin_png}")
     return [chemin_gif, chemin_png]
+
+
+visualiser_clusters(
+    "outputs/maillage_test_arbre.txt",
+    "outputs/arbre_clusters_geometrique.csv",
+    type_maillage="segments",
+    dossier_sortie=None,
+    fps=1,
+)
+
+
+visualiser_clusters(
+    "outputs/maillage_test_arbre.txt",
+    "outputs/arbre_clusters_indices.csv",
+    type_maillage="segments",
+    dossier_sortie=None,
+    fps=1,
+)

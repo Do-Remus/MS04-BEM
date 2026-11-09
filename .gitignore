@@ -6,3 +6,4 @@ code_archive/*
 bin/*
 .vscode
 perf.*
+.venv

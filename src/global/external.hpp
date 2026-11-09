@@ -19,8 +19,13 @@
 #include <boost/math/special_functions/legendre.hpp>
 #include <Eigen/Dense>
 #include <Eigen/Core>
+
 #include <Eigen/SparseCore>
 #include <unsupported/Eigen/IterativeSolvers>
+
+
+#include <Eigen/SVD>
+#include <iomanip>
 
 // Parallel work
 #include <mpi.h>
