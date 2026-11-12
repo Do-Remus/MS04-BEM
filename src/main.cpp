@@ -271,366 +271,616 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef TESTS_CODE
-    /* -------------------- */
-    /* -- Area for tests -- */
-    /* -------------------- */
 
-    Timers timers;
-    timers.start("programme");
+    /* ====================================================== */
+    /* INITIALISATION POUR LES TESTS                          */
+    /* ====================================================== */
 
-    if (mpi_rank == 0)
+    if (mpi_size != 1)
     {
-        std::cout << "\n=== Début du programme ===" << std::endl;
+        if (mpi_rank == 0)
+            std::cerr << "Les tests doivent être exécutés avec un seul processus MPI."
+                      << std::endl;
+    }
+    else
+    {
+        Timers timers;
+        timers.start("programme_tests");
+
+        std::cout << "\n=== INITIALISATION DES TESTS ===" << std::endl;
         affichage_parametres();
-    }
 
-    // /* === Initialisation cache de green === */
+        /* === Initialisation du cache de Green === */
 
-    run("Initialisation de Green", timers, "green_cache", initialiser_green_cache, affichage_approximations);
+        run("Initialisation de Green", timers, "green_cache", initialiser_green_cache, affichage_approximations);
 
-    /* === Création Maillage === */
+        /* === Création du maillage === */
 
-    Maillage maillage = run("Préparation du maillage de l'obstacle", timers, "maillage", [&]() -> Maillage
-                            {
-                            if (nom_maillage == "narval")
-                            {
-                                return maillage_narval(
-                                    1.0,         // echelle
-                                    pasMaillage, // pas
-                                    true         // centrer
-                                );
-                            }
-                            else if (nom_maillage == "mur_acoustique")
-                            {
-                                return maillage_mur_acoustique(
-                                    0.5,         // largeur
-                                    4.0,         // hauteur
-                                    8,           // nbPointes
-                                    0.6,         // profondeur
-                                    pasMaillage, // pas
-                                    true         // centrer
-                                );
-                            }
-                            else if (nom_maillage == "balle_golf")
-                            {
-                                return maillage_balle_de_golf(
-                                    rayon,
-                                    12,         // nbAlveoles
-                                    0.12,       // profondeur
-                                    0.8,        // remplissage
-                                    pasMaillage // pas
-                                );
-                            }
-                            return maillage_cercle(); }, [&](const Maillage &maillage)
-                            {
-                            const std::filesystem::path dossier_sortie = std::filesystem::path("outputs") / (maillage.nom + end_output_folder);
-                            std::filesystem::create_directories(dossier_sortie);
-                            output_folder = dossier_sortie.string();
+        Maillage maillage = run(
+            "Préparation du maillage",
+            timers,
+            "maillage",
+            [&]() -> Maillage
+            {
+                if (nom_maillage == "narval")
+                    return maillage_narval(1.0, pasMaillage, true);
 
-                            maillage.export_maillage((dossier_sortie / "maillage.txt").string());
-                            affichage_maillage(Point(0, 0), maillage.size(), (dossier_sortie / "maillage.txt").string()); });
+                else if (nom_maillage == "mur_acoustique")
+                    return maillage_mur_acoustique(0.5, 4.0, 8, 0.6, pasMaillage, true);
 
-    /* === Calcul de la quadrature de Legendre === */
+                else if (nom_maillage == "balle_golf")
+                    return maillage_balle_de_golf(rayon, 12, 0.12, 0.8, pasMaillage);
 
-    const std::vector<QuadratureSegment> quadrature_maillage = run("Calcul de la quadrature", timers, "quadrature",
-                                                                   [&]()
-                                                                   {
-                                                                       return get_quadrature_maillage(maillage, get_legendre_data(ordre));
-                                                                   });
+                else if (nom_maillage == "rectangle")
+                    return maillage_rectangle(2.0, 1.0, pasMaillage);
 
-    /* === Réorganisation de la quadrature pour le SIMD === */
+                else if (nom_maillage == "ellipse")
+                    return maillage_ellipse(1.0, 0.5, pasMaillage);
 
-    // const QuadratureSIMD quadrature_simd = run("Préparation quadrature SIMD", timers, "quadrature_simd",
-    //                                            [&]()
-    //                                            {
-    //                                                return construire_quadrature_SIMD(maillage, quadrature_maillage);
-    //                                            });
+                return maillage_cercle();
+            },
+            [&](const Maillage &maillage)
+            {
+                const std::filesystem::path dossier_sortie = std::filesystem::path("outputs") / (maillage.nom + end_output_folder);
 
-    /* === Construction de l'arbre de clusters du maillage === */
+                std::filesystem::create_directories(dossier_sortie);
+                output_folder = dossier_sortie.string();
 
-    Arbre arbre_clusters_maillage = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
-                                        { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
-                                        { ecrire_arbre_clusters(arbre, output_folder + "/arbre_clusters_BEM.csv"); });
+                maillage.export_maillage((dossier_sortie / "maillage.txt").string());
+            });
 
-    /* === Construction de l'arbre de blocs H-matrice === */
+        const Index N = static_cast<Index>(maillage.size());
 
-    ArbreBlocs arbre_blocs_BEM = run("Construction de l'arbre de blocs", timers, "arbre_blocs_H", [&]()
-                                     {
-                                     ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters_maillage, parametre_admissibilite, facteur_admissibilite, true);
-                                     remplir_blocs_bem(*arbre, maillage, quadrature_maillage, rang_max, toleranceAca);
-                                     return arbre; }, [&](const ArbreBlocs &arbre)
-                                     { 
-                                    IntervallesClusters intervalles = construire_intervalles_clusters(arbre_clusters_maillage);
-                                    affichage_statistiques_matrice_H(arbre); 
-                                    ecrire_arbre_blocs(arbre, output_folder + "/arbre_blocs_BEM.csv", intervalles, intervalles, true); });
+        std::cout << "Nombre de segments : " << N << std::endl;
 
-    std::ofstream f("svd_blocs_rank" + std::to_string(mpi_rank) + ".txt");
-    // construire_bloc_forcage_dense(*arbre_blocs_BEM, maillage.PointsMaillage(), quadrature_maillage, f, 1e-12);
-    Matrice A_H = convertion_aca_dense(arbre_blocs_BEM);
+        /* === Calcul de la quadrature === */
 
-    if (mpi_rank == 0)
-    {
-        const Index N = A_H.rows();
-        Matrice A_ref(N, N);
+        const std::vector<QuadratureSegment> quadrature_maillage =
+            run("Calcul de la quadrature",
+                timers,
+                "quadrature",
+                [&]()
+                {
+                    return get_quadrature_maillage(maillage, get_legendre_data(ordre));
+                });
+
+        /* === Construction de l'arbre de clusters === */
+
+        Arbre arbre_clusters_maillage = run("Construction de l'arbre de clusters",
+                                            timers,
+                                            "arbre_clusters",
+                                            [&]()
+                                            {
+                                                return construire_arbre_maillage(maillage, N_leaves);
+                                            });
+
+        /* === Construction de l'arbre de blocs H-matrice === */
+
+        ArbreBlocs arbre_blocs_BEM = run("Construction de l'arbre de blocs", timers, "arbre_blocs_H", [&]()
+                                         { ArbreBlocs arbre = construire_arbre_blocs(arbre_clusters_maillage, parametre_admissibilite, facteur_admissibilite, true);
+                                           remplir_blocs_bem(*arbre, maillage, quadrature_maillage, rang_max, toleranceAca);
+                                           return arbre; }, [&](const ArbreBlocs &arbre)
+                                         { affichage_statistiques_matrice_H(arbre); });
+
+        /* === Construction du préconditionneur de Schwarz === */
+
+        PreconditionneurBlocs preconditionneur_blocs =
+            run("Construction du préconditionneur de Schwarz",
+                timers,
+                "preconditionneur_schwarz",
+                [&]()
+                {
+                    return construire_inverses_blocs_diagonaux(
+                        arbre_blocs_BEM,
+                        maillage,
+                        quadrature_maillage);
+                });
+
+        /* === Construction de la matrice dense === */
+
+        timers.start("construction_matrice_dense");
+
+        Matrice A_dense(N, N);
+
         for (Index i = 0; i < N; ++i)
-            for (Index j = 0; j < N; ++j)
-                A_ref(i, j) = matrice_bem(i, j, maillage, quadrature_maillage);
-        const double erreur_rel = norme_frobenius(A_H - A_ref) / norme_frobenius(A_ref);
-        // diagnostic_blocs(*arbre_blocs_BEM, A_ref, true);
-        // std::cout << "asymetrie A_ref : " << (A_ref - A_ref.transpose()).norm() / A_ref.norm() << std::endl;
-        std::cout << "Erreur relative H-matrice : " << erreur_rel << std::endl;
-    }
-
-    // const Eigen::Index N = maillage.size();
-    // const Eigen::Index maxRank = N;
-    // // const Eigen::Index rankTroncature = maxRank;
-    // for (Eigen::Index rankTroncature = 10; rankTroncature < N + 1; rankTroncature += 30)
-    // {
-    //     std::cout << " N =" << N << std::endl;
-    //     Matrice A = get_matrice_bem(maillage, quadrature_maillage);
-    //     // Vérification des dimensions
-    //     std::cout << "Dimensions de A : "
-    //               << A.rows() << " x " << A.cols() << std::endl;
-
-    //     std::cout << "SVD..." << std::endl;
-
-    //     // Pour une matrice complexe, utiliser JacobiSVD
-    //     timers.start("svd");
-    //     Eigen::JacobiSVD<Matrice> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    //     std::cout << "Troncature..." << std::endl;
-
-    //     const auto &sigma = svd.singularValues();
-
-    //     const Eigen::Index r = std::min(rankTroncature, static_cast<Eigen::Index>(sigma.size()));
-
-    //     if (r < 0)
-    //         throw std::invalid_argument("Rang de troncature invalide");
-
-    //     const Real sigmaMax = sigma.size() > 0 ? sigma(0) : 0.0;
-
-    //     const Real tol = std::numeric_limits<Real>::epsilon() * std::max(A.rows(), A.cols()) * sigmaMax;
-
-    //     Eigen::Index rangReel = 0;
-
-    //     for (Eigen::Index i = 0; i < sigma.size(); ++i)
-    //         if (sigma(i) > tol)
-    //             ++rangReel;
-
-    //     timers.end("svd");
-
-    //     // SVD tronquée
-    //     Matrice U_r = svd.matrixU().leftCols(r);
-    //     Matrice V_r = svd.matrixV().leftCols(r);
-    //     auto sigma_r = sigma.head(r);
-
-    //     Matrice A_r = U_r * sigma_r.asDiagonal() * V_r.adjoint();
-
-    //     const Real normeA = A.norm();
-    //     const Real erreurAbsolue = (A - A_r).norm();
-    //     const Real erreurRelative =
-    //         normeA > 0.0 ? erreurAbsolue / normeA : 0.0;
-
-    //     std::cout << "ACA..." << std::endl;
-
-    //     // -- Test de ACA pivotage complet
-    //     timers.start("ACA_pivot_complet");
-    //     ACA_decomposition aca = full_pivoted_cross_approximation(A, maxRank, 1e-8);
-    //     timers.end("ACA_pivot_complet");
-    //     std::cout << "ACA Partiel..." << std::endl;
-
-    //     // -- Test de ACA pivotage partiel
-    //     timers.start("ACA_pivot_partiel");
-    //     ACA_decomposition aca_partial = partial_pivoted_cross_approximation(A, maxRank, 1e-8);
-    //     timers.end("ACA_pivot_partiel");
-    //     std::cout << "Préaffichage..." << std::endl;
-
-    //     Matrice A_aca = aca.U * aca.V.transpose();
-    //     Matrice A_aca_partial = aca_partial.U * aca_partial.V.transpose();
-
-    //     // -- Erreurs
-    //     const Real erreurAbsolueACA = (A - A_aca).norm();
-    //     const Real erreurRelativeACA =
-    //         normeA > 0.0 ? erreurAbsolueACA / normeA : 0.0;
-
-    //     const Real erreurAbsolueACAPartial = (A - A_aca_partial).norm();
-    //     const Real erreurRelativeACAPartial =
-    //         normeA > 0.0 ? erreurAbsolueACAPartial / normeA : 0.0;
-
-    //     // -- Comparaison de mémoire SVD tronqué
-    //     const std::size_t originalBytes = static_cast<std::size_t>(A.size()) * sizeof(Complex);
-
-    //     const std::size_t truncatedBytes = static_cast<std::size_t>(U_r.size()) * sizeof(Complex) + static_cast<std::size_t>(sigma_r.size()) * sizeof(Real) + static_cast<std::size_t>(V_r.size()) * sizeof(Complex);
-
-    //     const double originalMB = originalBytes / (1024.0 * 1024.0);
-    //     const double truncatedMB = truncatedBytes / (1024.0 * 1024.0);
-
-    //     const double savedBytes = static_cast<double>(originalBytes) - truncatedBytes;
-
-    //     const double savedMB = savedBytes / (1024.0 * 1024.0);
-
-    //     const double savedPercent = originalBytes > 0 ? 100.0 * savedBytes / originalBytes : 0.0;
-
-    //     std::cout << std::scientific << std::setprecision(6);
-
-    //     // -- Comparaison de mémoire ACA
-    //     auto memoireACA = [](const ACA_decomposition &d) -> std::size_t
-    //     {
-    //         return static_cast<std::size_t>(
-    //                    d.U.size() + d.V.size()) *
-    //                sizeof(Complex);
-    //     };
-
-    //     const std::size_t memoireACAComplet = memoireACA(aca);
-    //     const std::size_t memoireACAPartiel = memoireACA(aca_partial);
-
-    //     auto MiB = [](std::size_t bytes) -> double
-    //     {
-    //         return static_cast<double>(bytes) / (1024.0 * 1024.0);
-    //     };
-
-    //     auto tauxCompression = [&](std::size_t bytes) -> double
-    //     {
-    //         return bytes > 0
-    //                    ? 100.0 * (1.0 -
-    //                               static_cast<double>(bytes) /
-    //                                   static_cast<double>(originalBytes))
-    //                    : 0.0;
-    //     };
-
-    //     std::cout << "\n========== ANALYSE SVD ==========\n";
-    //     std::cout << "Dimensions             : "
-    //               << A.rows() << " x " << A.cols() << '\n';
-    //     std::cout << "Rang demande            : " << maxRank << '\n';
-    //     std::cout << "Rang numerique estime   : " << rangReel << '\n';
-    //     std::cout << "Rang de troncature      : " << r << '\n';
-    //     std::cout << "Tolerance de rang       : " << tol << '\n';
-    //     std::cout << "Temps de calcul         : ";
-    //     timers.print("svd");
-    //     std::cout << '\n';
-
-    //     std::cout << "\n========== ERREUR ==========\n";
-    //     std::cout << "Norme de A              : " << normeA << '\n';
-    //     std::cout << "Norme de A_r            : " << A_r.norm() << '\n';
-    //     std::cout << "Erreur absolue          : " << erreurAbsolue << '\n';
-    //     std::cout << "Erreur relative         : " << erreurRelative << '\n';
-    //     std::cout << "================================\n";
-
-    //     std::cout << "\n========== MEMOIRE SVD ==========\n";
-    //     std::cout << "Original matrix       : "
-    //               << originalMB << " MiB\n";
-    //     std::cout << "Truncated SVD factors : "
-    //               << truncatedMB << " MiB\n";
-    //     std::cout << "Memory saved          : "
-    //               << savedMB << " MiB\n";
-    //     std::cout << "Space reduction       : "
-    //               << savedPercent << " %\n";
-    //     std::cout << "====================================\n";
-
-    //     std::cout << "\n========== ANALYSE ACA ==========\n";
-
-    //     std::cout << "\n--- ACA : pivotage complet ---\n";
-    //     std::cout << "Rang obtenu             : " << aca.rang << '\n';
-    //     std::cout << "Erreur absolue          : " << erreurAbsolueACA << '\n';
-    //     std::cout << "Erreur relative         : " << erreurRelativeACA << '\n';
-    //     std::cout << "Memoire des facteurs    : "
-    //               << MiB(memoireACAComplet) << " MiB\n";
-    //     std::cout << "Reduction memoire       : "
-    //               << tauxCompression(memoireACAComplet) << " %\n";
-    //     std::cout << "Temps de calcul         : ";
-    //     timers.print("ACA_pivot_complet");
-    //     std::cout << '\n';
-
-    //     std::cout << "\n--- ACA : pivotage partiel ---\n";
-    //     std::cout << "Rang obtenu             : " << aca_partial.rang << '\n';
-    //     std::cout << "Erreur absolue          : "
-    //               << erreurAbsolueACAPartial << '\n';
-    //     std::cout << "Erreur relative         : "
-    //               << erreurRelativeACAPartial << '\n';
-    //     std::cout << "Memoire des facteurs    : "
-    //               << MiB(memoireACAPartiel) << " MiB\n";
-    //     std::cout << "Reduction memoire       : "
-    //               << tauxCompression(memoireACAPartiel) << " %\n";
-
-    //     std::cout << "Temps de calcul         : ";
-    //     timers.print("ACA_pivot_partiel");
-    //     std::cout << '\n';
-
-    //     std::cout << "=================================\n";
-    // }
-
-    Arbre arbre_clusters = run("Construction de l'arbre de clusters", timers, "arbre_clusters", [&]()
-                               { return construire_arbre_maillage(maillage, N_leaves); }, [&](const Arbre &arbre)
-                               { ecrire_arbre_clusters(arbre, "outputs/arbre_clusters.csv"); });
-
-    std::vector<Index> permutation = run("Construction de la permutation", timers, "permutation",
-                                         [&]()
-                                         {
-                                             return construire_permutation(arbre_clusters);
-                                         });
-
-    std::vector<Index> permutation_inverse = run("Construction de la permutation inverse", timers, "permutation_inverse",
-                                                 [&]()
-                                                 {
-                                                     return construire_permutation_inverse(permutation);
-                                                 });
-
-    IntervallesClusters intervalles = run("Construction des intervalles des clusters", timers, "intervalles_clusters",
-                                          [&]()
-                                          {
-                                              return construire_intervalles_clusters(arbre_clusters);
-                                          });
-
-    ArbreBlocs arbre_blocs = run("Construction de l'arbre des blocs", timers, "arbre_blocs", [&]()
-                                 { return construire_arbre_blocs(arbre_clusters, parametre_admissibilite, facteur_admissibilite); }, [&](const ArbreBlocs &arbre)
-                                 { ecrire_arbre_blocs(arbre, "outputs/arbre_blocs.csv", intervalles); });
-
-    run("Remplissage de la matrice H", timers, "remplissage_matrice", [&]()
-        { remplir_blocs(*arbre_blocs, maillage, quadrature_maillage, rang_max, toleranceAca); }, [&]()
-        { affichage_statistiques_matrice_H(arbre_blocs); });
-
-    constexpr int NB_TESTS = 100;
-    const Eigen::Index N = static_cast<Eigen::Index>(arbre_clusters->indices.size());
-
-    std::vector<Vecteur> vecteurs_test;
-    vecteurs_test.reserve(NB_TESTS);
-
-    for (int i = 0; i < NB_TESTS; ++i)
-        vecteurs_test.push_back(Vecteur::Random(N));
-
-    std::vector<Vecteur> resultats;
-    resultats.reserve(NB_TESTS);
-
-    // run("10 produits Hx", timers, "produit Hx", [&]()
-    //     {
-    // for (int i = 0; i < NB_TESTS; ++i)
-    //     resultats.push_back(appliquer_H(arbre_blocs, vecteurs_test[i])); });
-    run("10 produits Hx", timers, "produit Hx", [&]()
         {
-            for (int i = 0; i < NB_TESTS; ++i)
-                resultats.push_back(appliquer_H(arbre_blocs, vecteurs_test[i])); });
+            for (Index j = i; j < N; ++j)
+            {
+                const Complex aij = matrice_bem(i, j, maillage, quadrature_maillage);
 
-    // Matrice A = run("Construction de la matrice BEM dense", timers, "matrice_bem_dense",
-    //                 [&]()
-    //                 {
-    //                     return get_matrice_bem(maillage, quadrature_maillage);
-    //                 });
+                A_dense(i, j) = aij;
+                A_dense(j, i) = aij;
+            }
+        }
 
-    // Vecteur x = Vecteur::Ones(A.cols());
+        timers.end("construction_matrice_dense");
 
-    // Vecteur Ax = run("Calcul Ax", timers, "produit Ax", [&]()
-    //                  { return A * x; });
+        /* === Construction du second membre === */
 
-    // Vecteur Hx = run("Calcul Hx", timers, "produit Hx", [&]()
-    //                  { return appliquer_H(arbre_blocs, x); });
+        Vecteur vect_b(N);
 
-    // cout << "Erreur ACA: " << (Ax - Hx).norm() / std::max(Ax.norm(), 1e-30);
+        timers.start("construction_second_membre");
 
-    // -- End time --
+        for (Index i = 0; i < N; ++i)
+        {
+            vect_b(i) = integ_simple(
+                [](const Point &P)
+                {
+                    return -u_inc(P);
+                },
+                quadrature_maillage[i]);
+        }
 
-    timers.end("programme");
+        timers.end("construction_second_membre");
 
-    if (mpi_rank == 0)
+        /* ====================================================== */
+        /* TEST 1 : ERREUR RELATIVE MATRICE H / MATRICE DENSE    */
+        /* ====================================================== */
+
+        {
+            std::cout << "\n=== TEST 1 : Erreur relative H / dense ===" << std::endl;
+
+            const int nb_tests = 20;
+
+            std::cout << "Nombre de vecteurs : " << nb_tests << std::endl;
+
+            /* === Génération et comparaison === */
+
+            std::mt19937_64 generateur(123456789);
+            std::normal_distribution<double> distribution(0.0, 1.0);
+
+            std::vector<double> erreurs;
+            erreurs.reserve(nb_tests);
+
+            timers.start("comparaison_produits");
+
+            for (int test = 0; test < nb_tests; ++test)
+            {
+                Vecteur x(N);
+
+                for (Index i = 0; i < N; ++i)
+                {
+                    x(i) = Complex(distribution(generateur), distribution(generateur));
+                }
+
+                const Vecteur y_dense = A_dense * x;
+                const Vecteur y_H = appliquer_H(arbre_blocs_BEM, x, true);
+
+                const double denominateur = y_dense.norm();
+
+                if (denominateur == 0.0)
+                    continue;
+
+                const double erreur = (y_H - y_dense).norm() / denominateur;
+
+                erreurs.push_back(erreur);
+            }
+
+            timers.end("comparaison_produits");
+
+            /* === Affichage des résultats === */
+
+            if (!erreurs.empty())
+            {
+                const double erreur_min = *std::min_element(erreurs.begin(), erreurs.end());
+                const double erreur_max = *std::max_element(erreurs.begin(), erreurs.end());
+                const double erreur_moyenne = std::accumulate(erreurs.begin(), erreurs.end(), 0.0) / erreurs.size();
+
+                double variance = 0.0;
+
+                for (double erreur : erreurs)
+                    variance += std::pow(erreur - erreur_moyenne, 2);
+
+                variance /= erreurs.size();
+
+                std::cout << "\n--- Résultats ---" << std::endl;
+                std::cout << std::scientific << std::setprecision(6);
+
+                std::cout << "Nombre de tests       : "
+                          << erreurs.size() << std::endl;
+
+                std::cout << "Erreur minimale      : "
+                          << erreur_min << std::endl;
+
+                std::cout << "Erreur moyenne       : "
+                          << erreur_moyenne << std::endl;
+
+                std::cout << "Erreur maximale      : "
+                          << erreur_max << std::endl;
+
+                std::cout << "Ecart-type           : "
+                          << std::sqrt(variance) << std::endl;
+            }
+        }
+
+        /* ====================================================== */
+        /* TEST 2 : PERFORMANCE DES PRODUITS MATRICE-VECTEUR      */
+        /* ====================================================== */
+
+        {
+            std::cout << "\n=== TEST 2 : Performance des produits Ax ==="
+                      << std::endl;
+
+            const int nb_iterations = 100;
+            const int nb_vecteurs = 10;
+
+            std::cout << "Nombre de vecteurs : " << nb_vecteurs << std::endl;
+            std::cout << "Nombre d'itération : " << nb_iterations << std::endl;
+
+            // Génération des vecteurs avant les mesures
+            std::mt19937_64 generateur_perf(987654321);
+            std::normal_distribution<double> distribution_perf(0.0, 1.0);
+
+            std::vector<Vecteur> vecteurs(nb_vecteurs);
+
+            for (int k = 0; k < nb_vecteurs; ++k)
+            {
+                vecteurs[k].resize(N);
+
+                for (Index i = 0; i < N; ++i)
+                {
+                    vecteurs[k](i) = Complex(distribution_perf(generateur_perf), distribution_perf(generateur_perf));
+                }
+            }
+
+            // Phase de chauffe
+            Vecteur y_dense = A_dense * vecteurs[0];
+            Vecteur y_H = appliquer_H(arbre_blocs_BEM, vecteurs[0], true);
+
+            // Vérification de cohérence
+            const double erreur_chauffe = (y_H - y_dense).norm() / y_dense.norm();
+
+            // Benchmark matrice dense
+            double temps_dense = 0.0;
+
+            {
+                const auto debut = std::chrono::steady_clock::now();
+
+                for (int iter = 0; iter < nb_iterations; ++iter)
+                {
+                    const Vecteur &x = vecteurs[iter % nb_vecteurs];
+                    y_dense = A_dense * x;
+                }
+
+                const auto fin = std::chrono::steady_clock::now();
+
+                temps_dense = std::chrono::duration<double>(fin - debut).count();
+            }
+
+            // Benchmark H-matrice
+            double temps_H = 0.0;
+
+            {
+                const auto debut = std::chrono::steady_clock::now();
+
+                for (int iter = 0; iter < nb_iterations; ++iter)
+                {
+                    const Vecteur &x = vecteurs[iter % nb_vecteurs];
+                    y_H = appliquer_H(arbre_blocs_BEM, x, true);
+                }
+
+                const auto fin = std::chrono::steady_clock::now();
+
+                temps_H = std::chrono::duration<double>(fin - debut).count();
+            }
+
+            // Résultats
+            std::cout << std::scientific << std::setprecision(6);
+
+            std::cout << "\n--- Résultats ---" << std::endl;
+
+            std::cout << "Nombre de produits : "
+                      << nb_iterations << std::endl;
+
+            std::cout << "Temps total dense  : "
+                      << temps_dense << " s" << std::endl;
+
+            std::cout << "Temps total H      : "
+                      << temps_H << " s" << std::endl;
+
+            std::cout << "Temps moyen dense  : "
+                      << temps_dense / nb_iterations << " s" << std::endl;
+
+            std::cout << "Temps moyen H      : "
+                      << temps_H / nb_iterations << " s" << std::endl;
+
+            std::cout << "Speedup dense / H  : "
+                      << temps_dense / temps_H << std::endl;
+
+            std::cout << "Erreur de contrôle : "
+                      << erreur_chauffe << std::endl;
+        }
+
+        /* ====================================================== */
+        /* TEST 3 : COMPARAISON MEMOIRE DENSE / H-MATRICE         */
+        /* ====================================================== */
+
+        {
+            std::cout << "\n=== TEST 3 : Comparaison mémoire ===" << std::endl;
+
+            // Mémoire de la matrice dense
+            const std::size_t memoire_dense = static_cast<std::size_t>(N) * static_cast<std::size_t>(N) * sizeof(Complex);
+
+            // Comptage mémoire H-matrice
+            std::size_t memoire_coefficients_H = 0;
+            std::size_t memoire_structure_H = 0;
+
+            std::size_t nb_blocs_denses = 0;
+            std::size_t nb_blocs_aca = 0;
+            std::size_t nb_noeuds = 0;
+
+            auto compter_memoire_H = [&](auto &&self, const Bloc &bloc) -> void
+            {
+                ++nb_noeuds;
+
+                // Structure du bloc
+                memoire_structure_H += sizeof(Bloc);
+
+                if (bloc.type == TypeBloc::Dense)
+                {
+                    ++nb_blocs_denses;
+
+                    memoire_coefficients_H += static_cast<std::size_t>(bloc.dense.size()) * sizeof(Complex);
+                }
+                else if (bloc.type == TypeBloc::Admissible)
+                {
+                    ++nb_blocs_aca;
+
+                    memoire_coefficients_H += static_cast<std::size_t>(bloc.U.size() + bloc.V.size()) * sizeof(Complex);
+                }
+
+                // Parcours des enfants
+                for (int i = 0; i < 2; ++i)
+                {
+                    for (int j = 0; j < 2; ++j)
+                    {
+                        if (bloc.fils[i][j])
+                            self(self, *bloc.fils[i][j]);
+                    }
+                }
+            };
+
+            compter_memoire_H(compter_memoire_H, *arbre_blocs_BEM);
+
+            // Mémoire totale estimée de la H-matrice
+            const std::size_t memoire_H = memoire_coefficients_H + memoire_structure_H;
+
+            // Conversion en Mio
+            const double dense_MiB = static_cast<double>(memoire_dense) / (1024.0 * 1024.0);
+            const double H_coefficients_MiB = static_cast<double>(memoire_coefficients_H) / (1024.0 * 1024.0);
+            const double H_structure_MiB = static_cast<double>(memoire_structure_H) / (1024.0 * 1024.0);
+            const double H_total_MiB = static_cast<double>(memoire_H) / (1024.0 * 1024.0);
+
+            std::cout << std::fixed << std::setprecision(4);
+
+            std::cout << "\n--- Résultats ---" << std::endl;
+
+            std::cout << "Matrice dense       : "
+                      << dense_MiB << " MiB" << std::endl;
+
+            std::cout << "H coefficients      : "
+                      << H_coefficients_MiB << " MiB" << std::endl;
+
+            std::cout << "H structure         : "
+                      << H_structure_MiB << " MiB" << std::endl;
+
+            std::cout << "H total estime      : "
+                      << H_total_MiB << " MiB" << std::endl;
+
+            std::cout << "\n--- Statistiques H ---" << std::endl;
+
+            std::cout << "Nombre de noeuds    : "
+                      << nb_noeuds << std::endl;
+
+            std::cout << "Blocs denses        : "
+                      << nb_blocs_denses << std::endl;
+
+            std::cout << "Blocs ACA           : "
+                      << nb_blocs_aca << std::endl;
+
+            std::cout << "\nRatio memoire dense / H : "
+                      << dense_MiB / H_total_MiB << std::endl;
+        }
+
+        /* ====================================================== */
+        /* TEST 4 : COMPARAISON DES RESOLUTIONS                    */
+        /* ====================================================== */
+
+        {
+            std::cout << "\n=== TEST 4 : Comparaison des résolutions ==="
+                      << std::endl;
+
+            // Paramètres communs aux trois résolutions
+            const double tolerance_gmres = tolGradConj;
+            const Eigen::Index max_iterations = maxIterGradConj;
+            const Eigen::Index restart = 40;
+
+            std::cout << "Taille du système    : " << N << std::endl;
+            std::cout << "Tolerance            : " << tolerance_gmres << std::endl;
+            std::cout << "Iterations max       : " << max_iterations << std::endl;
+            std::cout << "Restart GMRES        : " << restart << std::endl;
+
+            /* ================================================== */
+            /* 1. GMRES SUR LA MATRICE DENSE                       */
+            /* ================================================== */
+
+            std::cout << "\n--- GMRES dense ---" << std::endl;
+
+            ResultatGMRES resultat_dense;
+
+            timers.start("resolution_GMRES_dense");
+
+            {
+                Eigen::GMRES<Matrice, Eigen::IdentityPreconditioner> gmres;
+
+                gmres.set_restart(restart);
+                gmres.setMaxIterations(max_iterations);
+                gmres.setTolerance(tolerance_gmres);
+
+                gmres.compute(A_dense);
+
+                resultat_dense.solution = gmres.solve(vect_b);
+                resultat_dense.iterations = gmres.iterations();
+                resultat_dense.erreur = gmres.error();
+                resultat_dense.info = gmres.info();
+            }
+
+            timers.end("resolution_GMRES_dense");
+
+            // Résidu calculé dans le système original
+            const double residu_dense =
+                (A_dense * resultat_dense.solution - vect_b).norm() / std::max(vect_b.norm(), 1e-30);
+
+            /* ================================================== */
+            /* 2. GMRES SUR LA H-MATRICE SANS PRECONDITIONNEMENT  */
+            /* ================================================== */
+
+            std::cout << "\n--- GMRES H sans preconditionnement ---"
+                      << std::endl;
+
+            ResultatGMRES resultat_H;
+
+            timers.start("resolution_GMRES_H");
+
+            resultat_H = resoudre_GMRES_Id(
+                arbre_blocs_BEM,
+                vect_b,
+                tolerance_gmres,
+                max_iterations,
+                restart,
+                true);
+
+            timers.end("resolution_GMRES_H");
+
+            // Résidu calculé dans le système original
+            const Vecteur residu_H =
+                appliquer_H(
+                    arbre_blocs_BEM,
+                    resultat_H.solution,
+                    true) -
+                vect_b;
+
+            const double norme_residu_H =
+                residu_H.norm() / std::max(vect_b.norm(), 1e-30);
+
+            /* ================================================== */
+            /* 3. GMRES SUR LA H-MATRICE AVEC SCHWARZ             */
+            /* ================================================== */
+
+            std::cout << "\n--- GMRES H avec Schwarz ---"
+                      << std::endl;
+
+            ResultatGMRES resultat_H_schwarz;
+
+            timers.start("resolution_GMRES_H_Schwarz");
+
+            resultat_H_schwarz = resoudre_GMRES_BLOC(
+                arbre_blocs_BEM,
+                preconditionneur_blocs,
+                vect_b,
+                tolerance_gmres,
+                max_iterations,
+                restart,
+                true);
+
+            timers.end("resolution_GMRES_H_Schwarz");
+
+            // Attention : on calcule le résidu dans le système original
+            // et non dans le système préconditionné.
+            const Vecteur residu_H_schwarz =
+                appliquer_H(
+                    arbre_blocs_BEM,
+                    resultat_H_schwarz.solution,
+                    true) -
+                vect_b;
+
+            const double norme_residu_H_schwarz =
+                residu_H_schwarz.norm() / std::max(vect_b.norm(), 1e-30);
+
+            /* ================================================== */
+            /* 4. AFFICHAGE DES RESULTATS                         */
+            /* ================================================== */
+
+            std::cout << std::scientific << std::setprecision(6);
+
+            std::cout << "\n=== RESULTATS COMPARATIFS ===" << std::endl;
+
+            std::cout << std::left
+                      << std::setw(32) << "Methode"
+                      << std::right
+                      << std::setw(14) << "Iterations"
+                      << std::setw(18) << "Residu relatif"
+                      << std::setw(12) << "Convergence"
+                      << std::endl;
+
+            std::cout << std::string(76, '-') << std::endl;
+
+            auto afficher_resultat =
+                [&](const std::string &nom,
+                    const ResultatGMRES &resultat,
+                    const double residu)
+            {
+                std::cout << std::left
+                          << std::setw(32) << nom
+                          << std::right
+                          << std::setw(14) << resultat.iterations
+                          << std::setw(18) << residu
+                          << std::setw(12)
+                          << (resultat.info == Eigen::Success ? "OUI" : "NON")
+                          << std::endl;
+            };
+
+            afficher_resultat(
+                "GMRES dense",
+                resultat_dense,
+                residu_dense);
+
+            afficher_resultat(
+                "GMRES H sans Schwarz",
+                resultat_H,
+                norme_residu_H);
+
+            afficher_resultat(
+                "GMRES H avec Schwarz",
+                resultat_H_schwarz,
+                norme_residu_H_schwarz);
+
+            /* ================================================== */
+            /* 5. COMPARAISON DES REDUCTIONS D'ITERATIONS          */
+            /* ================================================== */
+
+            std::cout << "\n=== GAINS EN ITERATIONS ===" << std::endl;
+
+            if (resultat_H.iterations > 0)
+            {
+                std::cout << "Dense / H sans Schwarz : "
+                          << static_cast<double>(resultat_dense.iterations) / resultat_H.iterations
+                          << std::endl;
+            }
+
+            if (resultat_H_schwarz.iterations > 0)
+            {
+                std::cout << "Dense / H avec Schwarz : "
+                          << static_cast<double>(resultat_dense.iterations) / resultat_H_schwarz.iterations
+                          << std::endl;
+
+                if (resultat_H.iterations > 0)
+                {
+                    std::cout << "H sans / avec Schwarz : "
+                              << static_cast<double>(resultat_H.iterations) / resultat_H_schwarz.iterations
+                              << std::endl;
+                }
+            }
+        }
+
+        timers.end("programme_tests");
+
         timers.print_all();
+
+        afficher_memoire();
+
+        MPI_Win_free(&green_cache_win);
+    }
 
 #endif
 

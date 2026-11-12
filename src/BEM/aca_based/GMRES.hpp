@@ -125,19 +125,6 @@ inline ResultatGMRES resoudre_GMRES_Id(const ArbreBlocs &arbre_blocs, const Vect
 {
     OperateurH_Eigen A(arbre_blocs, b.size(), est_symetrique);
 
-    { // TEST
-        Vecteur x = Vecteur::Random(b.size());
-
-        Vecteur Ax = appliquer_H(arbre_blocs, x, true);
-
-        double erreur_preconditionneur =
-            (Ax - x).norm() /
-            std::max(x.norm(), 1e-30);
-
-        if (mpi_rank == 0)
-            cout << "Erreur approximation identité : " << erreur_preconditionneur << endl;
-    }
-
     Eigen::GMRES<
         OperateurH_Eigen,
         Eigen::IdentityPreconditioner>
@@ -243,18 +230,6 @@ inline ResultatGMRES resoudre_GMRES_preconditionne(const ArbreBlocs &arbre_blocs
 {
     // Opérateur L * UT * H.
     OperateurPreconditionneSparseLU A(arbre_blocs, facteurs, est_symetrique);
-
-    { // TEST : approximation de l'identité
-        const Vecteur x = Vecteur::Random(b.size());
-        const Vecteur Hx = appliquer_H(arbre_blocs, x, est_symetrique);
-        const Vecteur UTHx = appliquer_UT(facteurs, Hx);
-        const Vecteur LUTHx = appliquer_L(facteurs, UTHx);
-        const double erreur = (LUTHx - x).norm() / std::max(x.norm(), 1e-30);
-
-        if (mpi_rank == 0)
-            cout << "Erreur approximation identite : "
-                 << erreur << endl;
-    }
 
     // Second membre préconditionné : L * UT * b.
     const Vecteur UTb = appliquer_UT(facteurs, b);
@@ -388,28 +363,6 @@ inline ResultatGMRES resoudre_GMRES_BLOC(const ArbreBlocs &arbre_blocs, const Pr
 {
     // Opérateur M^-1 * H.
     OperateurPreconditionneBlocs A(arbre_blocs, preconditionneur, b.size(), est_symetrique);
-
-    // Test de l'approximation de l'identité.
-    {
-        Vecteur x = Vecteur::Zero(b.size());
-
-        if (mpi_rank == 0)
-        {
-            x = Vecteur::Random(b.size());
-        }
-
-        MPI_Bcast(x.data(), static_cast<int>(x.size()), MPI_CXX_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD);
-
-        const Vecteur Hx = appliquer_H(arbre_blocs, x, est_symetrique);
-        const Vecteur M_inv_Hx = appliquer_preconditionneur_blocs(preconditionneur, Hx);
-        const double erreur = (M_inv_Hx - x).norm() / std::max(x.norm(), 1e-30);
-
-        if (mpi_rank == 0)
-        {
-            cout << "Erreur approximation identite (bloc) : "
-                 << erreur << endl;
-        }
-    }
 
     // Second membre préconditionné : M^-1 * b.
     const Vecteur b_preconditionne = appliquer_preconditionneur_blocs(preconditionneur, b);
